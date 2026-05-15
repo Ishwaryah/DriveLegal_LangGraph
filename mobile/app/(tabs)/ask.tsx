@@ -20,6 +20,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useHistory } from '../../hooks/useHistory';
 import { useSettings } from '../../hooks/useSettings';
+import { API_BASE } from '../../config/api';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Location from 'expo-location';
@@ -29,15 +30,24 @@ const localRules = require('../../assets/seed/rules.json');
 export default function DriveLegalAssistant() {
   const { q, sid, new: isNew } = useLocalSearchParams<{ q: string, sid: string, new: string }>();
   const { addSession, sessions } = useHistory();
-  const { t, highContrast, profile } = useSettings();
+  const { t, highContrast, profile, language } = useSettings();
   const router = useRouter();
-  const { isOffline, countryCode } = useGeoFineAlert();
+  const { isOffline, countryCode, locationName, coords } = useGeoFineAlert();
   const { width: windowWidth } = useWindowDimensions();
   const width = Math.min(windowWidth, 500);
   const fontScale = width / 375;
   const fs = (size: number) => size * fontScale;
 
   const [selectedCountry, setSelectedCountry] = useState(countryCode || 'IN');
+
+  // Country keyword detector — mirrors backend country_detector.py
+  const detectCountryFromText = (text: string): string | null => {
+    const lower = ' ' + text.toLowerCase() + ' ';
+    if (lower.includes('uae') || lower.includes('dubai') || lower.includes('abu dhabi') || lower.includes('emirates')) return 'AE';
+    if (lower.includes('singapore') || lower.includes(' sg ')) return 'SG';
+    if (lower.includes('united kingdom') || lower.includes('britain') || lower.includes('london') || lower.includes(' uk ')) return 'GB';
+    return null;
+  };
 
   const [queryText, setQueryText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -51,9 +61,14 @@ export default function DriveLegalAssistant() {
     id: string;
     sender: 'user' | 'ai';
     text: string;
+    textEn?: string;        // English version when backend auto-detected a different language
+    detectedLang?: string;  // ISO code returned by the multilingual endpoint
     suggestions?: string[];
     source?: string;
   }
+
+  // Global toggle: show native-language response vs. English fallback
+  const [showEnglish, setShowEnglish] = useState(false);
 
   const initialMessage: ChatMessage = {
     id: '1',
@@ -94,41 +109,49 @@ export default function DriveLegalAssistant() {
   const handleSend = async (textOverride?: string) => {
     const text = textOverride || queryText;
     if (!text.trim()) return;
-    
+
     lastQueryRef.current = text;
+
+    // Auto-detect country from query text and switch selector if found
+    const detectedCountry = detectCountryFromText(text);
+    if (detectedCountry && detectedCountry !== selectedCountry) {
+      setSelectedCountry(detectedCountry);
+    }
+    const effectiveCountry = detectedCountry || selectedCountry;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
       text: text,
     };
-    
+
     setChatHistory(prev => [...prev, userMessage]);
     setQueryText('');
-    
+
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    
-    // Offline fallback check
+
+    // Offline fallback — keyword search against local rules.json
     if (isOffline) {
       setTimeout(() => {
         const keywords = text.toLowerCase().split(' ');
         let foundRule = null;
         for (const rule of localRules) {
-          if (keywords.some(k => k.length > 3 && rule.title.toLowerCase().includes(k) || rule.description.toLowerCase().includes(k))) {
+          if (keywords.some(k => k.length > 3 && (rule.title.toLowerCase().includes(k) || rule.description.toLowerCase().includes(k)))) {
             foundRule = rule;
             break;
           }
         }
-        
-        const respText = foundRule 
-          ? `⚠️ Limited mode - offline\n\n${foundRule.description}` 
-          : `⚠️ Limited mode - offline\n\nSorry, I couldn't find offline information matching your query.`;
-          
+
+        const locationLabel = locationName ? `Using last known: ${locationName}` : 'offline';
+        const respText = foundRule
+          ? `⚠️ Limited mode — ${locationLabel}\n\n${foundRule.description}`
+          : `⚠️ Limited mode — ${locationLabel}\n\nSorry, I couldn't find offline information matching your query. Connect to the internet for full results.`;
+
         const aiResponse: ChatMessage = {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
           text: respText,
-          source: foundRule ? foundRule.section : "Local Database"
+          source: foundRule ? foundRule.section : 'Local Database',
         };
         addSession(text, respText);
         setChatHistory(prev => [...prev, aiResponse]);
@@ -137,24 +160,54 @@ export default function DriveLegalAssistant() {
       return;
     }
 
-    await submitQuery(text);
+    // Online: call multilingual endpoint
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const resp = await fetch(`${API_BASE}/api/v1/chat/multilingual`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, country: effectiveCountry, preferred_lang: language, gps: coords }),
+        signal: controller.signal as any,
+      });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        const result = await resp.json();
+        const nativeText   = result.response    || result.text || 'No response.';
+        const englishText  = result.response_en || nativeText;
+        const detectedLang = result.detected_language || 'en';
+        const sectionRef   = result.fine?.section_ref || result.rule?.section;
+        const aiResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: nativeText,
+          textEn: detectedLang !== 'en' ? englishText : undefined,
+          detectedLang,
+          source: sectionRef ? `${sectionRef}, MV Act` : 'Traffic Rules Database',
+        };
+        addSession(text, nativeText);
+        lastQueryRef.current = '';
+        setChatHistory(prev => [...prev, aiResponse]);
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+        return;
+      }
+    } catch (_) { /* fall through to legacy endpoint */ }
+
+    // Fallback to legacy /query endpoint
+    await submitQuery(text, coords, effectiveCountry);
   };
 
+  // Handle legacy /query responses (network fallback path only)
   useEffect(() => {
     if (data) {
-      const respText = data.text || "I found some information regarding your query.";
+      const respText = data.text || data.response || 'I found some information regarding your query.';
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
         text: respText,
-        source: data.fine?.section_ref ? `Section ${data.fine.section_ref}` : "Traffic Rules Database"
+        source: data.fine?.section_ref ? `Section ${data.fine.section_ref}` : 'Traffic Rules Database',
       };
-
-      if (lastQueryRef.current) {
-        addSession(lastQueryRef.current, respText);
-        lastQueryRef.current = '';
-      }
-
+      if (lastQueryRef.current) { addSession(lastQueryRef.current, respText); lastQueryRef.current = ''; }
       setChatHistory(prev => [...prev, aiResponse]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     } else if (error) {
@@ -265,8 +318,12 @@ export default function DriveLegalAssistant() {
             <View>
               <Text style={[styles.headerTitle, { color: textPrimary, fontSize: fs(16) }]}>{t('assistant_name')}</Text>
               <View style={styles.statusRow}>
-                <View style={styles.statusDot} />
-                <Text style={[styles.statusText, {fontSize: fs(11)}]}>{isOffline ? 'Offline' : t('assistant_status')}</Text>
+                <View style={[styles.statusDot, isOffline && { backgroundColor: '#f59e0b' }]} />
+                <Text style={[styles.statusText, { fontSize: fs(11), color: isOffline ? '#f59e0b' : '#10b981' }]}>
+                  {isOffline
+                    ? (locationName ? `Last known: ${locationName}` : 'Offline')
+                    : t('assistant_status')}
+                </Text>
               </View>
             </View>
           </View>

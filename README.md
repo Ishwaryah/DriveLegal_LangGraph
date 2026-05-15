@@ -98,7 +98,7 @@ npx expo start --web    # for browser at http://localhost:8081
 
 ```bash
 # backend/.env
-GROQ_API_KEY=your_key_here
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
 ---

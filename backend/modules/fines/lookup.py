@@ -48,7 +48,7 @@ class FineLookup:
         if not os.path.exists(self.db_path):
             raise FileNotFoundError(f"Database not found at {self.db_path}")
 
-    def query(self, offence_code: str, vehicle_class: str, state: str, repeat: bool = False) -> Optional[dict]:
+    def query(self, offence_code: str, vehicle_class: str, state: str, country: str = "IN", repeat: bool = False) -> Optional[dict]:
         """
         Query the fine database for a specific offence and vehicle class in a state.
         Returns: {amount_inr, section_ref} or None
@@ -67,12 +67,12 @@ class FineLookup:
             FROM fines
             WHERE violation_code = ?
               AND vehicle_type IN (?, 'all')
-              AND country = 'IN'
+              AND country = ?
               AND (state_province = ? OR state_province IS NULL)
             ORDER BY CASE WHEN state_province = ? THEN 0 ELSE 1 END
             LIMIT 1
         """
-        cursor.execute(query, (db_code, db_vehicle, state, state))
+        cursor.execute(query, (db_code, db_vehicle, country, state, state))
         row = cursor.fetchone()
         conn.close()
 
@@ -90,14 +90,14 @@ class FineLookup:
             }
         return None
 
-    def query_by_section(self, section_ref: str) -> List[Dict]:
+    def query_by_section(self, section_ref: str, country: str = "IN") -> List[Dict]:
         """Query fines by MV Act section reference."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM fines WHERE mv_act_section LIKE ?",
-            (f"%{section_ref}%",)
+            "SELECT * FROM fines WHERE mv_act_section LIKE ? AND country = ?",
+            (f"%{section_ref}%", country)
         )
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()

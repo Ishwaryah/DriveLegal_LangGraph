@@ -17,6 +17,12 @@ from .normalizer import normalize
 from .intent_classifier import IntentClassifier
 from .entity_extractor import EntityExtractor
 from .context_resolver import resolve
+from backend.modules.multilingual_intent import (
+    detect_language,
+    extract_intent_multilingual,
+    extract_state_multilingual,
+    violation_code_to_offence_type
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +33,12 @@ _EMPTY_ENTITIES: Dict[str, Any] = {
     "state":         None,
     "repeat_offence": None,
     "section_ref":   None,
+    "road_type":     None,
 }
+
+# Intents that are valid without a structured offence_type/section_ref.
+# General and procedure queries are answered from the knowledge base alone.
+_KNOWLEDGE_INTENTS = {"general_query", "procedure_query"}
 
 
 class NLPPipeline:
@@ -63,17 +74,46 @@ class NLPPipeline:
             # 1. Normalise
             clean_text = normalize(raw_text)
 
-            # 2. Classify intent
+            # 2. Language detection
+            lang = detect_language(clean_text)
+            
+            # 3. Classify intent (Multilingual support)
+            multilingual_intent = "unknown"
+            multilingual_violations = []
+            multilingual_country = "IN"
+            if lang != "en":
+                multilingual_intent, multilingual_violations, multilingual_country = extract_intent_multilingual(clean_text, lang)
+
             try:
                 intent = self.classifier.predict(clean_text) or "unknown"
+                # Use multilingual intent if classifier failed but keyword match found
+                if intent == "unknown" and multilingual_intent != "unknown":
+                    intent = multilingual_intent
             except Exception as e:
                 logger.error("Intent classification error: %s", e)
-                intent = "unknown"
+                intent = multilingual_intent or "unknown"
 
-            # 3. Extract entities (returns complete dict with None defaults)
+            # 4. Extract entities
             try:
                 entities = self.extractor.extract(clean_text)
-                # Ensure all keys present — guard against partial returns
+                # Merge multilingual violations if found
+                if multilingual_violations:
+                    for v_code in multilingual_violations:
+                        offence = violation_code_to_offence_type(v_code)
+                        if offence and not entities.get("offence_type"):
+                            entities["offence_type"] = offence
+
+                # Merge state detected from native-script keywords (e.g. Tamil Nadu in Tamil)
+                if not entities.get("state") and lang != "en":
+                    ml_state = extract_state_multilingual(clean_text, lang)
+                    if ml_state:
+                        entities["state"] = ml_state
+
+                # Propagate country detected from multilingual extraction (e.g. Arabic UAE)
+                if multilingual_country != "IN":
+                    entities["country"] = multilingual_country
+
+                # Ensure all keys present
                 for key in _EMPTY_ENTITIES:
                     entities.setdefault(key, None)
             except Exception as e:
@@ -96,7 +136,11 @@ class NLPPipeline:
                 resolved.get("offence_type") is not None
                 or resolved.get("section_ref") is not None
             )
-            if intent == "unknown" or not has_subject:
+            # Knowledge-base intents (general/procedure) are valid without a
+            # structured offence code — they rely on semantic search instead.
+            if intent == "unknown":
+                status = "insufficient_info"
+            elif not has_subject and intent not in _KNOWLEDGE_INTENTS:
                 status = "insufficient_info"
             else:
                 status = "success"
@@ -108,9 +152,12 @@ class NLPPipeline:
                 "state":         resolved.get("state"),
                 "repeat_offence": resolved.get("repeat_offence"),
                 "section_ref":   resolved.get("section_ref"),
+                "road_type":     resolved.get("road_type"),
+                "country":       resolved.get("country") or entities.get("country"),
                 "confidence":    confidence,
                 "status":        status,
                 "raw_text":      raw_text,
+                "lang":          lang,
             }
 
         except Exception as e:

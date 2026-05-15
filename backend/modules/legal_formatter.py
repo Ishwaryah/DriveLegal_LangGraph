@@ -9,9 +9,118 @@ from difflib import get_close_matches
 from typing import Any, Dict, List, Optional
 
 
+# ── Localised UI labels ────────────────────────────────────────────────────────
+
+_LABELS: Dict[str, Dict[str, str]] = {
+    "en": {
+        "legal_ref":   "Legal Reference",
+        "fine":        "Fine",
+        "compound_y":  "Compoundable: Yes",
+        "compound_n":  "Compoundable: No – court appearance mandatory",
+        "settle":      "can be settled on-spot or online",
+        "additional":  "Additional Penalty",
+        "verify":      "Verify at official portal",
+    },
+    "hi": {
+        "legal_ref":   "कानूनी संदर्भ",
+        "fine":        "जुर्माना",
+        "compound_y":  "समझौता योग्य: हाँ",
+        "compound_n":  "समझौता योग्य: नहीं – अदालत में उपस्थिति अनिवार्य",
+        "settle":      "– ऑन-स्पॉट या ऑनलाइन निपटाया जा सकता है",
+        "additional":  "अतिरिक्त दंड",
+        "verify":      "आधिकारिक पोर्टल पर सत्यापित करें",
+    },
+    "ta": {
+        "legal_ref":   "சட்ட குறிப்பு",
+        "fine":        "அபராதம்",
+        "compound_y":  "சமரசம் செய்யலாம்: ஆம்",
+        "compound_n":  "சமரசம் செய்யலாம்: இல்லை – நீதிமன்றத்தில் ஆஜராக வேண்டும்",
+        "settle":      "– இடத்திலேயே அல்லது ஆன்லைனில் தீர்க்கலாம்",
+        "additional":  "கூடுதல் தண்டனை",
+        "verify":      "அதிகாரப்பூர்வ தளத்தில் சரிபார்க்கவும்",
+    },
+    "ar": {
+        "legal_ref":   "المرجع القانوني",
+        "fine":        "الغرامة",
+        "compound_y":  "قابل للتسوية: نعم",
+        "compound_n":  "غير قابل للتسوية – الحضور الإلزامي أمام المحكمة",
+        "settle":      "يمكن تسويتها في الموقع أو عبر الإنترنت",
+        "additional":  "عقوبة إضافية",
+        "verify":      "تحقق من البوابة الرسمية",
+    },
+}
+
+# Common violation name translations keyed by English title keywords
+_VIOLATION_NAMES: Dict[str, Dict[str, str]] = {
+    "hi": {
+        "no helmet":      "हेलमेट न पहनना",
+        "helmet":         "हेलमेट न पहनना",
+        "drunk driving":  "नशे में गाड़ी चलाना",
+        "drunk":          "नशे में गाड़ी चलाना",
+        "overspeeding":   "तेज़ गति से वाहन चलाना",
+        "speeding":       "तेज़ गति से वाहन चलाना",
+        "no seatbelt":    "सीट बेल्ट न पहनना",
+        "seatbelt":       "सीट बेल्ट न पहनना",
+        "mobile phone":   "गाड़ी चलाते समय फोन का उपयोग",
+        "phone":          "गाड़ी चलाते समय फोन का उपयोग",
+        "no insurance":   "बीमा न होना",
+        "insurance":      "बीमा न होना",
+        "no license":     "बिना लाइसेंस के गाड़ी चलाना",
+        "license":        "बिना लाइसेंस के गाड़ी चलाना",
+        "signal jumping": "सिग्नल तोड़ना",
+        "red light":      "लाल बत्ती पर रुकना",
+    },
+    "ta": {
+        "no helmet":      "தலைக்கவசம் அணியாமல் இருத்தல்",
+        "helmet":         "தலைக்கவசம் அணியாமல் இருத்தல்",
+        "drunk driving":  "குடிபோதையில் வாகனம் ஓட்டுதல்",
+        "drunk":          "குடிபோதையில் வாகனம் ஓட்டுதல்",
+        "overspeeding":   "அதிவேகமாக வாகனம் ஓட்டுதல்",
+        "speeding":       "அதிவேகமாக வாகனம் ஓட்டுதல்",
+        "no seatbelt":    "சீட் பெல்ட் அணியாமல் இருத்தல்",
+        "mobile phone":   "வாகனம் ஓட்டும்போது தொலைபேசி பயன்படுத்துதல்",
+        "no insurance":   "காப்பீடு இல்லாமல் வாகனம் ஓட்டுதல்",
+        "no license":     "உரிமம் இல்லாமல் வாகனம் ஓட்டுதல்",
+        "signal jumping": "சிக்னல் மீறுதல்",
+        "red light":      "சிவப்பு விளக்கு மீறுதல்",
+        "juvenile":       "வயதுக்கு வராத நபர் வாகனம் ஓட்டுதல்",
+    },
+    "ar": {
+        "no helmet":      "عدم ارتداء الخوذة",
+        "helmet":         "عدم ارتداء الخوذة",
+        "drunk driving":  "القيادة تحت تأثير الكحول",
+        "drunk":          "القيادة تحت تأثير الكحول",
+        "overspeeding":   "تجاوز السرعة المحددة",
+        "speeding":       "تجاوز السرعة المحددة",
+        "no seatbelt":    "عدم ارتداء حزام الأمان",
+        "mobile phone":   "استخدام الهاتف أثناء القيادة",
+        "no insurance":   "القيادة بدون تأمين",
+        "no license":     "القيادة بدون رخصة",
+        "signal jumping": "تجاوز إشارة المرور الحمراء",
+        "red light":      "تجاوز الإشارة الحمراء",
+        "reckless":       "القيادة المتهورة",
+    },
+}
+
+
+def _translate_title(title: str, lang: str) -> str:
+    """Return a translated violation title for *lang*, or the original if no match."""
+    if lang not in _VIOLATION_NAMES:
+        return title
+    title_lower = title.lower()
+    for keyword, translation in _VIOLATION_NAMES[lang].items():
+        if keyword in title_lower:
+            return translation
+    return title
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def format_legal_response(violation_row: Dict[str, Any], country: str = "IN") -> str:
+def format_legal_response(
+    violation_row: Dict[str, Any],
+    country: str = "IN",
+    lang: str = "en",
+) -> str:
     """
     Convert a merged violation dict into a rich markdown block.
 
@@ -21,9 +130,11 @@ def format_legal_response(violation_row: Dict[str, Any], country: str = "IN") ->
     """
     lines: List[str] = []
     currency = _currency_symbol(country)
+    lbl = _LABELS.get(lang) or _LABELS["en"]
 
     # ── Header ────────────────────────────────────────────────────────────────
-    title = violation_row.get("title") or "Traffic Violation"
+    raw_title = violation_row.get("title") or "Traffic Violation"
+    title = _translate_title(raw_title, lang) if lang != "en" else raw_title
     lines.append(f"🚦 **{title}**")
 
     # ── Legal reference ───────────────────────────────────────────────────────
@@ -34,9 +145,9 @@ def format_legal_response(violation_row: Dict[str, Any], country: str = "IN") ->
     ).strip()
     act = violation_row.get("act") or "Motor Vehicles (Amendment) Act 2019"
     if section:
-        lines.append(f"📋 Legal Reference: {act}, {section}")
+        lines.append(f"📋 {lbl['legal_ref']}: {act}, {section}")
     else:
-        lines.append(f"📋 Legal Reference: {act}")
+        lines.append(f"📋 {lbl['legal_ref']}: {act}")
 
     # ── Fine range ────────────────────────────────────────────────────────────
     min_fine = (
@@ -57,24 +168,24 @@ def format_legal_response(violation_row: Dict[str, Any], country: str = "IN") ->
     if min_fine is not None:
         if max_fine and max_fine != min_fine:
             lines.append(
-                f"💰 Fine: {currency}{min_fine:,} – {currency}{max_fine:,}"
+                f"💰 {lbl['fine']}: {currency}{min_fine:,} – {currency}{max_fine:,}"
                 f" ({vehicle_type})"
             )
         else:
-            lines.append(f"💰 Fine: {currency}{min_fine:,} ({vehicle_type})")
+            lines.append(f"💰 {lbl['fine']}: {currency}{min_fine:,} ({vehicle_type})")
     else:
-        lines.append("💰 Fine: Verify at official portal")
+        lines.append(f"💰 {lbl['fine']}: {lbl['verify']}")
 
     # ── Compoundable ──────────────────────────────────────────────────────────
     compoundable = violation_row.get("compoundable")
     compounding_fee = violation_row.get("compounding_fee")
     if compoundable is True:
         if compounding_fee is not None:
-            lines.append(f"✅ Compoundable: Yes – {currency}{compounding_fee:,}")
+            lines.append(f"✅ {lbl['compound_y']} – {currency}{compounding_fee:,} {lbl['settle']}")
         else:
-            lines.append("✅ Compoundable: Yes – can be settled on-spot or online")
+            lines.append(f"✅ {lbl['compound_y']} – {lbl['settle']}")
     elif compoundable is False:
-        lines.append("❌ Compoundable: No – court appearance mandatory")
+        lines.append(f"❌ {lbl['compound_n']}")
     # omit if compoundable is None (status unknown)
 
     # ── Imprisonment / additional penalties ───────────────────────────────────
@@ -82,13 +193,12 @@ def format_legal_response(violation_row: Dict[str, Any], country: str = "IN") ->
     if imprisonment and imprisonment is not False:
         imp_text = _format_imprisonment(imprisonment)
         if imp_text:
-            lines.append(f"⚖️ Additional Penalty: {imp_text}")
+            lines.append(f"⚖️ {lbl['additional']}: {imp_text}")
 
     # ── Notes / description ───────────────────────────────────────────────────
     notes = (violation_row.get("notes") or violation_row.get("description") or "").strip()
     if notes:
-        # Trim to 300 chars for conciseness
-        lines.append(f"ℹ️ {notes[:300]}")
+        lines.append(f"ℹ️ {notes[:2000]}")
 
     return "\n".join(lines)
 

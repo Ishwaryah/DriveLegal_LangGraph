@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { HistoryProvider } from '../hooks/useHistory';
 import { SettingsProvider } from '../hooks/useSettings';
+import { LanguageProvider } from '../context/LanguageContext';
 import { Platform, View, useWindowDimensions } from 'react-native';
 
 function AppShell() {
@@ -44,6 +45,7 @@ function AppShell() {
 export default function RootLayout() {
   return (
     <SettingsProvider>
+      <LanguageProvider>
       <HistoryProvider>
         {Platform.OS === 'web' && (
           <style dangerouslySetInnerHTML={{ __html: `
@@ -56,6 +58,7 @@ export default function RootLayout() {
         )}
         <AppShell />
       </HistoryProvider>
+      </LanguageProvider>
     </SettingsProvider>
   );
 }

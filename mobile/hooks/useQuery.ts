@@ -5,9 +5,13 @@ import Constants from 'expo-constants';
 
 interface QueryResult {
   status: string;
-  intent: string;
-  text: string;
-  query_summary: string;
+  intent?: string;
+  // NLP pipeline uses `text`; Gemini agent uses `response`
+  text?: string;
+  response?: string;
+  query_summary?: string;
+  agent_powered?: boolean;
+  tools_used?: any[];
   fine: {
     amount_inr: number | null;
     section_ref: string;
@@ -27,7 +31,7 @@ interface UseQueryResult {
   isLoading: boolean;
   isOffline: boolean;
   error: string | null;
-  submitQuery: (text: string) => Promise<void>;
+  submitQuery: (text: string, gps?: { lat: number, lon: number } | null, country?: string) => Promise<void>;
 }
 
 export function useQuery(): UseQueryResult {
@@ -40,7 +44,7 @@ export function useQuery(): UseQueryResult {
 
   const db = Platform.OS !== 'web' ? require('expo-sqlite').openDatabase('drivelegal.db') : null;
 
-  const submitQuery = async (text: string) => {
+  const submitQuery = async (text: string, gps?: { lat: number, lon: number } | null, country?: string) => {
     setIsLoading(true);
     setError(null);
     setData(null);
@@ -68,7 +72,12 @@ export function useQuery(): UseQueryResult {
       const response = await fetch(`${BASE_URL}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, session: session }),
+        body: JSON.stringify({ 
+          text: text, 
+          session: session,
+          gps: gps,
+          country: country
+        }),
         signal: controller.signal as any,
       });
 
@@ -143,3 +152,4 @@ export function useQuery(): UseQueryResult {
 
   return { data, isLoading, isOffline, error, submitQuery };
 }
+

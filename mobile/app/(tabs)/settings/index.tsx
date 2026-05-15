@@ -51,11 +51,12 @@ export default function ProfileScreen() {
     { code: 'CV', label: 'Commercial Vehicle' }
   ];
 
-  const languages: { code: 'en' | 'ta' | 'hi' | 'te'; label: string }[] = [
-    { code: 'en', label: 'English' },
-    { code: 'ta', label: 'Tamil (தமிழ்)' },
-    { code: 'hi', label: 'Hindi (हिन्दी)' },
-    { code: 'te', label: 'Telugu (తెలుగు)' },
+  const languages: { code: 'en' | 'hi' | 'ta' | 'te' | 'kn'; nativeName: string; romanName: string }[] = [
+    { code: 'en', nativeName: 'English',  romanName: 'English' },
+    { code: 'hi', nativeName: 'हिंदी',    romanName: 'Hindi' },
+    { code: 'ta', nativeName: 'தமிழ்',    romanName: 'Tamil' },
+    { code: 'te', nativeName: 'తెలుగు',   romanName: 'Telugu' },
+    { code: 'kn', nativeName: 'ಕನ್ನಡ',    romanName: 'Kannada' },
   ];
 
   const handleSaveProfile = () => {
@@ -139,7 +140,7 @@ export default function ProfileScreen() {
               iconBg="#F3F4F6"
               iconColor="#4B5563"
               label={t('language')}
-              value={languages.find(l => l.code === language)?.label}
+              value={(() => { const l = languages.find(x => x.code === language); return l ? `${l.nativeName} · ${l.romanName}` : language; })()}
               onPress={() => setLangModalVisible(true)}
             />
             <SettingsItem
@@ -230,12 +231,14 @@ export default function ProfileScreen() {
                   setLangModalVisible(false);
                 }}
               >
-                <Text style={[
-                  styles.langLabel,
-                  language === lang.code && styles.langLabelSelected
-                ]}>
-                  {lang.label}
-                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.langLabel, language === lang.code && styles.langLabelSelected]}>
+                    {lang.nativeName}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                    {lang.romanName}
+                  </Text>
+                </View>
                 {language === lang.code && (
                   <Ionicons name="checkmark" size={20} color="#D97706" />
                 )}

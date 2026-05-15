@@ -50,7 +50,7 @@ const getCategory = (name: string) => {
 
 export default function ChallanCalculatorScreen() {
   const { isConnected } = useNetInfo();
-  const { defaultCountry, selectedVehicleId, defaultVehicleType } = useSettings();
+  const { defaultCountry, selectedVehicleId, defaultVehicleType, t } = useSettings();
 
   const initialVehicle = VEHICLE_ID_MAP[selectedVehicleId || defaultVehicleType] || 'two_wheeler';
 
@@ -237,10 +237,10 @@ export default function ChallanCalculatorScreen() {
       
       {/* Header & Connectivity Badge */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Challan Calculator</Text>
+        <Text style={styles.headerTitle}>{t('calculator_title')}</Text>
         <View style={[styles.badge, { backgroundColor: isConnected ? '#dcfce7' : '#fee2e2' }]}>
           <Text style={[styles.badgeText, { color: isConnected ? '#166534' : '#991b1b' }]}>
-            {isConnected ? '🟢 Online' : '🔴 Offline – Cached'}
+            {isConnected ? t('online_badge') : t('offline_badge')}
           </Text>
         </View>
       </View>
@@ -268,7 +268,7 @@ export default function ChallanCalculatorScreen() {
         {/* State Selector (India Only) */}
         {selectedCountry === 'IN' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>State/Province</Text>
+            <Text style={styles.sectionTitle}>{t('state_province')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {STATES.map(s => (
                 <TouchableOpacity 
@@ -285,7 +285,7 @@ export default function ChallanCalculatorScreen() {
 
         {/* Vehicle Selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vehicle Type</Text>
+          <Text style={styles.sectionTitle}>{t('vehicle_type')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vehicleRow}>
             {VEHICLE_TYPES.filter(v => showHMV || (v.id !== 'hmv' && v.id !== 'commercial')).map(v => (
               <TouchableOpacity 
@@ -311,7 +311,7 @@ export default function ChallanCalculatorScreen() {
           <Ionicons name="search" size={20} color="#94a3b8" />
           <TextInput 
             style={styles.searchInput}
-            placeholder="Search violations..."
+            placeholder={t('search_violations')}
             placeholderTextColor="#94a3b8"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -320,14 +320,14 @@ export default function ChallanCalculatorScreen() {
 
         {/* Repeat Offense Toggle */}
         <View style={styles.toggleRow}>
-          <Text style={styles.toggleText}>First Offense</Text>
-          <Switch 
-            value={isRepeatOffense} 
+          <Text style={styles.toggleText}>{t('first_offense')}</Text>
+          <Switch
+            value={isRepeatOffense}
             onValueChange={setIsRepeatOffense}
             trackColor={{ false: '#cbd5e1', true: '#a5b4fc' }}
             thumbColor={isRepeatOffense ? '#4f46e5' : '#f8fafc'}
           />
-          <Text style={[styles.toggleText, isRepeatOffense && styles.toggleTextActive]}>Repeat Offense</Text>
+          <Text style={[styles.toggleText, isRepeatOffense && styles.toggleTextActive]}>{t('repeat_offense')}</Text>
         </View>
 
         {/* Violations List */}
@@ -395,7 +395,7 @@ export default function ChallanCalculatorScreen() {
         <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.calcBtn} onPress={calculateFine}>
             <LinearGradient colors={['#4f46e5', '#4338ca']} style={styles.calcBtnGradient}>
-              <Text style={styles.calcBtnText}>Calculate {selectedIds.size} Violations</Text>
+              <Text style={styles.calcBtnText}>{t('calculate')} ({selectedIds.size})</Text>
               <Ionicons name="calculator" size={20} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
@@ -407,7 +407,7 @@ export default function ChallanCalculatorScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Calculation Result</Text>
+              <Text style={styles.modalTitle}>{t('calculation_result')}</Text>
               <TouchableOpacity onPress={() => setShowResultModal(false)}>
                 <Ionicons name="close-circle" size={28} color="#94a3b8" />
               </TouchableOpacity>
@@ -422,7 +422,7 @@ export default function ChallanCalculatorScreen() {
               ))}
 
               <View style={styles.totalBox}>
-                <Text style={styles.totalLabel}>Total Fine</Text>
+                <Text style={styles.totalLabel}>{t('total_fine')}</Text>
                 <Text style={styles.totalValue}>{calcResult?.currency} {calcResult?.total_fine}</Text>
               </View>
 
@@ -442,7 +442,7 @@ export default function ChallanCalculatorScreen() {
 
             <TouchableOpacity style={styles.shareBtn} onPress={shareSummary}>
               <Ionicons name="share-social" size={20} color="#fff" />
-              <Text style={styles.shareBtnText}>Share Summary</Text>
+              <Text style={styles.shareBtnText}>{t('share_summary')}</Text>
             </TouchableOpacity>
           </View>
         </View>

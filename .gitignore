@@ -14,9 +14,10 @@ build/
 backend/dist/
 mobile/dist/
 
-# Environment variables (intentionally committed for hackathon demo)
+# Environment variables
 .env.local
 .env.*.local
+backend/.env
 
 # Logs
 *.log

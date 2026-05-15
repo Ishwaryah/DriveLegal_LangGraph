@@ -84,6 +84,7 @@ export interface UseGeoFineAlertResult {
   isOffline: boolean;
   permissionDenied: boolean;
   speedZoneLimit: number | null;
+  coords: { lat: number; lon: number } | null;
   dismissAlert: (id: string) => void;
   setManualLocation: (countryName: string, stateName: string) => void;
 }
@@ -286,6 +287,7 @@ export function useGeoFineAlert(): UseGeoFineAlertResult {
     isOffline,
     permissionDenied,
     speedZoneLimit,
+    coords,
     dismissAlert,
     setManualLocation,
   };

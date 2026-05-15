@@ -1,16 +1,26 @@
-import json
 import os
 from typing import Optional, Dict
-
+from backend.modules.geofencing.offline_geocoder import reverse_geocode
 
 def _reverse_geocode_state(gps: Dict) -> Optional[str]:
     """
     Attempts to resolve a state from GPS coordinates using local GeoJSON zone data.
     Returns None if no match is found — does NOT fall back to a hardcoded value.
     """
-    # NOTE: A real implementation would use the GeoJSON zone files in data/zones/
-    # to do a point-in-polygon lookup. Until that data is integrated, we return None
-    # honestly rather than guessing. This prevents hallucinated state data.
+    lat = gps.get("lat")
+    lon = gps.get("lon")
+    if lat is None or lon is None:
+        return None
+        
+    # Find zones directory relative to this file
+    # backend/modules/nlp/context_resolver.py -> backend/data/zones
+    zones_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "zones"))
+    
+    result = reverse_geocode(lat, lon, zones_dir)
+    state = result.get("state")
+    if state and state != "UNKNOWN":
+        return state
+        
     return None
 
 
@@ -25,20 +35,24 @@ def resolve(entities: Dict, session: Dict, gps: Optional[Dict], intent: str = "u
         if session.get("state"):
             entities["state"] = session["state"]
         elif gps:
-            # Attempt real reverse geocoding — returns None if unavailable
             resolved_state = _reverse_geocode_state(gps)
             if resolved_state:
                 entities["state"] = resolved_state
-            # If None, we leave state as None — prompting the user to clarify
 
     # 2. Vehicle Class Resolution from Session
     if entities.get("vehicle_class") is None and session.get("vehicle_class"):
         entities["vehicle_class"] = session["vehicle_class"]
 
     # 3. Offence Type & Section Resolution from Session
-    # Only inherit offence/section if this looks like a follow-up query
-    # e.g., very short text (like 'DL', 'car') or unknown intent.
-    is_followup = len(raw_text.split()) <= 3 or intent == "unknown"
+    #
+    # Always inherit when the previous turn asked a clarification question
+    # (session["in_clarification"] = True).  This covers any reply length or
+    # intent — the user is just answering our question, not starting a new topic.
+    #
+    # Also inherit for short/ambiguous follow-ups (≤ 4 words, or unknown intent)
+    # so that "Chennai" / "I'm in Delhi" / "bike" all flow naturally.
+    in_clarification = session.get("in_clarification", False)
+    is_followup = in_clarification or len(raw_text.split()) <= 4 or intent == "unknown"
 
     if is_followup:
         if entities.get("offence_type") is None and session.get("offence_type"):

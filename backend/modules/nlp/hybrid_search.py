@@ -19,6 +19,7 @@ import chromadb
 from rank_bm25 import BM25Okapi
 from dotenv import load_dotenv
 
+from backend.modules.nlp.country_detector import detect_country
 load_dotenv()
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class HybridSearch:
         # ── ChromaDB ──────────────────────────────────────────────────────────
         self.client = chromadb.PersistentClient(path=self.persist_directory)
         embedding_tag    = "st" if self.embedding_function else "none"
-        collection_name  = f"drivelegal_{embedding_tag}_v3"
+        collection_name  = f"drivelegal_{embedding_tag}_v5"
 
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
@@ -112,9 +113,33 @@ class HybridSearch:
         tokenized = [_tokenize(c["text"]) for c in chunks]
         self.bm25  = BM25Okapi(tokenized)
 
-        # ChromaDB — skip if already populated (avoids duplicate-ID errors)
-        if self.collection.count() == 0:
+        # ChromaDB — repopulate when empty OR when rules.json is newer than the
+        # stored collection (catches rule edits without manual cache deletion).
+        needs_rebuild = self.collection.count() == 0
+        if not needs_rebuild:
+            try:
+                rules_mtime = os.path.getmtime(self.rules_path)
+                stamp_path  = os.path.join(self.persist_directory, ".rules_mtime")
+                stored_mtime = float(open(stamp_path).read()) if os.path.exists(stamp_path) else 0
+                if rules_mtime > stored_mtime:
+                    logger.info("rules.json changed — rebuilding ChromaDB index.")
+                    self.client.delete_collection(self.collection.name)
+                    self.collection = self.client.get_or_create_collection(
+                        name=self.collection.name,
+                        embedding_function=self.embedding_function,
+                    )
+                    needs_rebuild = True
+            except Exception as e:
+                logger.warning("Staleness check failed: %s", e)
+
+        if needs_rebuild:
             self._chroma_add(chunks)
+            try:
+                os.makedirs(self.persist_directory, exist_ok=True)
+                with open(os.path.join(self.persist_directory, ".rules_mtime"), "w") as f:
+                    f.write(str(os.path.getmtime(self.rules_path)))
+            except Exception as e:
+                logger.warning("Could not write mtime stamp: %s", e)
 
     def _chunks_from_rules(self) -> List[Dict]:
         """Convert rules.json entries to indexable chunks."""
@@ -142,6 +167,26 @@ class HybridSearch:
                 _safe_text(rule.get("section")),
             ]).strip()
 
+            # Detect country from rule context
+            country = "IN"
+            if rid.startswith("MV_"):
+                country = "IN"
+            else:
+                act_text = _safe_text(rule.get("act", "")).lower()
+                if any(k in act_text for k in ["minnesota", "texas", "usa", "america", "us "]):
+                    country = "US"
+                elif any(k in act_text for k in ["singapore", "sg "]):
+                    country = "SG"
+                elif any(k in act_text for k in ["united kingdom", "uk ", "london"]):
+                    country = "GB"
+                elif any(k in act_text for k in ["emirates", "uae", "dubai"]):
+                    country = "AE"
+                
+                # Fallback to title-based detection if act is generic
+                if country == "IN":
+                    detected = detect_country(text, default="IN")
+                    country = detected
+
             chunks.append({
                 "id":       rid,
                 "text":     text or rid,
@@ -149,6 +194,7 @@ class HybridSearch:
                     "section":  _safe_text(rule.get("section")),
                     "title":    _safe_text(rule.get("title")),
                     "source":   "rules_json",
+                    "country":  country,
                 },
             })
         return chunks
@@ -181,6 +227,9 @@ class HybridSearch:
                     clean_meta[k] = str(v)
                 else:
                     clean_meta[k] = v
+            # Detect country for KB chunks (mostly IN, but good to be safe)
+            country = detect_country(text, default="IN")
+            clean_meta["country"] = country
             clean_meta.setdefault("source", "drivelegal_kb")
 
             chunks.append({"id": cid, "text": text or cid, "metadata": clean_meta})
@@ -202,25 +251,36 @@ class HybridSearch:
 
     # ── Search ────────────────────────────────────────────────────────────────
 
-    def search(self, query: str, top_k: int = 3) -> List[Dict]:
+    def search(self, query: str, top_k: int = 3, country: str = "IN") -> List[Dict]:
         """
         Hybrid search: vector results (ranked by position) merged with BM25 results.
         Returns at most top_k unique results sorted by combined score (descending).
-        Falls back gracefully if any sub-system is unavailable.
+        Filters by country to ensure relevant legal context.
         """
         results: Dict[str, Dict] = {}   # chunk_id → result entry
 
         # 1. Vector search
         if self.embedding_function and self.collection.count() > 0:
             try:
-                vr = self.collection.query(query_texts=[query], n_results=min(top_k, self.collection.count()))
+                vr = self.collection.query(
+                    query_texts=[query], 
+                    n_results=min(top_k * 2, self.collection.count()),
+                    where={"country": country}
+                )
                 ids   = (vr.get("ids")       or [[]])[0]
                 metas = (vr.get("metadatas") or [[]])[0]
                 docs  = (vr.get("documents") or [[]])[0]
                 for rank, (cid, meta, doc) in enumerate(zip(ids, metas, docs)):
+                    score = 1.0 / (rank + 1)
+                    # Boost structured MV Act rules (MV_NNN format only).
+                    # Old-format IDs like MV177 are catch-all dataset entries and
+                    # should not be over-ranked on generic queries.
+                    if cid.startswith("MV_"):
+                        score *= 5.0
+
                     results[cid] = {
                         "rule_id":  cid,
-                        "score":    1.0 / (rank + 1),
+                        "score":    score,
                         "metadata": meta or {},
                         "content":  _safe_text(doc),
                         "source":   "vector",
@@ -237,15 +297,25 @@ class HybridSearch:
                 for idx in top_indices:
                     doc   = self.documents[idx]
                     cid   = doc["id"]
+                    meta  = doc.get("metadata", {})
+                    
+                    # Filter by country for BM25 results
+                    if meta.get("country") != country:
+                        continue
+
                     bscore = float(scores[idx]) / max(10.0, float(scores[idx]) + 1e-9)
+                    # Same rule: only boost structured MV_NNN IDs.
+                    if cid.startswith("MV_"):
+                        bscore *= 5.0
+
                     if cid in results:
                         # Boost combined score
-                        results[cid]["score"] += bscore * 0.3
+                        results[cid]["score"] += bscore * 0.5
                     else:
                         results[cid] = {
                             "rule_id":  cid,
                             "score":    bscore,
-                            "metadata": doc.get("metadata", {}),
+                            "metadata": meta,
                             "content":  doc.get("text", ""),
                             "source":   "lexical",
                         }

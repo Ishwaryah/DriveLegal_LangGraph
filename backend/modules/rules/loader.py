@@ -61,8 +61,24 @@ class RulesLoader:
             if not rid:
                 continue
 
-            # Set default country to IN if missing
-            country = rule.get("country", "IN").upper()
+            # Set default country to IN if missing, with basic detection for US rules
+            country = rule.get("country")
+            if not country:
+                act_text = (rule.get("act") or "").lower()
+                title_text = (rule.get("title") or "").lower()
+                if any(k in act_text for k in ["minnesota", "texas", "usa", "america", "us "]) or \
+                   any(k in title_text for k in ["minnesota", "texas"]):
+                    country = "US"
+                elif any(k in act_text for k in ["singapore", "sg "]):
+                    country = "SG"
+                elif any(k in act_text for k in ["united kingdom", "uk ", "london"]):
+                    country = "GB"
+                elif any(k in act_text for k in ["emirates", "uae", "dubai"]):
+                    country = "AE"
+                else:
+                    country = "IN"
+            
+            country = country.upper()
             rule["country"] = country
             self.country_index.setdefault(country, []).append(rule)
 

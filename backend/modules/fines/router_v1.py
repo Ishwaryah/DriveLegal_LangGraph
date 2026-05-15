@@ -84,22 +84,25 @@ def calculate_challan(req: ChallanCalculationRequest = Body(...)):
             currency = data['currency']
             comp_elig = bool(data['compounding_eligible'])
             comp_fee = data['compounding_fee']
-            
+
             if comp_elig and comp_fee is not None:
                 compounding_available = True
                 total_comp += comp_fee
-                
-            total_min += data['min_fine_local'] or 0
-            total_max += data['max_fine_local'] or 0
-            
-            imprisonment_str = f"{data['imprisonment_days']} days" if data['imprisonment_days'] else "None"
-            
+
             fine_min_val = data['min_fine_local'] or 0
             fine_max_val = data['max_fine_local'] or 0
+            # For repeat offenses use the higher fine (max_fine_local)
+            applied_fine = fine_max_val if req.is_repeat_offense and fine_max_val else fine_min_val
+
+            total_min += applied_fine
+            total_max += fine_max_val
+
+            imprisonment_str = f"{data['imprisonment_days']} days" if data['imprisonment_days'] else "None"
+
             violations_resp.append(ViolationResponse(
                 violation_code=data['violation_code'],
                 violation_name=data['violation_name'],
-                fine_amount=fine_min_val,
+                fine_amount=applied_fine,
                 fine_min=fine_min_val,
                 fine_max=fine_max_val,
                 mv_act_section=data['mv_act_section'] or "",

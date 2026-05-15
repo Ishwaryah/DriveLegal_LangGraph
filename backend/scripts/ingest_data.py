@@ -568,8 +568,9 @@ _COL_ALIASES: dict[str, str] = {
     "registration_state": "state_province",
     "issuing_state": "state_province",
     "location_state": "state_province",
-    # country
-    "country": "country",
+    "state/_ut": "state_province",
+    "state/ut": "state_province",
+    "state_ut": "state_province",
     # section reference
     "section": "section_reference",
     "section_reference": "section_reference",

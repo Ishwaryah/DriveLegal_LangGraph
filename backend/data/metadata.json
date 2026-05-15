@@ -31,7 +31,7 @@
     "tuk tuk": "3W"
   },
   "states": {
-    "Tamil Nadu": ["tn", "tamil nadu", "chennai", "coimbatore", "madurai"],
+    "Tamil Nadu": ["tn", "tamil nadu", "chennai", "coimbatore", "madurai", "தமிழ்நாடு", "தமிழ்நாட்டில்", "தமிழ்நாட்டின்", "சென்னை", "கோயம்புத்தூர்"],
     "Delhi": ["dl", "delhi", "ncr", "new delhi", "dwarka", "noida", "gurgaon", "gurugram"],
     "Karnataka": ["ka", "karnataka", "bangalore", "bengaluru", "mysore", "hubli"],
     "Maharashtra": ["mh", "maharashtra", "mumbai", "pune", "nagpur", "aurangabad", "thane"],
@@ -63,6 +63,20 @@
     "traffic signal": "RED_LIGHT_JUMPING",
     "jumped signal": "RED_LIGHT_JUMPING",
     "beat red light": "RED_LIGHT_JUMPING",
+    "crossed the signal": "RED_LIGHT_JUMPING",
+    "crossed signal": "RED_LIGHT_JUMPING",
+    "crossing signal": "RED_LIGHT_JUMPING",
+    "crossed a red": "RED_LIGHT_JUMPING",
+    "ran a red": "RED_LIGHT_JUMPING",
+    "ran the red": "RED_LIGHT_JUMPING",
+    "ran red light": "RED_LIGHT_JUMPING",
+    "violated signal": "RED_LIGHT_JUMPING",
+    "broke signal": "RED_LIGHT_JUMPING",
+    "breaking signal": "RED_LIGHT_JUMPING",
+    "skip red": "RED_LIGHT_JUMPING",
+    "skipped red": "RED_LIGHT_JUMPING",
+    "ignored signal": "RED_LIGHT_JUMPING",
+    "ignored red": "RED_LIGHT_JUMPING",
 
     "speeding": "SPEED_EXCESS",
     "speed limit": "SPEED_EXCESS",
@@ -244,6 +258,41 @@
   },
   "repeat_keywords": ["again", "second", "repeat", "previous", "twice", "reoffence", "second time", "third time", "subsequent", "another time"],
   "intent_rules": {
+    "procedure_query": [
+      "how to", "how do i", "how can i", "steps to", "process for",
+      "procedure", "apply for", "renew", "renewal", "get a license",
+      "obtain", "register", "transfer", "contest", "dispute", "appeal",
+      "pay challan", "pay fine", "pay online", "payment",
+      "what are the steps", "how to renew", "how to apply",
+      "how to pay", "how to transfer", "how to register",
+      "how to contest", "how to dispute", "how to check",
+      "where to pay", "where to apply", "where to check",
+      "learner license apply", "driving test", "rto procedure",
+      "parivahan", "echallan", "digilocker"
+    ],
+    "general_query": [
+      "what is the rule", "rules for", "tell me about", "explain",
+      "what are the rules", "road rules", "traffic rules",
+      "driving rules", "speed limit", "what speed", "maximum speed",
+      "lane rule", "lane discipline", "lane change",
+      "night driving", "high beam", "headlight",
+      "following distance", "safe distance", "tailgating",
+      "right of way", "pedestrian", "crosswalk", "zebra crossing",
+      "horn", "honking", "no horn zone",
+      "highway rules", "expressway rules", "flyover",
+      "child seat", "baby seat", "infant seat",
+      "documents required", "documents to carry",
+      "blood alcohol", "bac limit",
+      "what happens", "what is", "tell me", "explain",
+      "road sign", "traffic sign", "signal meaning",
+      "safe driving", "driving tips", "road safety",
+      "age limit", "minimum age", "eligibility",
+      "vehicle fitness", "roadworthy", "emission norm",
+      "learner license rules", "l board", "learner restrictions",
+      "what are", "list of", "list the", "major violations",
+      "common violations", "types of violations", "traffic offences",
+      "types of offences", "all violations", "all offences"
+    ],
     "fine_lookup": [
       "fine", "penalty", "challan", "amount", "cost", "pay", "ticket",
       "drunk", "helmet", "speeding", "seatbelt", "seat belt",
@@ -251,15 +300,21 @@
       "puc", "insurance", "rc", "registration", "juvenile", "underage",
       "stunt", "racing", "tinted", "ambulance", "caught", "violation",
       "offence", "offense", "illegal", "banned", "prohibited",
-      "how much", "what is the fine", "what is the penalty"
+      "how much", "what is the fine", "what is the penalty",
+      "i crossed", "i jumped", "i ran", "i violated", "i broke",
+      "i was driving", "i drove", "i skipped", "i ignored",
+      "what happens if i", "what will happen", "got caught",
+      "was caught", "i did not", "i didn't", "i wasn't wearing",
+      "i was not wearing", "i have no", "i don't have", "i didn't have"
     ],
     "rule_query": [
       "rule", "legal", "allowed", "permitted", "dl", "license", "rc",
       "permit", "limit", "restriction", "section", "act", "govern",
-      "can i", "is it", "when can", "how to", "requirement",
-      "document", "certificate", "renew", "apply", "test", "learner",
+      "can i", "is it legal", "is it allowed", "when can", "requirement",
+      "document", "certificate", "learner",
       "age", "what documents", "do i need", "mandatory", "compulsory",
-      "rules for", "law", "regulation", "valid", "validity"
+      "law", "regulation", "valid", "validity", "under the law",
+      "is it compulsory", "is it mandatory", "is it required"
     ],
     "zone_check": [
       "zone", "area", "here", "location", "parking", "no entry", "stop",

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import strings from '../i18n/strings';
 
-type Language = 'en' | 'ta' | 'hi' | 'te';
+type Language = 'en' | 'hi' | 'ta' | 'te' | 'kn';
 
 interface UserProfile {
   name: string;
@@ -9,13 +10,8 @@ interface UserProfile {
   drivingSince: string;
 }
 
-interface Translations {
-  [key: string]: {
-    [lang in Language]: string;
-  };
-}
-
-const translations: Translations = {
+// Translations are centralised in i18n/strings.ts (5 languages incl. Kannada).
+const _PLACEHOLDER: any = {
   // Common
   'back': { en: 'Back', ta: 'பின்னால்', hi: 'पीछे', te: 'వెనుకకు' },
   'save': { en: 'Save', ta: 'சேமி', hi: 'சहेजें', te: 'సేవ్' },
@@ -67,7 +63,7 @@ const translations: Translations = {
   'privacy_data': { en: 'Privacy & data', ta: 'தனியுரிமை மற்றும் தரவு', hi: 'गोपनीयता और डेटा', te: 'గోప్యత మరియు డేటా' },
   'driving_since': { en: 'Personal · Driving since {year}', ta: 'தனிப்பட்ட · {year} முதல் ஓட்டுதல்', hi: 'व्यक्तिगत · {year} से ड्राइविंग', te: 'వ్యక్తిగత · {year} నుండి డ్రైవింగ్' },
   'safe_driver': { en: 'Safe driver', ta: 'பாதுகாப்பான ஓட்டுநர்', hi: 'सुरक्षित ड्राइवर', te: 'సురక్షిత డ్రైవర్' },
-};
+}; // _PLACEHOLDER kept only to preserve git diff readability — unused at runtime
 
 interface SettingsContextType {
   language: Language;
@@ -114,8 +110,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const savedDefaultCountry = await AsyncStorage.getItem('defaultCountry');
       const savedDefaultVehicle = await AsyncStorage.getItem('defaultVehicleType');
 
-      if (savedLang && ['en', 'ta', 'hi', 'te'].includes(savedLang)) {
+      const SUPPORTED: Language[] = ['en', 'hi', 'ta', 'te', 'kn'];
+      if (savedLang && SUPPORTED.includes(savedLang as Language)) {
         setLanguageState(savedLang as Language);
+      } else if (!savedLang) {
+        // First launch: auto-detect from device locale
+        try {
+          const { getLocales } = await import('expo-localization');
+          const deviceLang = (getLocales()[0]?.languageCode || 'en').toLowerCase();
+          const match = SUPPORTED.find(l => l !== 'en' && deviceLang.startsWith(l));
+          if (match) setLanguageState(match);
+        } catch { /* expo-localization unavailable — stay on 'en' */ }
       }
       if (savedProfile) {
         setProfileState(JSON.parse(savedProfile));
@@ -183,7 +188,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: string, params?: Record<string, string>) => {
-    let text = translations[key]?.[language] || translations[key]?.['en'] || key;
+    let text = strings[key]?.[language as keyof typeof strings[string]] || strings[key]?.['en'] || key;
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
         text = text.replace(`{${k}}`, v);

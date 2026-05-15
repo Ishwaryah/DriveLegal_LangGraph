@@ -21,6 +21,69 @@
           ]
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "state": "MH",
+        "name": "Maharashtra",
+        "city": "Mumbai",
+        "district": "Mumbai"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.0, 15.0],
+            [81.0, 15.0],
+            [81.0, 22.5],
+            [72.0, 22.5],
+            [72.0, 15.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "state": "KA",
+        "name": "Karnataka",
+        "city": "Bengaluru",
+        "district": "Bengaluru"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [74.0, 11.0],
+            [79.0, 11.0],
+            [79.0, 19.0],
+            [74.0, 19.0],
+            [74.0, 11.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "state": "DL",
+        "name": "Delhi",
+        "city": "New Delhi",
+        "district": "New Delhi"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [76.8, 28.4],
+            [77.4, 28.4],
+            [77.4, 28.9],
+            [76.8, 28.9],
+            [76.8, 28.4]
+          ]
+        ]
+      }
     }
   ]
 }

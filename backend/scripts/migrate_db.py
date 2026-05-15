@@ -117,12 +117,18 @@ def migrate():
         ("Maharashtra", "using_phone","Mobile Phone",           "Sec 194F", 1000, 1000, "all", 1, 1000, 0, "Maharashtra: ₹1,000"),
         ("Maharashtra", "no_insurance","No Insurance",          "Sec 196",  2000, 4000, "all", 0, None, 0, "Maharashtra: ₹2,000"),
         # TAMIL NADU
-        ("Tamil Nadu", "no_license", "No DL",                   "Sec 181",  5000, 5000, "all", 0, None, 0, "Tamil Nadu: ₹5,000"),
-        ("Tamil Nadu", "no_rc",      "No RC",                   "Sec 192",  5000, 5000, "all", 0, None, 0, "Tamil Nadu: ₹5,000"),
-        ("Tamil Nadu", "no_helmet",  "No Helmet",               "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Tamil Nadu: ₹1,000"),
-        ("Tamil Nadu", "no_seatbelt","No Seatbelt",             "Sec 194B", 1000, 1000, "all", 1, 1000, 0, "Tamil Nadu: ₹1,000"),
-        ("Tamil Nadu", "no_insurance","No Insurance",           "Sec 196",  2000, 4000, "all", 0, None, 0, "Tamil Nadu: ₹2,000"),
-        ("Tamil Nadu", "overspeeding","Overspeeding LMV",       "Sec 183",  1000, 2000, "lmv", 1, 1000, 0, "Tamil Nadu: ₹1,000"),
+        ("Tamil Nadu", "no_license",   "No DL",                   "Sec 181",  5000, 5000,  "all",         0, None, 0,   "Tamil Nadu: ₹5,000"),
+        ("Tamil Nadu", "no_rc",        "No RC",                   "Sec 192",  5000, 5000,  "all",         0, None, 0,   "Tamil Nadu: ₹5,000"),
+        ("Tamil Nadu", "no_helmet",    "No Helmet",               "Sec 194D", 1000, 1000,  "two_wheeler", 1, 1000, 0,   "Tamil Nadu: ₹1,000; Section 129 MV Act; compoundable at designated counters"),
+        ("Tamil Nadu", "no_seatbelt",  "No Seatbelt",             "Sec 194B", 1000, 1000,  "all",         1, 1000, 0,   "Tamil Nadu: ₹1,000"),
+        ("Tamil Nadu", "no_insurance", "No Insurance",            "Sec 196",  2000, 4000,  "all",         0, None, 0,   "Tamil Nadu: ₹2,000 first / ₹4,000 repeat; Sec 196 MV Act 2019"),
+        ("Tamil Nadu", "overspeeding", "Overspeeding LMV",        "Sec 183",  1000, 2000,  "lmv",         1, 1000, 0,   "Tamil Nadu LMV: ₹1,000-₹2,000; Sec 183 MV Act 2019"),
+        ("Tamil Nadu", "overspeeding", "Overspeeding HMV",        "Sec 183",  2000, 4000,  "hmv",         1, 2000, 0,   "Tamil Nadu HMV: ₹2,000-₹4,000; Sec 183 MV Act 2019"),
+        # TN drunk driving: follows national rate (non-compoundable, court-mandatory)
+        ("Tamil Nadu", "drunk_driving","Drunk Driving",            "Sec 185",  10000, 15000, "all",        0, None, 180, "Tamil Nadu: ₹10,000 first offence / ₹15,000 repeat + up to 6 months imprisonment; Sec 185 MV Act 2019; NON-COMPOUNDABLE — court appearance mandatory; BAC limit 30mg/100ml"),
+        ("Tamil Nadu", "signal_jumping","Signal Jumping",          "Sec 184",  1000, 5000,  "all",         0, None, 0,   "Tamil Nadu: ₹1,000-₹5,000; non-compoundable"),
+        ("Tamil Nadu", "using_phone",  "Mobile Phone while Driving","Sec 194F",1500, 5000,  "all",         0, None, 0,   "Tamil Nadu: ₹1,500 first / ₹5,000 repeat"),
+        ("Tamil Nadu", "juvenile_driving","Juvenile / Underage Driving","Sec 199A",25000,25000,"all",      0, None, 1095,"Tamil Nadu: ₹25,000 + 3yr jail; guardian liable; RC cancelled; Sec 199A MV Act 2019"),
         # KARNATAKA
         ("Karnataka", "no_license",  "No DL",                   "Sec 181",  5000, 5000, "all", 0, None, 0, "Karnataka: ₹5,000"),
         ("Karnataka", "no_rc",       "No RC",                   "Sec 192",  5000, 5000, "all", 0, None, 0, "Karnataka: ₹5,000"),
@@ -135,6 +141,46 @@ def migrate():
         ("Kerala", "no_seatbelt",    "No Seatbelt",             "Sec 194B", 1000, 1000, "all", 1, 1000, 0, "Kerala: ₹1,000"),
         ("Kerala", "signal_jumping", "Signal Jumping",          "Sec 184",  1000, 5000, "all", 0, None, 0, "Kerala: ₹1,000"),
         ("Kerala", "no_insurance",   "No Insurance",            "Sec 196",  2000, 4000, "all", 0, None, 0, "Kerala: ₹2,000"),
+        # ANDHRA PRADESH
+        ("Andhra Pradesh", "no_license", "No DL",               "Sec 181",  5000, 5000, "all", 0, None, 0, "AP: ₹5,000"),
+        ("Andhra Pradesh", "no_helmet",  "No Helmet",           "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "AP: ₹1,000"),
+        # GUJARAT
+        ("Gujarat", "no_helmet",  "No Helmet",                  "Sec 194D", 500,  500,  "two_wheeler", 1, 500, 0, "Gujarat: reduced to ₹500"),
+        ("Gujarat", "no_seatbelt", "No Seatbelt",               "Sec 194B", 500,  500,  "all", 1, 500, 0, "Gujarat: reduced to ₹500"),
+        # RAJASTHAN
+        ("Rajasthan", "no_license", "No DL",                    "Sec 181",  5000, 5000, "all", 0, None, 0, "Rajasthan: ₹5,000"),
+        ("Rajasthan", "no_helmet",  "No Helmet",                "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Rajasthan: ₹1,000"),
+        # TELANGANA
+        ("Telangana", "wrong_side", "Wrong Side Driving",       "Sec 184",  1000, 5000, "all", 0, None, 0, "Telangana: strict enforcement"),
+        ("Telangana", "no_helmet",  "No Helmet",                "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Telangana: ₹1,000"),
+        # PUNJAB
+        ("Punjab", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Punjab: ₹1,000"),
+        ("Punjab", "overspeeding", "Overspeeding", "Sec 183", 1000, 2000, "lmv", 1, 1000, 0, "Punjab LMV: ₹1,000"),
+        # UTTAR PRADESH
+        ("Uttar Pradesh", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "UP: ₹1,000"),
+        ("Uttar Pradesh", "no_seatbelt", "No Seatbelt", "Sec 194B", 1000, 1000, "all", 1, 1000, 0, "UP: ₹1,000"),
+        # WEST BENGAL
+        ("West Bengal", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "West Bengal: ₹1,000"),
+        ("West Bengal", "signal_jumping", "Signal Jumping", "Sec 184", 500, 5000, "all", 0, None, 0, "West Bengal: ₹500 minimum"),
+        # ODISHA
+        ("Odisha", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Odisha: ₹1,000"),
+        ("Odisha", "drunk_driving", "Drunk Driving", "Sec 185", 10000, 10000, "all", 0, None, 0, "Odisha: ₹10,000"),
+        # BIHAR
+        ("Bihar", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Bihar: ₹1,000"),
+        ("Bihar", "no_license", "No DL", "Sec 181", 5000, 5000, "all", 0, None, 0, "Bihar: ₹5,000"),
+        # HARYANA
+        ("Haryana", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Haryana: ₹1,000"),
+        ("Haryana", "overspeeding", "Overspeeding", "Sec 183", 2000, 2000, "lmv", 1, 2000, 0, "Haryana: ₹2,000"),
+        # MADHYA PRADESH
+        ("Madhya Pradesh", "no_helmet", "No Helmet", "Sec 194D", 500, 500, "two_wheeler", 1, 500, 0, "MP: ₹500"),
+        # CHHATTISGARH
+        ("Chhattisgarh", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Chhattisgarh: ₹1,000"),
+        # JHARKHAND
+        ("Jharkhand", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Jharkhand: ₹1,000"),
+        # ASSAM
+        ("Assam", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Assam: ₹1,000"),
+        # UTTARAKHAND
+        ("Uttarakhand", "no_helmet", "No Helmet", "Sec 194D", 1000, 1000, "two_wheeler", 1, 1000, 0, "Uttarakhand: ₹1,000"),
     ]
 
     for state, code, name, section, min_f, max_f, v_type, comp_elig, comp_fee, jail, notes in state_overrides:
@@ -142,16 +188,20 @@ def migrate():
 
     # --- UAE ---
     uae_violations = [
-        ("drunk_driving", "Drunk Driving", "Federal Traffic Law No. 21 of 1995", 20000, 20000, 30, "AED 20,000 + jail + deportation risk"),
-        ("overspeeding_20", "Overspeeding (>20 km/h)", "Federal Traffic Law No. 21 of 1995", 300, 300, 0, "4 black points"),
-        ("overspeeding_40", "Overspeeding (>40 km/h)", "Federal Traffic Law No. 21 of 1995", 600, 600, 0, "6 black points"),
-        ("overspeeding_60", "Overspeeding (>60 km/h)", "Federal Traffic Law No. 21 of 1995", 1000, 1000, 0, "8 black points + license confiscation 60 days"),
-        ("no_seatbelt", "No Seatbelt", "Federal Traffic Law No. 21 of 1995", 400, 400, 0, "4 black points"),
-        ("using_phone", "Using Phone while Driving", "Federal Traffic Law No. 21 of 1995", 800, 800, 0, "4 black points"),
-        ("signal_jumping", "Signal Jumping", "Federal Traffic Law No. 21 of 1995", 1000, 1000, 0, "12 black points"),
-        ("no_insurance", "Driving without Insurance", "Federal Traffic Law No. 21 of 1995", 500, 500, 0, "AED 500"),
-        ("reckless_driving", "Reckless Driving", "Federal Traffic Law No. 21 of 1995", 2000, 2000, 7, "AED 2000 + jail + 23 black points"),
-        ("no_license", "Driving without License", "Federal Traffic Law No. 21 of 1995", 500, 500, 0, "AED 500")
+        ("drunk_driving",    "Drunk Driving",                    "Federal Traffic Law No. 21 of 1995", 20000, 20000, 30, "AED 20,000 + jail + deportation risk; zero tolerance policy"),
+        # Generic overspeeding row for NLP SPEED_EXCESS queries
+        ("overspeeding",     "Overspeeding (General)",           "Federal Traffic Law No. 21 of 1995", 300,  1000,  0,  "AED 300-1,000 depending on excess speed + black points: >20 km/h: AED 300 (4 pts); >40 km/h: AED 600 (6 pts); >60 km/h: AED 1,000 (8 pts) + 60-day licence confiscation"),
+        ("overspeeding_20",  "Overspeeding (>20 km/h over limit)","Federal Traffic Law No. 21 of 1995", 300,  300,   0,  "AED 300 + 4 black points"),
+        ("overspeeding_40",  "Overspeeding (>40 km/h over limit)","Federal Traffic Law No. 21 of 1995", 600,  600,   0,  "AED 600 + 6 black points"),
+        ("overspeeding_60",  "Overspeeding (>60 km/h over limit)","Federal Traffic Law No. 21 of 1995", 1000, 1000,  0,  "AED 1,000 + 8 black points + 60-day licence confiscation"),
+        ("no_seatbelt",      "No Seatbelt",                      "Federal Traffic Law No. 21 of 1995", 400,  400,   0,  "AED 400 + 4 black points"),
+        ("using_phone",      "Using Phone while Driving",        "Federal Traffic Law No. 21 of 1995", 800,  800,   0,  "AED 800 + 4 black points"),
+        ("signal_jumping",   "Signal Jumping",                   "Federal Traffic Law No. 21 of 1995", 1000, 1000,  0,  "AED 1,000 + 12 black points"),
+        ("no_insurance",     "Driving without Insurance",        "Federal Traffic Law No. 21 of 1995", 500,  500,   0,  "AED 500 fine"),
+        ("reckless_driving", "Reckless Driving",                 "Federal Traffic Law No. 21 of 1995", 2000, 2000,  7,  "AED 2,000 + jail + 23 black points"),
+        ("no_license",       "Driving without License",          "Federal Traffic Law No. 21 of 1995", 500,  500,   0,  "AED 500 fine"),
+        ("dangerous_driving","Dangerous Driving",                "Federal Traffic Law No. 21 of 1995", 2000, 2000,  0,  "AED 2,000 + 6 black points"),
+        ("no_helmet",        "No Helmet (Motorcycle)",           "Federal Traffic Law No. 21 of 1995", 500,  500,   0,  "AED 500 + 4 black points"),
     ]
     for code, name, section, min_f, max_f, jail, notes in uae_violations:
         insert_fine('AE', None, code, name, 'all', min_f, max_f, 'AED', section, 0, None, jail, notes)
@@ -179,7 +229,7 @@ def migrate():
         ("overspeeding_serious", "Overspeeding (Serious)", "Road Traffic Offenders Act 1988", 2500, 5000, 0, "up to unlimited, 6 points, SP50, court referral"),
         ("no_seatbelt", "No Seatbelt", "Road Traffic Act 1988", 100, 100, 0, "GBP 100"),
         ("using_phone", "Using Phone while Driving", "Road Traffic Act 1988", 200, 200, 0, "6 points"),
-        ("no_insurance", "Driving without Insurance", "Road Traffic Offenders Act 1988", 300, 300, 0, "300 fixed + 6-8 points, IN10"),
+        ("no_insurance", "Driving without Insurance", "Road Traffic Offenders Act 1988", 300, 300, 0, "£300 fixed penalty + 6-8 licence points; offence code IN10 on driving record; court can impose unlimited fine + vehicle seizure"),
         ("reckless_driving", "Reckless Driving", "Road Traffic Act 1988", 5000, 5000, 730, "unlimited + 2yr jail, DD40"),
         ("no_license", "Driving without License", "Road Traffic Act 1988", 1000, 1000, 0, "GBP 1,000"),
         ("no_mot", "Driving without Valid MOT", "Road Traffic Act 1988", 1000, 1000, 0, "GBP 1,000 fixed penalty"),
