@@ -1,0 +1,86 @@
+state,state_code,violation,fine_inr,notes
+Delhi,DL,No Driving Licence,5000,Fixed state fine
+Delhi,DL,Over Speeding (LMV),2000,Fixed state fine
+Delhi,DL,Over Speeding (HGV),4000,Fixed state fine
+Delhi,DL,Signal Jump / Dangerous Driving,5000,Fixed state fine
+Delhi,DL,Mobile Phone While Driving,5000,Fixed state fine
+Delhi,DL,Wrong Side Driving,5000,Fixed state fine
+Delhi,DL,Drunk Driving (1st),10000,Fixed state fine
+Delhi,DL,Drunk Driving (2nd+),15000,Fixed state fine
+Delhi,DL,No Vehicle Registration,5000,Fixed state fine
+Delhi,DL,No Seat Belt,1000,Fixed state fine
+Delhi,DL,No Helmet,1000,Fixed state fine
+Delhi,DL,No Insurance,2000,Fixed state fine
+Maharashtra,MH,No Driving Licence,1000,Reduced from central Act after state notification
+Maharashtra,MH,Over Speeding (LMV),1000,State notification
+Maharashtra,MH,Over Speeding (HGV),2000,State notification
+Maharashtra,MH,Signal Jump / Dangerous Driving,1000,State notification
+Maharashtra,MH,Mobile Phone While Driving,1000,State notification
+Maharashtra,MH,Drunk Driving (1st),10000,Follows central Act
+Maharashtra,MH,No Seat Belt,500,Reduced from central Act
+Maharashtra,MH,No Helmet,500,Reduced from central Act
+Maharashtra,MH,No Insurance,2000,Follows central Act
+Tamil Nadu,TN,No Driving Licence,5000,Follows central Act
+Tamil Nadu,TN,Over Speeding (LMV),1000,Follows central Act
+Tamil Nadu,TN,Over Speeding (HGV),2000,Follows central Act
+Tamil Nadu,TN,Signal Jump / Dangerous Driving,1000,Follows central Act
+Tamil Nadu,TN,Mobile Phone While Driving,1000,Follows central Act
+Tamil Nadu,TN,Drunk Driving (1st),10000,Follows central Act
+Tamil Nadu,TN,No Seat Belt,1000,Follows central Act
+Tamil Nadu,TN,No Helmet,1000,Follows central Act
+Tamil Nadu,TN,No Insurance,2000,Follows central Act
+Karnataka,KA,No Driving Licence,5000,Follows central Act
+Karnataka,KA,Over Speeding (LMV),1000,Follows central Act
+Karnataka,KA,Over Speeding (HGV),2000,Follows central Act
+Karnataka,KA,Signal Jump / Dangerous Driving,1000,Follows central Act
+Karnataka,KA,Drunk Driving (1st),10000,Follows central Act
+Karnataka,KA,No Seat Belt,1000,Follows central Act
+Karnataka,KA,No Helmet,1000,Follows central Act
+Karnataka,KA,No Insurance,2000,Follows central Act
+Kerala,KL,No Driving Licence,5000,Follows central Act
+Kerala,KL,Over Speeding (LMV),1000,Follows central Act
+Kerala,KL,Drunk Driving (1st),10000,Follows central Act
+Kerala,KL,No Seat Belt,1000,Follows central Act
+Kerala,KL,No Helmet,1000,Follows central Act
+Kerala,KL,No Insurance,2000,Follows central Act
+Gujarat,GJ,No Driving Licence,5000,Partial MV 2019 implementation
+Gujarat,GJ,Over Speeding (LMV),1000,Partial implementation
+Gujarat,GJ,Drunk Driving (1st),10000,State is dry - strict enforcement
+Gujarat,GJ,No Helmet,1000,Follows central Act
+Gujarat,GJ,No Insurance,2000,Follows central Act
+Rajasthan,RJ,No Driving Licence,5000,Follows central Act
+Rajasthan,RJ,Over Speeding (LMV),1000,Follows central Act
+Rajasthan,RJ,Drunk Driving (1st),10000,Follows central Act
+Rajasthan,RJ,No Helmet,1000,Follows central Act
+Rajasthan,RJ,No Insurance,2000,Follows central Act
+Uttar Pradesh,UP,No Driving Licence,5000,Follows central Act
+Uttar Pradesh,UP,Over Speeding (LMV),1000,Follows central Act
+Uttar Pradesh,UP,Drunk Driving (1st),10000,Follows central Act
+Uttar Pradesh,UP,No Helmet,1000,Follows central Act
+Uttar Pradesh,UP,No Insurance,2000,Follows central Act
+West Bengal,WB,No Driving Licence,5000,Follows central Act
+West Bengal,WB,Over Speeding (LMV),1000,Follows central Act
+West Bengal,WB,Drunk Driving (1st),10000,Follows central Act
+West Bengal,WB,No Helmet,1000,Follows central Act
+West Bengal,WB,No Insurance,2000,Follows central Act
+Andhra Pradesh,AP,No Driving Licence,5000,Follows central Act
+Andhra Pradesh,AP,Over Speeding (LMV),1000,Follows central Act
+Andhra Pradesh,AP,Drunk Driving (1st),10000,Follows central Act
+Andhra Pradesh,AP,No Helmet,1000,Follows central Act
+Andhra Pradesh,AP,No Insurance,2000,Follows central Act
+Telangana,TS,No Driving Licence,5000,Follows central Act
+Telangana,TS,Over Speeding (LMV),1000,Follows central Act
+Telangana,TS,Signal Jump,1000,Follows central Act
+Telangana,TS,Drunk Driving (1st),10000,Follows central Act
+Telangana,TS,No Helmet,1000,Follows central Act
+Telangana,TS,No Insurance,2000,Follows central Act
+Punjab,PB,No Driving Licence,5000,Follows central Act
+Punjab,PB,Over Speeding (LMV),1000,Follows central Act
+Punjab,PB,Drunk Driving (1st),10000,Follows central Act
+Punjab,PB,No Helmet,1000,Follows central Act
+Punjab,PB,No Insurance,2000,Follows central Act
+Haryana,HR,No Driving Licence,5000,Follows central Act
+Haryana,HR,Over Speeding (LMV),1000,Follows central Act
+Haryana,HR,Drunk Driving (1st),10000,Follows central Act
+Haryana,HR,No Helmet,1000,Follows central Act
+Haryana,HR,No Insurance,2000,Follows central Act

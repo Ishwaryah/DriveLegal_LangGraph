@@ -1,0 +1,126 @@
+{
+  "metadata": {
+    "source": "MoRTH Speed Limit Notifications + State Transport Dept Rules",
+    "note": "Geo-fenced zones have special speed limits and sometimes higher fines. Use GPS/IP to detect zone type.",
+    "last_updated": "2026-05-01"
+  },
+  "zone_types": {
+    "school_zone": {
+      "description": "Within 500m radius of a school gate",
+      "speed_limit_kmph": 25,
+      "fine_multiplier": 2.0,
+      "active_hours": "07:00-09:00, 13:00-15:30",
+      "active_days": "Monday-Saturday",
+      "tags": ["school", "children", "education zone"]
+    },
+    "hospital_zone": {
+      "description": "Within 200m of a hospital or emergency medical facility",
+      "speed_limit_kmph": 25,
+      "fine_multiplier": 1.5,
+      "active_hours": "24x7",
+      "active_days": "All days",
+      "tags": ["hospital", "medical", "silence zone"]
+    },
+    "residential_zone": {
+      "description": "Residential colony or housing area roads",
+      "speed_limit_kmph": 30,
+      "fine_multiplier": 1.0,
+      "active_hours": "24x7",
+      "active_days": "All days",
+      "tags": ["residential", "colony", "housing"]
+    },
+    "urban_road": {
+      "description": "City/municipal roads inside city limits",
+      "speed_limit_kmph": 50,
+      "fine_multiplier": 1.0,
+      "active_hours": "24x7",
+      "active_days": "All days",
+      "tags": ["city", "urban", "municipal road"]
+    },
+    "state_highway": {
+      "description": "State Highway (SH prefix roads)",
+      "speed_limit_kmph": {
+        "LMV": 80,
+        "Two-Wheeler": 60,
+        "HGV": 60
+      },
+      "fine_multiplier": 1.0,
+      "tags": ["state highway", "SH"]
+    },
+    "national_highway": {
+      "description": "National Highway (NH prefix roads)",
+      "speed_limit_kmph": {
+        "LMV": 100,
+        "Two-Wheeler": 80,
+        "HGV": 80,
+        "Bus": 80
+      },
+      "fine_multiplier": 1.0,
+      "tags": ["national highway", "NH"]
+    },
+    "expressway": {
+      "description": "Controlled-access expressway (limited entry/exit)",
+      "speed_limit_kmph": {
+        "LMV": 120,
+        "Two-Wheeler": 0,
+        "HGV": 80,
+        "Bus": 100
+      },
+      "two_wheelers_allowed": false,
+      "fine_multiplier": 1.5,
+      "tags": ["expressway", "freeway", "limited access"]
+    },
+    "toll_plaza": {
+      "description": "Within 200m of toll plaza",
+      "speed_limit_kmph": 20,
+      "fine_multiplier": 1.0,
+      "tags": ["toll", "toll booth", "toll plaza"]
+    },
+    "construction_zone": {
+      "description": "Active road construction or repair zone",
+      "speed_limit_kmph": 30,
+      "fine_multiplier": 2.0,
+      "tags": ["construction", "road work", "repair zone"]
+    },
+    "night_restriction_zone": {
+      "description": "City area where heavy vehicles are banned at night",
+      "banned_vehicles": ["HGV", "MGV", "Trucks"],
+      "banned_hours": "22:00-06:00",
+      "fine_for_violation": 10000,
+      "tags": ["night ban", "heavy vehicle restriction", "city night"]
+    }
+  },
+  "city_specific_zones": {
+    "Delhi": {
+      "odd_even_zone": {
+        "description": "Central Delhi roads under odd-even scheme",
+        "applies_to": "Private Cars",
+        "active_hours": "08:00-10:00, 17:00-21:00",
+        "active_days": "Monday-Friday (notified periods only)",
+        "fine": 4000,
+        "exceptions": ["Women drivers alone", "CNG vehicles", "Electric vehicles", "Disabled persons"]
+      },
+      "no_truck_zone": {
+        "description": "Inner Delhi - no trucks during day",
+        "banned_vehicles": ["Trucks", "HGV"],
+        "banned_hours": "07:00-23:00",
+        "fine": 20000
+      }
+    },
+    "Mumbai": {
+      "no_horn_zone": {
+        "description": "Hospital and court areas",
+        "restriction": "Horn prohibited",
+        "fine": 1000
+      }
+    },
+    "Bengaluru": {
+      "no_vehicle_day": {
+        "description": "Car-free Sundays on selected roads",
+        "active_days": "Selected Sundays",
+        "roads": ["MG Road", "Brigade Road"],
+        "active_hours": "06:00-10:00"
+      }
+    }
+  }
+}

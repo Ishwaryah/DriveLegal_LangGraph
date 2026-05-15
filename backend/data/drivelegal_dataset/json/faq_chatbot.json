@@ -1,0 +1,479 @@
+[
+  {
+    "id": "FAQ001",
+    "question": "What is the fine for driving without a helmet in India?",
+    "answer": "Under Section 194D of the Motor Vehicles (Amendment) Act 2019, the fine for riding a two-wheeler without a helmet is ₹1,000. Additionally, your driving licence will be disqualified for 3 months. This applies to both the rider and the pillion passenger. The helmet must be BIS-approved (IS:4151 standard). Maharashtra has reduced this to ₹500 while most other states follow the central ₹1,000 fine.",
+    "category": "Two-Wheeler",
+    "section": "Section 194D",
+    "tags": ["helmet", "no helmet", "two-wheeler", "fine", "penalty"]
+  },
+  {
+    "id": "FAQ002",
+    "question": "What is the fine for drunk driving in India?",
+    "answer": "Under Section 185 of the MV Amendment Act 2019, drunk driving penalties are: First offence - Fine of ₹10,000 and/or imprisonment up to 6 months. Second offence (within 3 years) - Fine of ₹15,000 and/or imprisonment up to 2 years. The legal BAC (Blood Alcohol Content) limit is 30mg per 100ml of blood. The offence is non-compoundable meaning it cannot be settled on the spot and goes to court. Your licence can be suspended or cancelled.",
+    "category": "Driving Under Influence",
+    "section": "Section 185",
+    "tags": ["drunk driving", "DUI", "alcohol", "BAC", "drink and drive"]
+  },
+  {
+    "id": "FAQ003",
+    "question": "What happens if I drive without insurance?",
+    "answer": "Under Section 196 of the MV Amendment Act 2019: First offence - Fine of ₹2,000 and/or imprisonment up to 3 months. Second offence - Fine of ₹4,000 and/or imprisonment up to 3 months. Third-party insurance is mandatory for ALL vehicles in India under the Motor Vehicles Act. Comprehensive insurance is optional but recommended. You can buy insurance online through IRDAI-registered insurers.",
+    "category": "Documents",
+    "section": "Section 196",
+    "tags": ["no insurance", "without insurance", "third party", "mandatory insurance"]
+  },
+  {
+    "id": "FAQ004",
+    "question": "What is the fine for jumping a red light?",
+    "answer": "Jumping a red light is classified as 'Dangerous Driving' under Section 184 of the MV Act 2019. Fine: First offence - ₹1,000 to ₹5,000 and/or imprisonment up to 6 months. Second offence - ₹10,000 and/or imprisonment up to 2 years. In Delhi specifically, the fine is ₹5,000 for signal jumping. The offence is non-compoundable and will be recorded against your licence.",
+    "category": "Dangerous Driving",
+    "section": "Section 184",
+    "tags": ["red light", "signal jump", "traffic signal", "jumping signal"]
+  },
+  {
+    "id": "FAQ005",
+    "question": "What is the fine for using a mobile phone while driving?",
+    "answer": "Under Section 194F of the MV Amendment Act 2019: First offence - ₹1,000 to ₹5,000. Second offence - ₹10,000. Using a hand-held mobile phone while driving is considered distracted driving. This includes texting, calling, or any other use of the phone while the vehicle is in motion. In Delhi, the fine is fixed at ₹5,000 for mobile phone use while driving.",
+    "category": "Distracted Driving",
+    "section": "Section 194F",
+    "tags": ["mobile phone", "phone driving", "texting", "distracted driving", "hand-held device"]
+  },
+  {
+    "id": "FAQ006",
+    "question": "What are the documents I must carry while driving?",
+    "answer": "You must carry these documents while driving any motor vehicle in India: 1. Driving Licence (DL) - valid and appropriate for the vehicle class. 2. Registration Certificate (RC) - proving vehicle ownership and registration. 3. Insurance Certificate - valid third-party or comprehensive insurance. 4. PUC Certificate (Pollution Under Control) - valid emission certificate. 5. Permit (for commercial vehicles). Digital copies in DigiLocker are legally valid under Section 139 of the IT Act. Failure to produce documents when demanded by police under Section 206 carries a fine of ₹500.",
+    "category": "Documents",
+    "section": "Section 130, 206",
+    "tags": ["documents", "DL", "RC", "insurance", "PUC", "permit", "digilocker"]
+  },
+  {
+    "id": "FAQ007",
+    "question": "Can I use DigiLocker documents during traffic checking?",
+    "answer": "Yes. As per a 2018 Government of India circular and the Information Technology Act 2000, digital documents stored in DigiLocker are legally equivalent to physical originals. The Parivahan Sewa (parivahan.gov.in) also provides mParivahan app for digital documents. Police officers are required to accept digital documents. However, if there is a dispute, physical documents are advisable to carry as backup. DigiLocker can be accessed at digilocker.gov.in or via the DigiLocker app.",
+    "category": "Documents",
+    "section": "IT Act Section 139",
+    "tags": ["DigiLocker", "digital documents", "mParivahan", "digital DL", "digital RC"]
+  },
+  {
+    "id": "FAQ008",
+    "question": "What is the fine for overspeeding in a school zone?",
+    "answer": "In a school zone (typically within 500m of a school), the speed limit is 25 kmph. Any speeding in such zones is treated with higher severity. The base fine under Section 183 for a car (LMV) is ₹1,000 to ₹2,000. In school zones, courts can apply higher penalties as the offence endangers children. Some states like Karnataka apply a 2x multiplier in school zones. Additionally, dangerous driving near schools may be charged under Section 184 (Dangerous Driving) with fines up to ₹5,000.",
+    "category": "Speed Limits",
+    "section": "Section 183",
+    "tags": ["school zone", "speed limit", "children", "school area speed"]
+  },
+  {
+    "id": "FAQ009",
+    "question": "What is the speed limit in Indian cities?",
+    "answer": "As per MoRTH notification, general speed limits in India are: Urban/City roads: 50 kmph for cars, 50 kmph for two-wheelers. State Highways: 80 kmph for cars, 60 kmph for two-wheelers, 60 kmph for HGVs. National Highways: 100 kmph for cars, 80 kmph for two-wheelers, 80 kmph for HGVs. Expressways: 120 kmph for cars, two-wheelers NOT allowed, 80 kmph for HGVs. School/Hospital zones: 25 kmph. These are maximum limits - lower limits posted on signs take precedence.",
+    "category": "Speed Limits",
+    "section": "Section 183",
+    "tags": ["speed limit", "city speed", "highway speed", "expressway speed"]
+  },
+  {
+    "id": "FAQ010",
+    "question": "What is the fine for driving without a valid RC (Registration Certificate)?",
+    "answer": "Under Section 192 of the MV Amendment Act 2019: First offence - Fine of ₹2,000 to ₹5,000 and/or imprisonment up to 6 months. Subsequent offences - Fine up to ₹10,000. The Registration Certificate (RC) must be valid and match the vehicle. RC must be renewed on expiry (typically every 15 years for new vehicles). Expired RC is treated the same as no RC. In Tamil Nadu and Delhi, the fine for no RC or expired RC is ₹5,000.",
+    "category": "Documents",
+    "section": "Section 192",
+    "tags": ["no RC", "registration certificate", "expired RC", "vehicle registration"]
+  },
+  {
+    "id": "FAQ011",
+    "question": "What is the fine for not wearing a seatbelt?",
+    "answer": "Under Section 194B of the MV Amendment Act 2019, the fine for not wearing a seatbelt is ₹1,000. This applies to: The driver, all front-seat passengers, and all rear-seat passengers. Child restraint systems (car seats) are mandatory for children under 14 years. In Maharashtra, the fine has been reduced to ₹500. Habitual offenders may face enhanced penalties.",
+    "category": "Safety",
+    "section": "Section 194B",
+    "tags": ["seat belt", "seatbelt", "no seatbelt", "safety belt"]
+  },
+  {
+    "id": "FAQ012",
+    "question": "What is the fine for underage driving in India?",
+    "answer": "Under Section 199 of the MV Amendment Act 2019, for underage/juvenile driving: The guardian or vehicle owner (not the juvenile) is held liable. Fine: ₹25,000. Imprisonment: Up to 3 years for the guardian. The vehicle's registration certificate will be cancelled. The juvenile will be tried under the Juvenile Justice Act 2015. The minimum legal driving age in India is 18 years for all motorised vehicles, and 16 years for gearless two-wheelers up to 50cc with parental consent.",
+    "category": "Juvenile",
+    "section": "Section 199",
+    "tags": ["underage driving", "juvenile", "minor driving", "below 18", "teenage driving"]
+  },
+  {
+    "id": "FAQ013",
+    "question": "How do I pay a traffic challan online?",
+    "answer": "You can pay traffic challans online through: 1. Official eChallan portal: echallan.parivahan.gov.in - enter vehicle number, challan number, or DL number. 2. Parivahan App (mParivahan) - available on Android and iOS. 3. State-specific portals (e.g., Delhi: delhitrafficpolice.nic.in). Payment methods accepted: UPI, debit/credit cards, net banking, digital wallets (Paytm, GPay, PhonePe). On-spot payment: Through handheld POS machines carried by traffic police.",
+    "category": "Challan Payment",
+    "tags": ["pay challan", "online payment", "echallan", "Parivahan", "challan payment"]
+  },
+  {
+    "id": "FAQ014",
+    "question": "What is the PUC certificate and what is the fine for not having it?",
+    "answer": "PUC stands for Pollution Under Control certificate. It is a certificate proving your vehicle's emissions are within permissible limits. Validity: 6 months for petrol/diesel vehicles, 1 year for CNG vehicles. Electric vehicles do not require PUC. Fine for no PUC: Under Section 190(2), the fine is ₹10,000 and/or imprisonment up to 6 months for first offence. PUC can be obtained at any authorized PUC checking center (petrol stations, RTO-authorized centers). Cost is nominal (₹60-₹100).",
+    "category": "Documents",
+    "section": "Section 190",
+    "tags": ["PUC", "pollution certificate", "emission certificate", "PUCC"]
+  },
+  {
+    "id": "FAQ015",
+    "question": "What are the rules for overloading a vehicle?",
+    "answer": "Under Section 194 of the MV Amendment Act 2019, overloading penalties are very steep: Base fine: ₹20,000 for overloading a goods vehicle. Additional: ₹2,000 for every extra tonne beyond permitted limit. The driver's licence can be disqualified, and the vehicle's fitness certificate can be cancelled. For passenger overloading (Section 194A): ₹1,000 per extra passenger. The permitted load is specified in the vehicle's registration certificate (RC). Road transport authorities can also seize the vehicle.",
+    "category": "Commercial Vehicles",
+    "section": "Section 194, 194A",
+    "tags": ["overloading", "excess load", "overweight", "truck overloading", "passenger overloading"]
+  },
+  {
+    "id": "FAQ016",
+    "question": "Is triple riding on a two-wheeler allowed?",
+    "answer": "No. Triple riding (more than 2 persons on a two-wheeler) is prohibited across India. The maximum permitted is: 1 rider + 1 pillion passenger (2 persons total). Fine for triple riding: Treated as violation of Section 128 (safety rules for motorcycles) and Section 194C, with a fine of ₹1,000. In some states, triple riding is specifically penalized under local transport rules.",
+    "category": "Two-Wheeler",
+    "section": "Section 128, 194C",
+    "tags": ["triple riding", "three persons", "pillion", "two-wheeler rules"]
+  },
+  {
+    "id": "FAQ017",
+    "question": "What is the difference between compoundable and non-compoundable traffic offences?",
+    "answer": "Compoundable offences: Can be settled on the spot by paying the fine to the traffic police officer or via online payment. No court appearance needed. Examples: No helmet, no seatbelt, over-speeding (first time), no documents. Non-compoundable offences: Must go to court. Cannot be settled on the spot. Requires a court appearance. Examples: Drunk driving, dangerous driving, racing, underage driving, driving with cancelled licence. Under Section 200 of the MV Act, specific sections are listed as compoundable. For non-compoundable offences, a court date is given and the magistrate decides the final fine/punishment.",
+    "category": "Legal Process",
+    "section": "Section 200",
+    "tags": ["compoundable", "non-compoundable", "court challan", "on spot fine", "settlement"]
+  },
+  {
+    "id": "FAQ018",
+    "question": "What is the rule about not giving way to an ambulance?",
+    "answer": "Under Section 194E of the MV Amendment Act 2019, failing to give way to emergency vehicles (ambulance, fire service vehicle, police vehicle) carries: Fine of ₹10,000 and/or imprisonment up to 6 months. All vehicles must immediately move to the side of the road and stop to allow emergency vehicles to pass. Blocking an ambulance can directly cost lives and is treated very seriously. The Supreme Court of India has also mandated strict enforcement of this rule.",
+    "category": "Emergency Vehicles",
+    "section": "Section 194E",
+    "tags": ["ambulance", "emergency vehicle", "fire engine", "not giving way", "green corridor"]
+  },
+  {
+    "id": "FAQ019",
+    "question": "Can I contest a wrongful traffic challan?",
+    "answer": "Yes. If you believe a challan was wrongly issued: 1. Gather evidence: Photos, CCTV footage, witness statements, dashcam footage. 2. Online complaint: Visit the state traffic police website or echallan.parivahan.gov.in and file a complaint. 3. Court appeal: Appear on the court date mentioned in the challan and present your case. You have the right to contest any challan in a court of law. The magistrate will review the evidence and decide. If the court finds the challan was wrongfully issued, it will be dismissed and no fine collected.",
+    "category": "Legal Process",
+    "tags": ["contest challan", "wrong challan", "wrongful fine", "appeal challan", "dispute traffic fine"]
+  },
+  {
+    "id": "FAQ020",
+    "question": "What happens if I don't pay a traffic challan?",
+    "answer": "If you fail to pay a traffic challan: 1. A court summons will be issued (typically after 60 days). 2. Additional penalties may accumulate. 3. Your vehicle's RC renewal or transfer may be blocked. 4. Your DL renewal may be blocked. 5. In serious cases, a warrant may be issued. 6. The challan may be upgraded to a 'court challan' with higher fines. It is always advisable to pay challans promptly or contest them legally within the given time frame.",
+    "category": "Challan Payment",
+    "tags": ["unpaid challan", "not paying fine", "challan consequences", "court summons"]
+  },
+  {
+    "id": "FAQ021",
+    "question": "What is the minimum age to get a driving licence in India?",
+    "answer": "The minimum age to obtain a driving licence in India is: 16 years for gearless two-wheelers up to 50cc (with parental consent). 18 years for all other motor vehicles including motorcycles, cars, and commercial vehicles. 20 years for transport/commercial vehicles (Heavy Goods Vehicles, Heavy Passenger Vehicles). A learner's licence is issued first (valid 6 months), followed by the permanent licence after passing the driving test. Applicants must pass both a written test and a practical driving test at the RTO.",
+    "category": "Driving Licence",
+    "section": "Section 4, 8",
+    "tags": ["minimum age", "driving licence age", "18 years", "learner licence", "RTO"]
+  },
+  {
+    "id": "FAQ022",
+    "question": "What are the rules for a learner's licence holder?",
+    "answer": "Rules for Learner's Licence (LL) holders: 1. Must be accompanied by a valid licence holder at all times while driving. 2. The 'L' board must be displayed prominently on the front and rear of the vehicle. 3. Cannot drive on expressways or highways unsupervised. 4. Cannot carry passengers for hire. 5. Valid for 6 months from date of issue. 6. Must apply for permanent DL within 30 days of LL expiry (after passing driving test). Driving alone with a learner's licence is treated as driving without a valid licence under Section 181 with a fine of ₹5,000.",
+    "category": "Driving Licence",
+    "section": "Section 3, 181",
+    "tags": ["learner licence", "L board", "learning to drive", "temporary licence"]
+  },
+  {
+    "id": "FAQ023",
+    "question": "What is the fine for driving with a suspended or cancelled licence?",
+    "answer": "Driving with a suspended or disqualified licence is a serious offence under Section 182 of the MV Act: Fine: ₹10,000 and/or imprisonment up to 3 months. For repeat offence: Fine up to ₹10,000 and/or imprisonment up to 3 months. If the licence was cancelled by a court order and you drive anyway, additional contempt of court proceedings can be initiated. A suspended licence typically occurs due to: Serious traffic violations, accumulation of demerit points, court orders, or administrative action by the licensing authority.",
+    "category": "Driving Licence",
+    "section": "Section 182",
+    "tags": ["suspended licence", "cancelled DL", "disqualified licence", "driving ban"]
+  },
+  {
+    "id": "FAQ024",
+    "question": "What is the fine for stunt driving or street racing?",
+    "answer": "Under Section 189 of the MV Amendment Act 2019, speed trials and racing on public roads without authorization: Fine: ₹5,000 and/or imprisonment up to 3 months for first offence. Repeat offence: ₹10,000 and/or imprisonment up to 1 year. Stunt driving (wheelies, burnouts, drifting on public roads) falls under Sections 184 (dangerous driving) and 189 (racing). Organizers of unauthorized road races can also be penalized. The vehicle used for racing can be impounded.",
+    "category": "Dangerous Driving",
+    "section": "Section 189, 184",
+    "tags": ["stunt driving", "street racing", "drag racing", "wheelie", "rash driving"]
+  },
+  {
+    "id": "FAQ025",
+    "question": "What is the fine for driving on the wrong side of the road?",
+    "answer": "Driving on the wrong side of the road falls under Section 184 (Dangerous Driving) of the MV Act 2019: Fine: ₹1,000 to ₹5,000 and/or imprisonment up to 6 months. In Delhi, the specific fine for wrong-side driving is ₹5,000. Entering a one-way road from the wrong direction is a ₹1,100 fine in many cities. It is also non-compoundable when combined with other offences. Apart from the fine, it can lead to licence suspension.",
+    "category": "Dangerous Driving",
+    "section": "Section 184",
+    "tags": ["wrong side", "wrong way", "one-way violation", "driving against traffic"]
+  },
+  {
+    "id": "FAQ026",
+    "question": "What are the rules about parking in India?",
+    "answer": "Parking rules in India: No Parking zones are designated by a sign (P with a cross). Parking on footpaths, zebra crossings, bus stops, or within 15 meters of an intersection is illegal. Double parking (blocking another vehicle) is prohibited. Fine for illegal parking: ₹500 to ₹2,000 depending on city/state. Vehicle towing: Vehicles parked illegally can be towed. Towing charge is typically ₹500 to ₹1,500 plus daily impound fees. No-parking zones near courts, hospitals, schools, and railways are strictly enforced. Specific cities have automated parking management systems.",
+    "category": "Parking",
+    "section": "Section 122",
+    "tags": ["parking", "no parking", "illegal parking", "towing", "parking fine"]
+  },
+  {
+    "id": "FAQ027",
+    "question": "What is the fine for tinted glass or dark window film on vehicles?",
+    "answer": "Under the Motor Vehicles Act and Supreme Court guidelines, window tinting is regulated: Legal limit: Visible Light Transmission (VLT) - Front windscreen 70%, Side and rear windows 50%. Using films/tints darker than permitted: Fine ranges from ₹1,000 to ₹5,000 depending on state. In extreme cases, the vehicle can be impounded. The Supreme Court of India had banned all forms of window tinting in 2012, but later allowed factory-fitted tints within VLT limits. Aftermarket dark films are still not permitted.",
+    "category": "Vehicle Rules",
+    "section": "Section 177",
+    "tags": ["tinted glass", "dark windows", "window film", "sun film", "VLT"]
+  },
+  {
+    "id": "FAQ028",
+    "question": "What are the rules for honking and using pressure horns?",
+    "answer": "Rules regarding horns in India: Pressure horns (air horns) are banned on all private vehicles under Rule 119 of the Central Motor Vehicles Rules, 1989. Using a horn in silent zones (hospitals, courts, schools) is prohibited. Using a horn unnecessarily is a punishable offence. Fine for illegal horn/pressure horn: ₹1,000 to ₹5,000. Silent zone radius is typically 100 metres around hospitals, schools, and courts. Night honking is particularly regulated in many states. The horn must be used as a safety signal only, not as a way to express frustration.",
+    "category": "Vehicle Rules",
+    "section": "Rule 119 CMVR",
+    "tags": ["horn", "pressure horn", "air horn", "silent zone", "noise pollution"]
+  },
+  {
+    "id": "FAQ029",
+    "question": "What are the traffic rules on Indian national highways?",
+    "answer": "Key traffic rules on National Highways (NH): Speed limits: Cars/LMV - 100 kmph, Two-wheelers - 80 kmph, HGV/Buses - 80 kmph. Lane discipline: Overtaking only from the right. Left lane for slow vehicles. Middle lane for normal speed. Right lane for fast vehicles. No U-turns except at designated points. No stopping on the highway except emergencies. Mandatory to stop at toll plazas and pay toll. FASTag is mandatory since February 2021 for toll payment. Heavy vehicles banned from some NHs during certain hours.",
+    "category": "Highway Rules",
+    "section": "Section 183",
+    "tags": ["national highway", "highway rules", "speed limit highway", "FASTag", "toll"]
+  },
+  {
+    "id": "FAQ030",
+    "question": "What is FASTag and is it mandatory?",
+    "answer": "FASTag is an electronic toll collection device that uses RFID technology. It is affixed on the windscreen of the vehicle and automatically deducts toll charges when passing through a toll plaza. FASTag has been mandatory for all vehicles since February 16, 2021 in India. Fine for not having FASTag: Double the applicable toll at the toll plaza. No cash lane available at most toll plazas. FASTag can be obtained from banks, NHAI website (ihmcl.com), or at toll plazas. Needs to be linked to a bank account/prepaid wallet.",
+    "category": "Highway Rules",
+    "section": "National Highways Fee Rules",
+    "tags": ["FASTag", "RFID", "toll", "electronic toll", "mandatory FASTag"]
+  },
+  {
+    "id": "FAQ031",
+    "question": "What are the rules for overtaking in India?",
+    "answer": "Overtaking rules in India under the Central Motor Vehicles Rules: Always overtake from the RIGHT side. Never overtake: at pedestrian crossings, at intersections, on blind curves, at speed breakers, in school/hospital zones, when there is a solid white/yellow line on the road, when a vehicle ahead has signalled to turn right. Dangerous overtaking is punishable under Section 184: ₹1,000 to ₹5,000. Do not overtake emergency vehicles. Overtaking a stationary bus at a bus stop when passengers are boarding/alighting is prohibited.",
+    "category": "Traffic Rules",
+    "section": "Section 184, Rule 36 CMVR",
+    "tags": ["overtaking", "passing", "road rules", "lane discipline"]
+  },
+  {
+    "id": "FAQ032",
+    "question": "What are the rules for using fog lights?",
+    "answer": "Rules for fog lights in India: Fog lights are only permitted during actual fog or heavy rain conditions. Using fog lights in clear weather is prohibited and can attract a fine of ₹1,000 under Section 177. High beam headlights must be dipped when approaching oncoming traffic. Vehicles on roads at night must use headlights (not just parking lights). Rear fog lights must only be used in conditions of reduced visibility. Driving without headlights at night is an offence with a fine of ₹1,000 to ₹5,000.",
+    "category": "Vehicle Rules",
+    "section": "Section 177",
+    "tags": ["fog lights", "headlights", "night driving", "high beam"]
+  },
+  {
+    "id": "FAQ033",
+    "question": "What is the rule about pedestrian zebra crossings?",
+    "answer": "Rules regarding zebra crossings: Vehicles MUST stop and give way to pedestrians at zebra crossings. Stopping on a zebra crossing is prohibited. Parking within 15 metres of a zebra crossing is illegal. Failure to yield to pedestrians at crossings is an offence under Section 184 (Dangerous Driving). Fine: ₹1,000 to ₹5,000. Pedestrians have the right of way at marked crossings. Traffic signal-controlled crossings: Vehicles must stop at red; pedestrians can cross only on walk signal.",
+    "category": "Pedestrian Rules",
+    "section": "Section 184",
+    "tags": ["zebra crossing", "pedestrian crossing", "pedestrian rights", "crosswalk"]
+  },
+  {
+    "id": "FAQ034",
+    "question": "How can I renew my driving licence?",
+    "answer": "Driving licence renewal in India: Apply at the RTO (Regional Transport Office) or online via the Parivahan Sewa portal (parivahan.gov.in/parivahanseva). Documents required: Original DL, filled Form 9, address proof, medical certificate (Form 1A for transport vehicles or for applicants above 50 years). Fee: ₹200 for LMV licence renewal, ₹300 for transport vehicles. Licence must be renewed within 30 days before or 1 year after expiry to avoid penalty. Beyond 1 year of expiry, a fresh driving test may be required. Online renewal available in most states.",
+    "category": "Driving Licence",
+    "section": "Section 15",
+    "tags": ["DL renewal", "licence renewal", "renew driving licence", "RTO", "Parivahan"]
+  },
+  {
+    "id": "FAQ035",
+    "question": "What is the penalty for illegal vehicle modifications?",
+    "answer": "Under Section 52 of the Motor Vehicles Act, unauthorized vehicle modifications are prohibited: Modifications not approved by the original manufacturer or RTO are illegal. This includes: lifting/lowering suspension, fitting non-standard wheels, engine modification, changing body structure. Fine: ₹5,000 and the vehicle may be seized. The vehicle cannot be re-registered without reverting to original specifications. Number plate modifications (fancy fonts, different color) carry a fine of ₹5,000 under Section 192. Structural modifications after 2019 Supreme Court order require ARAI approval.",
+    "category": "Vehicle Rules",
+    "section": "Section 52",
+    "tags": ["vehicle modification", "illegal modification", "fancy number plate", "modified vehicle"]
+  },
+  {
+    "id": "FAQ036",
+    "question": "What are the rules for two-wheelers on expressways?",
+    "answer": "Two-wheelers (motorcycles, scooters) are BANNED on most Indian expressways: Not permitted on: Delhi-Meerut Expressway, Yamuna Expressway, Agra-Lucknow Expressway, Mumbai-Pune Expressway, and most other expressways. Some state highways allow two-wheelers with a maximum speed of 80 kmph. Penalty for using expressway on two-wheeler: Fine of ₹1,000 to ₹5,000 under Section 184. Look for signage at entry points - they clearly show which vehicles are permitted. Always check the rules for the specific expressway before travel.",
+    "category": "Highway Rules",
+    "section": "Section 184",
+    "tags": ["expressway", "two-wheeler ban", "motorcycle highway", "bike expressway"]
+  },
+  {
+    "id": "FAQ037",
+    "question": "What is the fine for not giving way to a school bus?",
+    "answer": "A school bus with red flashing lights stopped to drop or pick up children: Vehicles from BOTH directions must stop and wait. Overtaking a stopped school bus with flashing lights is prohibited. Fine: ₹1,000 to ₹5,000 under Section 184. School buses must have safety equipment: speed governors, CCTV, emergency exits, first-aid kit. School buses are given priority at zebra crossings. Special yellow colour and markings identify school buses.",
+    "category": "Safety",
+    "section": "Section 184",
+    "tags": ["school bus", "children safety", "bus stop rules"]
+  },
+  {
+    "id": "FAQ038",
+    "question": "What happens if I get into a hit-and-run accident?",
+    "answer": "Hit-and-run (leaving the scene of an accident without stopping) is a serious criminal offence in India: Under Section 161 of the MV Act 2019, victims of hit-and-run are entitled to compensation: ₹2,00,000 for death, ₹50,000 for grievous injury (from Solatium Fund). The driver who flees can be charged under: Section 184 MV Act (dangerous driving), Section 279 IPC (rash driving), Section 304A IPC (causing death by negligence). Sentence: Up to 2 years imprisonment + fine. Always STOP, call 108 (ambulance) and 100 (police), and wait for authorities.",
+    "category": "Accidents",
+    "section": "Section 161, 279 IPC",
+    "tags": ["hit and run", "accident", "leaving scene", "solatium fund", "compensation"]
+  },
+  {
+    "id": "FAQ039",
+    "question": "What is Good Samaritan Law and can I help accident victims?",
+    "answer": "The Good Samaritan Law (Motor Vehicles Act 2019, Section 134A) protects bystanders who help accident victims: You CANNOT be harassed by police or held liable if you help an accident victim in good faith. Police cannot detain a Good Samaritan who brings a victim to hospital. Good Samaritans are not required to reveal their identity. Hospital staff CANNOT delay treatment pending police or insurance formalities (Golden Hour rule). You should: Call 108 (ambulance), take the victim to the nearest hospital, and inform police. There is a cash reward for Good Samaritans in some states.",
+    "category": "Accidents",
+    "section": "Section 134A",
+    "tags": ["good samaritan", "accident victim", "helping accident", "golden hour", "108"]
+  },
+  {
+    "id": "FAQ040",
+    "question": "What are the traffic rules in Delhi specifically?",
+    "answer": "Delhi-specific traffic rules and fines (stricter than national): Signal jumping: ₹5,000 (vs national ₹1,000). Mobile phone use: ₹5,000. Wrong side driving: ₹5,000. No helmet: ₹1,000. No seatbelt: ₹1,000. No DL: ₹5,000. No RC: ₹5,000. Drunk driving: ₹10,000 (national rate). Odd-Even rule: Applies on weekdays during specific hours in winter (check DPCC for current dates). Over 800 ANPR (Automatic Number Plate Recognition) cameras active. Challans issued digitally and sent to registered mobile number.",
+    "category": "State-Specific",
+    "section": "Delhi Motor Vehicles Rules",
+    "tags": ["Delhi traffic", "Delhi fines", "Delhi rules", "ANPR camera", "odd-even"]
+  },
+  {
+    "id": "FAQ041",
+    "question": "What are the traffic rules in Maharashtra (Mumbai/Pune)?",
+    "answer": "Maharashtra has some state-specific modifications to central fines: No helmet: ₹500 (reduced from ₹1,000). No seatbelt: ₹500. Signal jumping: ₹1,000 (Mumbai). Mobile phone: ₹1,000. No DL: ₹1,000. No RC: ₹2,000. Drunk driving: ₹10,000 (national rate). Mumbai Traffic Police: One of India's busiest traffic enforcement agencies. Lane driving strictly enforced on expressways. Triple riding on two-wheelers strictly penalized. Mumbai has dedicated app-based challan payment through Mumbai Traffic Police app.",
+    "category": "State-Specific",
+    "section": "Maharashtra Motor Vehicles Rules",
+    "tags": ["Maharashtra traffic", "Mumbai traffic", "Pune traffic", "Mumbai fines"]
+  },
+  {
+    "id": "FAQ042",
+    "question": "What documents are needed for vehicle registration at RTO?",
+    "answer": "Documents required for new vehicle registration at RTO: 1. Form 20 (Application for registration) - filled and signed. 2. Form 21 (Sales Certificate from dealer). 3. Form 22 (Roadworthiness Certificate from manufacturer). 4. Address proof of owner (Aadhaar, Voter ID, Passport). 5. ID proof. 6. Insurance certificate (valid). 7. PAN card (for vehicles above ₹10 lakhs). 8. Road tax payment receipt. 9. Form 34 (if vehicle is hypothecated/has loan). The registration process is also available online via parivahan.gov.in in most states.",
+    "category": "Documents",
+    "section": "Section 41",
+    "tags": ["vehicle registration", "RTO", "new registration", "RC application"]
+  },
+  {
+    "id": "FAQ043",
+    "question": "What are the rules for CNG vehicles and auto-rickshaws?",
+    "answer": "CNG (Compressed Natural Gas) vehicle rules: PUC (Pollution Under Control) certificate validity for CNG vehicles is 1 year (vs 6 months for petrol/diesel). Auto-rickshaws must use metered rates within city limits in most states. Auto-rickshaws are not permitted on expressways/national highways. CNG cylinder must be tested and certified every 3 years (tested by BIS-approved centres). Operating a CNG vehicle with expired cylinder fitness certificate is illegal. In Delhi, all auto-rickshaws and city buses must run on CNG (mandatory since 2001 Supreme Court order).",
+    "category": "Vehicle Rules",
+    "section": "Section 190",
+    "tags": ["CNG", "auto-rickshaw", "meter", "natural gas", "CNG rules"]
+  },
+  {
+    "id": "FAQ044",
+    "question": "What is the penalty for road rage in India?",
+    "answer": "Road rage is treated as dangerous driving and assault: Aggressive driving/threatening behaviour: Section 184 MV Act - Fine ₹1,000 to ₹5,000. Physical assault on another driver: Section 323 IPC (assault) - imprisonment up to 1 year + fine. Causing grievous hurt: Section 325 IPC - imprisonment up to 7 years. Using vehicle as weapon: Section 307 IPC (attempt to murder) - up to 10 years. Vehicle can be impounded. The license can be cancelled. Always stay calm and do not engage with aggressive drivers. Report incidents to traffic police via helpline 112.",
+    "category": "Dangerous Driving",
+    "section": "Section 184",
+    "tags": ["road rage", "aggressive driving", "threatening", "assault"]
+  },
+  {
+    "id": "FAQ045",
+    "question": "What are the rules for driving in a hospital or school zone?",
+    "answer": "Designated silent zones (100 metres radius from hospitals, educational institutions, courts): Speed limit: 25 kmph in school zones, 30 kmph near hospitals. No honking allowed (horn prohibited). No loud music. Parking restrictions strictly enforced. Violation of silent zone rules: Fine under Section 177 (₹500) + noise pollution laws under Environment Protection Act (up to ₹10,000 and/or jail). School zones have additional restrictions: No parking in front of schools during school hours. Speed bumps mandatory near schools. Signs must display 'SCHOOL AHEAD - DRIVE SLOW'.",
+    "category": "Zone Rules",
+    "section": "Section 177",
+    "tags": ["school zone", "hospital zone", "silent zone", "speed bump", "no horn zone"]
+  },
+  {
+    "id": "FAQ046",
+    "question": "What are the rules for commercial vehicle permits in India?",
+    "answer": "Commercial vehicles require permits to operate: National Permit: Allows goods vehicles to travel across India (issued for one year, renewable). State Permit: Allows operation within a specific state. Contract Carriage Permit: For vehicles carrying passengers on contract (e.g., taxis, tourist buses). Stage Carriage Permit: For public buses on fixed routes. Operating without permit: Section 66 offence - Fine ₹10,000 and/or imprisonment up to 3 months. Permits are issued by State Transport Authorities (STA). Tourist vehicles need special permits for movement across states.",
+    "category": "Commercial Vehicles",
+    "section": "Section 66",
+    "tags": ["commercial permit", "national permit", "transport vehicle", "taxi permit", "goods vehicle"]
+  },
+  {
+    "id": "FAQ047",
+    "question": "What is the law on driving while sick or on medication?",
+    "answer": "Under Section 186 of the MV Act, driving while mentally or physically unfit is an offence: Fine: ₹1,000 for first offence, ₹2,000 for repeat. Driving under sedating medication (antihistamines, strong painkillers, tranquilizers) that impairs judgment is treated similarly to DUI. A doctor-prescribed medication that causes drowsiness must not be used before driving. Police can conduct roadside tests if impairment is suspected. Driving with certain medical conditions (epilepsy, severe vision problems) without RTO knowledge and approval can lead to licence cancellation.",
+    "category": "Driving Licence",
+    "section": "Section 186",
+    "tags": ["medical fitness", "driving sick", "medication driving", "physically unfit", "mentally unfit"]
+  },
+  {
+    "id": "FAQ048",
+    "question": "What are the traffic rules for electric vehicles (EVs)?",
+    "answer": "Traffic rules specific to Electric Vehicles in India: No PUC certificate required (EVs produce zero tailpipe emissions). Registration is mandatory like all other vehicles. Insurance is mandatory. Speed limits are the same as conventional vehicles. EVs with top speed below 25 kmph and motor power below 250W are exempt from registration and DL requirements. High-speed EVs (above 250W/25 kmph) need registration and DL. Driving licence for EVs: Same LMV or 2W licence applies. FAME-II scheme subsidies available on EV purchase. Charging in public places must follow safety norms.",
+    "category": "Vehicle Rules",
+    "section": "Section 7A",
+    "tags": ["electric vehicle", "EV", "no PUC", "electric scooter", "e-bike rules"]
+  },
+  {
+    "id": "FAQ049",
+    "question": "What is the speed limit for bikes on national highways?",
+    "answer": "Speed limits for two-wheelers on Indian roads: Urban roads: 50 kmph. State highways: 60 kmph. National highways: 80 kmph. Expressways: Two-wheelers are BANNED on most Indian expressways. In school/hospital zones: 25-30 kmph. These are the maximum limits - local signage overrides these. Exceeding the speed limit on a national highway by a two-wheeler: Fine under Section 183 is ₹1,000 for first offence, ₹2,000 for repeat. Helmet is mandatory at all speeds on two-wheelers.",
+    "category": "Speed Limits",
+    "section": "Section 183",
+    "tags": ["bike speed limit", "motorcycle speed", "two-wheeler speed", "NH speed limit"]
+  },
+  {
+    "id": "FAQ050",
+    "question": "What is the fine for driving a vehicle without fitness certificate?",
+    "answer": "Under Section 56 of the MV Act, all transport vehicles (commercial vehicles, buses, taxis) must have a valid Certificate of Fitness (FC): Fine for no fitness certificate: ₹5,000 and/or imprisonment up to 3 months. The vehicle can be detained. Fitness certificates are issued by RTOs after physical inspection. Private vehicles (LMV): Not required to have fitness certificate. Transport/commercial vehicles: Annual fitness inspection required. Vehicles older than 15 years: Stricter fitness requirements. An unfit vehicle on the road endangers public safety.",
+    "category": "Commercial Vehicles",
+    "section": "Section 56",
+    "tags": ["fitness certificate", "FC", "vehicle fitness", "transport vehicle", "RTO inspection"]
+  },
+  {
+    "id": "FAQ051",
+    "question": "What are the rules for lane driving in India?",
+    "answer": "Lane driving rules in India (Central Motor Vehicles Rules): Keep LEFT unless overtaking. Overtake from the right only. Change lanes only after signalling (indicator). Do not straddle lanes. Heavy vehicles must use the left lane. On 3-lane roads: Left - slow vehicles, Middle - medium speed, Right - fast vehicles/overtaking. Lane cutting (abruptly changing lanes) is dangerous driving under Section 184. Fine for lane cutting: ₹1,000 to ₹5,000. Use indicators before every lane change. Do not tailgate - maintain safe following distance.",
+    "category": "Traffic Rules",
+    "section": "Section 184",
+    "tags": ["lane driving", "lane discipline", "left lane", "overtaking lane", "indicator"]
+  },
+  {
+    "id": "FAQ052",
+    "question": "What is the rule for driving in reverse gear?",
+    "answer": "Rules for driving in reverse: Never reverse on a main road or highway. Reverse only in private premises, parking areas, or very short distances in residential roads. Always check for pedestrians and other vehicles before reversing. Using hazard lights or a reverse warning horn is recommended when reversing. Causing an accident while reversing irresponsibly is an offence under Section 184. Reversing on a one-way road in the wrong direction can be penalized. Drivers of large vehicles must have a 'banksman' (spotter) when reversing in tight spaces.",
+    "category": "Traffic Rules",
+    "section": "Section 184",
+    "tags": ["reverse driving", "reversing", "reverse gear"]
+  },
+  {
+    "id": "FAQ053",
+    "question": "Can I drive with headphones or earphones while driving?",
+    "answer": "Driving with both earphones in is considered dangerous and distracted driving: Under Section 184 and Section 194F, using earphones while driving is treated as distracted driving. Fine: ₹1,000 to ₹5,000. Wearing headphones while driving significantly reduces situational awareness (cannot hear horns, sirens, or other auditory cues). Some courts have held that wearing even one earphone while riding a two-wheeler is dangerous. Hands-free Bluetooth car systems are generally permitted but should not distract attention from the road.",
+    "category": "Distracted Driving",
+    "section": "Section 184, 194F",
+    "tags": ["earphones driving", "headphones", "distracted driving", "earbuds while driving"]
+  },
+  {
+    "id": "FAQ054",
+    "question": "What are the rules for taxis and app-based cabs (Ola/Uber)?",
+    "answer": "Rules for app-based taxis and cabs in India: Must have a valid Tourist or Stage Carriage Permit from the state transport authority. Driver must have a commercial driving licence (transport vehicle DL). Vehicle must have insurance and fitness certificate. Metered fare or app-based pricing must comply with state transport regulations. Surge pricing regulations vary by state. Refusing passengers: Penalised under respective state regulations. Passenger rights: Share your trip details, ensure meter/app is running, right to refuse unsafe rides. Grievances: File complaints on the state transport department portal.",
+    "category": "Commercial Vehicles",
+    "section": "Section 66, 67",
+    "tags": ["taxi rules", "Ola Uber", "app cab", "cab regulations", "commercial vehicle"]
+  },
+  {
+    "id": "FAQ055",
+    "question": "What is the rule about using hazard lights while driving?",
+    "answer": "Rules for hazard lights (emergency flashers): Should only be used when the vehicle is stationary due to a breakdown or emergency. Using hazard lights while driving in rain or fog is NOT recommended and is actually illegal in many states (it misleads other drivers about your turning intention). In breakdown situations: Switch on hazard lights, place a warning triangle 50-100 metres behind the vehicle. Fine for improper use of hazard lights: ₹500 to ₹1,000 under Section 177. Using hazard lights while parking on road shoulders of highways is mandatory.",
+    "category": "Vehicle Rules",
+    "section": "Section 177",
+    "tags": ["hazard lights", "emergency lights", "blinker", "breakdown lights", "flasher"]
+  },
+  {
+    "id": "FAQ056",
+    "question": "What are the blood alcohol limits for driving in India?",
+    "answer": "Legal Blood Alcohol Content (BAC) limits in India: For all private vehicle drivers: 30 mg of alcohol per 100 ml of blood (0.03%). For commercial vehicle drivers (transport vehicles, buses): 0 mg (zero tolerance). Testing methods: Breathalyzer test (Alco-Blow), blood test if breathalyzer is positive. Refusing a breathalyzer test is an offence and can be treated as drunk driving. BAC above 30 mg for private vehicle: Fine of ₹10,000 + up to 6 months jail. BAC above 30 mg second time within 3 years: ₹15,000 + up to 2 years jail. The law considers impaired driving even below BAC limit if visible signs of impairment are present.",
+    "category": "Driving Under Influence",
+    "section": "Section 185",
+    "tags": ["BAC", "blood alcohol", "breathalyzer", "drink limit", "alcohol test"]
+  },
+  {
+    "id": "FAQ057",
+    "question": "What are the rules for carrying LPG cylinders in vehicles?",
+    "answer": "Transporting LPG cylinders in vehicles: Commercial quantity transport requires a hazardous goods permit under CMVR. Domestic LPG cylinders (household): Permitted to carry up to 2 domestic cylinders per vehicle. The cylinder must be upright and secured. Vehicle must be well-ventilated; windows should be open. Do not carry near open flame or sparking equipment. Leaking cylinders must NOT be carried in a vehicle - it is a fire hazard and punishable under Explosives Act. Industrial cylinders require special permits and vehicles.",
+    "category": "Vehicle Rules",
+    "section": "CMVR Rule 129",
+    "tags": ["LPG cylinder", "gas cylinder", "hazardous goods", "cylinder transport"]
+  },
+  {
+    "id": "FAQ058",
+    "question": "What is the rule about seat belts for children?",
+    "answer": "Child safety rules in vehicles: Children below 14 years must be restrained in appropriate child restraint systems (car seats, booster seats). Infants: Rear-facing car seat in the back seat. Toddlers (1-4 years): Forward-facing child seat in back seat. Children (4-12 years): Booster seat with adult seatbelt. Above 12 years or 150 cm tall: Adult seatbelt. Fine for not using child restraint: ₹1,000 under Section 194B. Children must sit in the back seat, not in front. Airbags in front seats are dangerous for small children.",
+    "category": "Safety",
+    "section": "Section 194B",
+    "tags": ["child safety", "car seat", "child restraint", "baby seat", "booster seat"]
+  },
+  {
+    "id": "FAQ059",
+    "question": "What should I do immediately after a road accident?",
+    "answer": "Steps to follow immediately after a road accident: 1. STOP the vehicle - do not flee (hit-and-run is a serious offence). 2. Check for injuries - call 108 (ambulance) immediately if anyone is injured. 3. Call police - dial 100 or 112. 4. Switch on hazard lights and set up warning triangles. 5. Note details: other vehicle's number, driver's licence, insurance details. 6. Take photos of the scene, damage, injuries. 7. Get witness contacts. 8. File FIR at nearest police station within 24 hours. 9. Inform your insurer within 24 hours. Do not move injured persons unless there is immediate danger (fire, traffic hazard).",
+    "category": "Accidents",
+    "section": "Section 134",
+    "tags": ["accident procedure", "what to do accident", "FIR", "accident steps", "emergency"]
+  },
+  {
+    "id": "FAQ060",
+    "question": "What are the traffic fine amounts in UAE for common violations?",
+    "answer": "UAE Traffic Fines (Federal Traffic Law No. 21 of 1995): Speeding above limit by less than 20 kmph: AED 300 + 4 black points. Speeding 20-40 kmph over limit: AED 600 + 6 black points. Speeding 40-60 kmph over: AED 1,000 + 8 black points + 60-day vehicle confiscation. Drunk driving: AED 20,000 + jail + possible deportation for expatriates. Running red light: AED 1,000 + 12 black points + 30-day confiscation. No seatbelt: AED 400 + 4 black points. Mobile phone use: AED 800 + 4 black points. 24 black points = licence cancelled for 3 months.",
+    "category": "UAE Traffic Rules",
+    "section": "UAE Federal Traffic Law",
+    "tags": ["UAE fine", "Dubai traffic", "Abu Dhabi traffic", "AED fine", "black points UAE"]
+  }
+]

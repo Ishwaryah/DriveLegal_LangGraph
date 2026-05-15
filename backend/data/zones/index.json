@@ -1,0 +1,14 @@
+{
+  "states": [
+    {
+      "code": "TN",
+      "name": "Tamil Nadu",
+      "files": [
+        "TN/chennai_school_zones.geojson",
+        "TN/chennai_no_horn.geojson",
+        "TN/nh_corridors.geojson"
+      ]
+    }
+  ],
+  "boundaries": "india_states.geojson"
+}

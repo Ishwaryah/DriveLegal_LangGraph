@@ -1,0 +1,6 @@
+offence_code,vehicle_class,state,amount_inr,repeat_amount_inr,section_ref,source_url
+NO_LICENSE,LMV,ALL,5000,5000,Section 181,https://parivahan.gov.in
+SPEED_EXCESS,LMV,ALL,1000,2000,Section 183(1),https://parivahan.gov.in
+DRUNK_DRIVING,LMV,ALL,10000,15000,Section 185,https://parivahan.gov.in
+NO_HELMET,TWO_WHEELER,TN,1000,1000,Section 194D,https://tnsta.gov.in
+NO_INSURANCE,LMV,TN,2000,4000,Section 196,https://tnsta.gov.in

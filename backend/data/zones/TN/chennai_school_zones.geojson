@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "TN_CHN_SCH_001",
+        "zone_type": "school_zone",
+        "state": "TN",
+        "city": "Chennai",
+        "rule_set_id": "RULE_GEN_SCHOOL_ZONE",
+        "speed_limit_kmh": 30,
+        "active_hours": "08:00-17:00",
+        "fine_multiplier": 2.0,
+        "source": "https://chennaicitytrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.2300, 13.0600],
+            [80.2350, 13.0600],
+            [80.2350, 13.0650],
+            [80.2300, 13.0650],
+            [80.2300, 13.0600]
+          ]
+        ]
+      }
+    }
+  ]
+}

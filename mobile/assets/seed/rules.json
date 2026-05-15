@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-04-16",
+  "rules": [
+    {
+      "rule_id": "MV_183",
+      "section": "Section 183",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Driving at excessive speed",
+      "description": "Whoever drives a motor vehicle in contravention of the speed limits shall be punishable with fine.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["ALL"],
+      "state_overrides": [
+        {
+          "state": "DL",
+          "description": "Delhi specific speed limit enforcement and fine structure applies.",
+          "effective_date": "2024-01-01"
+        }
+      ],
+      "related_offence_codes": ["SPEED_EXCESS"],
+      "penalty_ref": "MV_183_FINE"
+    },
+    {
+      "rule_id": "MV_185",
+      "section": "Section 185",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Drunken driving",
+      "description": "Whoever, while driving, or attempting to drive, a motor vehicle, has in his blood, alcohol exceeding 30 mg. per 100 ml. of blood.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["ALL"],
+      "state_overrides": [],
+      "related_offence_codes": ["DRUNK_DRIVING"],
+      "penalty_ref": "MV_185_FINE"
+    },
+    {
+      "rule_id": "MV_181",
+      "section": "Section 181",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Driving without a valid license",
+      "description": "Whoever drives a motor vehicle in contravention of section 3 or section 4.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["ALL"],
+      "state_overrides": [],
+      "related_offence_codes": ["NO_LICENSE"],
+      "penalty_ref": "MV_181_FINE"
+    },
+    {
+      "rule_id": "MV_184",
+      "section": "Section 184",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Dangerous driving",
+      "description": "Whoever drives a motor vehicle at a speed or in a manner which is dangerous to the public, having regard to all the circumstances of the case, including the nature, condition and use of the place where the vehicle is driven and the amount of traffic which actually is at the time or which might reasonably be expected to be in the place, shall be punishable.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["ALL"],
+      "state_overrides": [],
+      "related_offence_codes": ["DANGEROUS_DRIVING", "RED_LIGHT_JUMPING"],
+      "penalty_ref": "MV_184_FINE"
+    },
+    {
+      "rule_id": "MV_194D",
+      "section": "Section 194D",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Not wearing protective headgear",
+      "description": "Whoever drives or causes or allows to be driven a motor cycle or pillion rider in contravention of the provisions of section 129.",
+      "applies_to": ["TWO_WHEELER"],
+      "vehicle_classes": ["TWO_WHEELER"],
+      "state_overrides": [],
+      "related_offence_codes": ["NO_HELMET"],
+      "penalty_ref": "MV_194D_FINE"
+    },
+    {
+      "rule_id": "MV_194E",
+      "section": "Section 194E",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Failure to allow passage to emergency vehicles",
+      "description": "Failure to allow passage to emergency vehicles like ambulance, fire engine, etc.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["ALL"],
+      "state_overrides": [],
+      "related_offence_codes": ["EMERGENCY_VEHICLE_OBSTRUCTION"],
+      "penalty_ref": "MV_194E_FINE"
+    }
+  ]
+}

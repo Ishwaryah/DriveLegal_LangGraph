@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+spacy
+transformers
+playwright
+shapely
+aiosqlite
+chromadb
+rank-bm25
+python-dotenv
+sentence-transformers
+groq

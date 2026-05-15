@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "TN_CHN_NH_001",
+        "zone_type": "no_horn",
+        "state": "TN",
+        "city": "Chennai",
+        "rule_set_id": "RULE_GEN_NO_HORN",
+        "speed_limit_kmh": null,
+        "active_hours": "ALL",
+        "fine_multiplier": 1.5,
+        "source": "https://chennaicitytrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.2400, 13.0700],
+            [80.2450, 13.0700],
+            [80.2450, 13.0750],
+            [80.2400, 13.0750],
+            [80.2400, 13.0700]
+          ]
+        ]
+      }
+    }
+  ]
+}

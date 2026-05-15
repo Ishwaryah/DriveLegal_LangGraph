@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "state": "TN",
+        "name": "Tamil Nadu",
+        "city": "Chennai",
+        "district": "Chennai"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [76.0, 8.0],
+            [80.5, 8.0],
+            [80.5, 14.0],
+            [76.0, 14.0],
+            [76.0, 8.0]
+          ]
+        ]
+      }
+    }
+  ]
+}
