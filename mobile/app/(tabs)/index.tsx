@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
-  Image,
   SafeAreaView,
   useWindowDimensions
 } from 'react-native';
@@ -45,6 +44,10 @@ export default function HomeScreen() {
     loadData();
   }, [stateCode]);
 
+  const hour = new Date().getHours();
+  const greetingWord = hour < 12 ? 'GOOD MORNING' : hour < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  const greeting = `${greetingWord}, ${profile.name.split(' ')[0].toUpperCase()}`;
+
   const bg = highContrast ? '#000' : '#FAF8F5';
   const textPrimary = highContrast ? '#FFF' : '#1c1c1c';
   const textSecondary = highContrast ? '#FFF' : '#6b7280';
@@ -62,7 +65,7 @@ export default function HomeScreen() {
             <View style={[styles.logoContainer, borderStyle, highContrast && {backgroundColor: '#000'}]}>
               <Text style={[styles.logoText, { color: accent, fontSize: fs(14) }]}>DL</Text>
             </View>
-            <Text style={[styles.greeting, { color: textSecondary, fontSize: fs(12) }]}>{t('greeting')}</Text>
+            <Text style={[styles.greeting, { color: textSecondary, fontSize: fs(12) }]}>{greeting}</Text>
           </View>
           <TouchableOpacity 
             style={[styles.notificationBtn, borderStyle, highContrast && {backgroundColor: '#000'}]} 
@@ -233,7 +236,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {topViolations.length > 0 ? topViolations.map((v, i) => (
+        {topViolations.length > 0 ? topViolations.map((v) => (
           <View key={v.id} style={[styles.briefCard, borderStyle, highContrast && {backgroundColor: '#000'}]}>
             <View style={[styles.briefIconContainer, { backgroundColor: highContrast ? accent : '#fef3c7' }]}>
               <MaterialCommunityIcons name="alert" size={fs(20)} color={highContrast ? '#000' : "#d97706"} />

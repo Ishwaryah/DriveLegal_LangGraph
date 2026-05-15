@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Scro
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../hooks/useSettings';
 
 const VEHICLES = [
@@ -15,12 +16,13 @@ export default function VehicleScreen() {
   const router = useRouter();
   const { selectedVehicleId, setSelectedVehicleId } = useSettings();
   const [selectedId, setSelectedId] = useState(selectedVehicleId || '4w');
-  const [vehicleNumber, setVehicleNumber] = useState('TN 09 BX 4421');
+  const [vehicleNumber, setVehicleNumber] = useState('');
 
   useEffect(() => {
-    if (selectedVehicleId) {
-      setSelectedId(selectedVehicleId);
-    }
+    if (selectedVehicleId) setSelectedId(selectedVehicleId);
+    AsyncStorage.getItem('vehicle_number').then(saved => {
+      if (saved) setVehicleNumber(saved);
+    });
   }, [selectedVehicleId]);
 
   // Format vehicle number on change (simple formatting for display)
@@ -28,8 +30,13 @@ export default function VehicleScreen() {
     setVehicleNumber(text.toUpperCase());
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setSelectedVehicleId(selectedId);
+    if (vehicleNumber.trim()) {
+      await AsyncStorage.setItem('vehicle_number', vehicleNumber.trim());
+    } else {
+      await AsyncStorage.removeItem('vehicle_number');
+    }
     router.push('/(tabs)');
   };
 

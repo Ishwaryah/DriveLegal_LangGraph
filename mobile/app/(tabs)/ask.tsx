@@ -29,7 +29,7 @@ const localRules = require('../../assets/seed/rules.json');
 export default function DriveLegalAssistant() {
   const { q, sid, new: isNew } = useLocalSearchParams<{ q: string, sid: string, new: string }>();
   const { addSession, sessions } = useHistory();
-  const { t, highContrast } = useSettings();
+  const { t, highContrast, profile } = useSettings();
   const router = useRouter();
   const { isOffline, countryCode } = useGeoFineAlert();
   const { width: windowWidth } = useWindowDimensions();
@@ -58,7 +58,7 @@ export default function DriveLegalAssistant() {
   const initialMessage: ChatMessage = {
     id: '1',
     sender: 'ai',
-    text: "Hi Arjun 👋 I'm your DriveLegal assistant. Ask anything about traffic rules, fines, or paperwork — in plain language.",
+    text: `Hi ${profile.name} 👋 I'm your DriveLegal assistant. Ask anything about traffic rules, fines, or paperwork — in plain language.`,
     suggestions: [
       "What's the fine?",
       "Are there any exceptions?",

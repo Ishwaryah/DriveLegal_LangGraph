@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
+import {
   View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
-  TextInput, Switch, Modal, Share, ActivityIndicator, Platform 
+  TextInput, Switch, Modal, Share, ActivityIndicator, Platform
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
-// SQLite is loaded conditionally
 import { Violation, CalculateResponse } from '../../types/challan';
 import { API_BASE } from '../../config/api';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSettings } from '../../hooks/useSettings';
 
 const db = Platform.OS !== 'web' ? require('expo-sqlite').openDatabase('fines.db') : null;
 
@@ -32,6 +32,13 @@ const VEHICLE_TYPES = [
   { id: 'commercial', label: 'Commercial', icon: 'bus' },
 ];
 
+// Map settings vehicle codes → fines vehicle_type values
+const VEHICLE_ID_MAP: Record<string, string> = {
+  '2w': 'two_wheeler', '2W': 'two_wheeler',
+  '4w': 'lmv',         '4W': 'lmv',
+  'cv': 'commercial',  'CV': 'commercial',
+};
+
 const getCategory = (name: string) => {
   const lower = name.toLowerCase();
   if (lower.includes('speed') || lower.includes('race')) return 'Speed';
@@ -43,10 +50,13 @@ const getCategory = (name: string) => {
 
 export default function ChallanCalculatorScreen() {
   const { isConnected } = useNetInfo();
-  
-  const [selectedCountry, setSelectedCountry] = useState('IN');
+  const { defaultCountry, selectedVehicleId, defaultVehicleType } = useSettings();
+
+  const initialVehicle = VEHICLE_ID_MAP[selectedVehicleId || defaultVehicleType] || 'two_wheeler';
+
+  const [selectedCountry, setSelectedCountry] = useState(defaultCountry || 'IN');
   const [selectedState, setSelectedState] = useState('Tamil Nadu');
-  const [selectedVehicle, setSelectedVehicle] = useState('two_wheeler');
+  const [selectedVehicle, setSelectedVehicle] = useState(initialVehicle);
   const [isRepeatOffense, setIsRepeatOffense] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -71,14 +81,14 @@ export default function ChallanCalculatorScreen() {
         if (Array.isArray(data)) {
           setViolations(data);
           // Sync to SQLite for offline use
-          if (db) db.transaction(tx => {
+          if (db) db.transaction((tx: any) => {
             tx.executeSql('DELETE FROM fines WHERE country = ?', [selectedCountry]);
             data.forEach((v: Violation) => {
               tx.executeSql(`
                 INSERT INTO fines (country, state_province, violation_code, violation_name, vehicle_type, min_fine_local, max_fine_local, currency, mv_act_section, compounding_eligible, compounding_fee)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               `, [
-                selectedCountry, selectedCountry === 'IN' ? selectedState : 'ALL', 
+                selectedCountry, selectedCountry === 'IN' ? selectedState : 'ALL',
                 v.violation_code, v.violation_name, v.vehicle_type || 'all',
                 v.min_fine_local, v.max_fine_local, v.currency, v.mv_act_section,
                 v.compounding_eligible ? 1 : 0, v.compounding_fee
@@ -99,12 +109,11 @@ export default function ChallanCalculatorScreen() {
 
   const loadOfflineViolations = () => {
     if (!db) return;
-    db.transaction(tx => {
+    db.transaction((tx: any) => {
       tx.executeSql(
         'SELECT * FROM fines WHERE country = ?',
         [selectedCountry],
-        (_, { rows }) => {
-          // @ts-ignore
+        (_: any, { rows }: any) => {
           let data = rows._array as Violation[];
           if (selectedCountry === 'IN') {
              data = data.filter(v => v.state_province === selectedState || v.state_province === 'ALL');
