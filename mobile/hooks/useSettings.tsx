@@ -82,19 +82,22 @@ interface SettingsContextType {
   setDefaultCountry: (code: string) => void;
   defaultVehicleType: string;
   setDefaultVehicleType: (type: string) => void;
+  vehicleNumber: string;
+  setVehicleNumber: (num: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
-  const [profile, setProfileState] = useState<UserProfile>({ name: 'Arjun Krishnan', avatar: 'A', drivingSince: '2021' });
+  const [profile, setProfileState] = useState<UserProfile>({ name: '', avatar: 'G', drivingSince: '---' });
   const [notificationsEnabled, setNotificationsEnabledState] = useState(true);
   const [selectedVehicleId, setSelectedVehicleIdState] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [highContrastState, setHighContrastState] = useState(false);
   const [defaultCountryState, setDefaultCountryState] = useState('IN');
   const [defaultVehicleTypeState, setDefaultVehicleTypeState] = useState('2W');
+  const [vehicleNumberState, setVehicleNumberState] = useState('');
 
   useEffect(() => {
     loadSettings();
@@ -109,6 +112,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const savedHighContrast = await AsyncStorage.getItem('highContrast');
       const savedDefaultCountry = await AsyncStorage.getItem('defaultCountry');
       const savedDefaultVehicle = await AsyncStorage.getItem('defaultVehicleType');
+      const savedVehicleNumber = await AsyncStorage.getItem('vehicle_number');
 
       const SUPPORTED: Language[] = ['en', 'hi', 'ta', 'te', 'kn'];
       if (savedLang && SUPPORTED.includes(savedLang as Language)) {
@@ -139,6 +143,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
       if (savedDefaultVehicle) {
         setDefaultVehicleTypeState(savedDefaultVehicle);
+      }
+      if (savedVehicleNumber) {
+        setVehicleNumberState(savedVehicleNumber);
       }
     } catch (e) {
       console.error('Failed to load settings', e);
@@ -187,6 +194,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('defaultVehicleType', type);
   };
 
+  const setVehicleNumber = async (num: string) => {
+    setVehicleNumberState(num);
+    await AsyncStorage.setItem('vehicle_number', num);
+  };
+
   const t = (key: string, params?: Record<string, string>) => {
     let text = strings[key]?.[language as keyof typeof strings[string]] || strings[key]?.['en'] || key;
     if (params) {
@@ -195,7 +207,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       });
     }
     // Handle global params like profile name
-    text = text.replace('{name}', profile.name);
+    text = text.replace('{name}', profile.name || 'User');
     return text;
   };
 
@@ -208,7 +220,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       t, initialized,
       highContrast: highContrastState, setHighContrast,
       defaultCountry: defaultCountryState, setDefaultCountry,
-      defaultVehicleType: defaultVehicleTypeState, setDefaultVehicleType
+      defaultVehicleType: defaultVehicleTypeState, setDefaultVehicleType,
+      vehicleNumber: vehicleNumberState, setVehicleNumber
     }}>
       {children}
     </SettingsContext.Provider>

@@ -152,13 +152,24 @@ export function useGeoFineAlert(): UseGeoFineAlertResult {
       }
 
       try {
+        console.log('Requesting GPS fix...');
+        
+        // Quick fallback: Get last known position while waiting for fresh fix
+        const last = await Location.getLastKnownPositionAsync();
+        if (last && !cancelled) {
+          setCoords({ lat: last.coords.latitude, lon: last.coords.longitude });
+        }
+
         const fix = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
+        
         if (!cancelled) {
+          console.log('GPS fix obtained:', fix.coords.latitude, fix.coords.longitude);
           setCoords({ lat: fix.coords.latitude, lon: fix.coords.longitude });
         }
-      } catch {
+      } catch (e) {
+        console.warn('GPS detection failed. Ensure location services are enabled and permissions granted.', e);
         // GPS failed — cached data stays active, isOffline remains true
       }
     };

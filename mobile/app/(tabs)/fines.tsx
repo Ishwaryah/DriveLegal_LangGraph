@@ -1,453 +1,259 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
-  TextInput, Switch, Modal, Share, ActivityIndicator, Platform
+  TextInput
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
-import { Violation, CalculateResponse } from '../../types/challan';
 import { API_BASE } from '../../config/api';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSettings } from '../../hooks/useSettings';
 
-const db = Platform.OS !== 'web' ? require('expo-sqlite').openDatabase('fines.db') : null;
 
-const COUNTRIES = [
-  { code: 'IN', name: 'India', flag: '🇮🇳' },
-  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
-  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
-  { code: 'GB', name: 'UK', flag: '🇬🇧' },
-];
 
-const STATES = [
-  'Tamil Nadu', 'Maharashtra', 'Karnataka', 'Delhi', 'Gujarat', 'Telangana', 'Other'
-];
+interface VehicleInfo {
+  vehicle_number: string;
+  owner_name: string;
+  registering_authority: string;
+  vehicle_class: string;
+  fuel_type: string;
+  emission_norm: string;
+  vehicle_age: string;
+  hypothecated: string;
+  vehicle_status: string;
+  registration_date: string;
+  fitness_valid_upto: string;
+  tax_valid_upto: string;
+  insurance_valid_upto: string;
+  pucc_valid_upto: string;
+  maker_model: string;
+  color: string;
+}
 
-const VEHICLE_TYPES = [
-  { id: 'two_wheeler', label: 'Two Wheeler', icon: 'motorbike' },
-  { id: 'three_wheeler', label: 'Three Wheeler', icon: 'taxi' },
-  { id: 'lmv', label: 'LMV', icon: 'car' },
-  { id: 'hmv', label: 'HMV', icon: 'truck' },
-  { id: 'commercial', label: 'Commercial', icon: 'bus' },
-];
-
-// Map settings vehicle codes → fines vehicle_type values
-const VEHICLE_ID_MAP: Record<string, string> = {
-  '2w': 'two_wheeler', '2W': 'two_wheeler',
-  '4w': 'lmv',         '4W': 'lmv',
-  'cv': 'commercial',  'CV': 'commercial',
-};
-
-const getCategory = (name: string) => {
-  const lower = name.toLowerCase();
-  if (lower.includes('speed') || lower.includes('race')) return 'Speed';
-  if (lower.includes('license') || lower.includes('rc') || lower.includes('document')) return 'Documentation';
-  if (lower.includes('helmet') || lower.includes('seatbelt') || lower.includes('light')) return 'Safety Equipment';
-  if (lower.includes('drunk') || lower.includes('alcohol') || lower.includes('substance')) return 'Substance';
-  return 'Other';
-};
+interface ChallanItem {
+  challan_no: string;
+  offence: string;
+  amount: number;
+  status: string;
+  date: string;
+}
 
 export default function ChallanCalculatorScreen() {
   const { isConnected } = useNetInfo();
-  const { defaultCountry, selectedVehicleId, defaultVehicleType, t } = useSettings();
+  const { vehicleNumber: savedVehicleNumber, setVehicleNumber } = useSettings();
 
-  const initialVehicle = VEHICLE_ID_MAP[selectedVehicleId || defaultVehicleType] || 'two_wheeler';
+  const [plateInput, setPlateInput] = useState(savedVehicleNumber || '');
 
-  const [selectedCountry, setSelectedCountry] = useState(defaultCountry || 'IN');
-  const [selectedState, setSelectedState] = useState('Tamil Nadu');
-  const [selectedVehicle, setSelectedVehicle] = useState(initialVehicle);
-  const [isRepeatOffense, setIsRepeatOffense] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const [violations, setViolations] = useState<Violation[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [errorState, setErrorState] = useState(false);
-  
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [calcResult, setCalcResult] = useState<CalculateResponse | null>(null);
+  // Vehicle info state
+  const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null);
+  const [challans, setChallans] = useState<ChallanItem[]>([]);
+  const [totalFine, setTotalFine] = useState(0);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
 
-  const fetchViolations = async () => {
-    setLoading(true);
-    setErrorState(false);
-    if (isConnected) {
-      try {
-        const stateQuery = selectedCountry === 'IN' ? `&state_province=${encodeURIComponent(selectedState)}` : '';
-        const vType = selectedCountry === 'IN' ? selectedVehicle : 'all';
-        const res = await fetch(`${API_BASE}/api/v1/fines/country/${selectedCountry}?vehicle_type=${vType}${stateQuery}`);
-        const data = await res.json();
-        
-        if (Array.isArray(data)) {
-          setViolations(data);
-          // Sync to SQLite for offline use
-          if (db) db.transaction((tx: any) => {
-            tx.executeSql('DELETE FROM fines WHERE country = ?', [selectedCountry]);
-            data.forEach((v: Violation) => {
-              tx.executeSql(`
-                INSERT INTO fines (country, state_province, violation_code, violation_name, vehicle_type, min_fine_local, max_fine_local, currency, mv_act_section, compounding_eligible, compounding_fee)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `, [
-                selectedCountry, selectedCountry === 'IN' ? selectedState : 'ALL',
-                v.violation_code, v.violation_name, v.vehicle_type || 'all',
-                v.min_fine_local, v.max_fine_local, v.currency, v.mv_act_section,
-                v.compounding_eligible ? 1 : 0, v.compounding_fee
-              ]);
-            });
-          });
-        }
-      } catch (err) {
-        console.error('API Error:', err);
-        setErrorState(true);
-        loadOfflineViolations();
-      }
-    } else {
-      loadOfflineViolations();
+  const lookupVehicle = async () => {
+    const plate = plateInput.replace(/[\s-]/g, '').toUpperCase();
+    if (plate.length < 6) {
+      setLookupError('Enter a valid vehicle number (e.g. TN09AB1234)');
+      return;
     }
-    setLoading(false);
-  };
+    setLookupLoading(true);
+    setLookupError('');
+    setVehicleInfo(null);
+    setChallans([]);
+    setTotalFine(0);
 
-  const loadOfflineViolations = () => {
-    if (!db) return;
-    db.transaction((tx: any) => {
-      tx.executeSql(
-        'SELECT * FROM fines WHERE country = ?',
-        [selectedCountry],
-        (_: any, { rows }: any) => {
-          let data = rows._array as Violation[];
-          if (selectedCountry === 'IN') {
-             data = data.filter(v => v.state_province === selectedState || v.state_province === 'ALL');
-             data = data.filter(v => v.vehicle_type === selectedVehicle || v.vehicle_type === 'all');
-          }
-          setViolations(data);
-        }
-      );
-    });
-  };
+    try {
+      const [infoRes, challanRes] = await Promise.all([
+        fetch(`${API_BASE}/api/v1/vehicle/info/${plate}`),
+        fetch(`${API_BASE}/api/v1/vehicle/challans/${plate}`),
+      ]);
+      const infoData = await infoRes.json();
+      const challanData = await challanRes.json();
 
-  useEffect(() => {
-    fetchViolations();
-    setSelectedIds(new Set()); // reset selection on filters change
-  }, [selectedCountry, selectedState, selectedVehicle, isConnected]);
-
-  const filteredAndGroupedViolations = useMemo(() => {
-    let filtered = violations;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(v => 
-        v.violation_name.toLowerCase().includes(q) || 
-        (v.mv_act_section && v.mv_act_section.toLowerCase().includes(q))
-      );
-    }
-    
-    const groups: Record<string, Violation[]> = {};
-    filtered.forEach(v => {
-      const cat = getCategory(v.violation_name);
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(v);
-    });
-    return groups;
-  }, [violations, searchQuery]);
-
-  const toggleSelection = (code: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(code)) next.delete(code);
-    else next.add(code);
-    setSelectedIds(next);
-  };
-
-  const calculateFine = async () => {
-    if (selectedIds.size === 0) return;
-    
-    const codes = Array.from(selectedIds);
-    
-    if (isConnected) {
-      try {
-        const payload = {
-          violation_codes: codes,
-          vehicle_type: selectedCountry === 'IN' ? selectedVehicle : 'all',
-          country: selectedCountry,
-          state_province: selectedCountry === 'IN' ? selectedState : undefined,
-          is_repeat_offense: isRepeatOffense
-        };
-        const res = await fetch(`${API_BASE}/api/v1/challan/calculate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        setCalcResult(data);
-        setShowResultModal(true);
-        return;
-      } catch (e) {
-        console.error(e);
+      if (infoData.status === 'success') {
+        setVehicleInfo(infoData.vehicle_info);
+      } else {
+        setLookupError(infoData.message || 'Vehicle not found. Check the registration number.');
       }
-    }
-    
-    // Offline Calculation
-    let total = 0;
-    let totalCompounding = 0;
-    let allCompoundable = true;
-    const resultViols: any[] = [];
-    const currency = violations[0]?.currency || 'INR';
 
-    codes.forEach(code => {
-      const v = violations.find(vi => vi.violation_code === code);
-      if (v) {
-        // Fallback calculation logic based on repeat offense
-        const amount = isRepeatOffense ? (v.max_fine_local || v.min_fine_local || 0) : (v.min_fine_local || v.max_fine_local || 0);
-        total += amount;
-        if (v.compounding_eligible && v.compounding_fee) {
-          totalCompounding += v.compounding_fee;
-        } else {
-          allCompoundable = false;
-        }
-        resultViols.push({
-          violation_code: v.violation_code,
-          violation_name: v.violation_name,
-          fine_amount: amount,
-          compounding_fee: v.compounding_fee,
-          is_compoundable: !!v.compounding_eligible
-        });
+      if (challanData.status === 'ok' || challanData.status === 'demo') {
+        setChallans(challanData.challans || []);
+        setTotalFine(challanData.total_fine || 0);
       }
-    });
-
-    setCalcResult({
-      currency,
-      total_fine: total,
-      compounding_available: allCompoundable && totalCompounding > 0,
-      total_compounding_fee: totalCompounding,
-      violations: resultViols
-    });
-    setShowResultModal(true);
+    } catch {
+      setLookupError('Could not reach the server. Make sure the backend is running.');
+    } finally {
+      setLookupLoading(false);
+    }
   };
 
-  const shareSummary = async () => {
-    if (!calcResult) return;
-    const items = calcResult.violations.map(v => `- ${v.violation_name}: ${calcResult.currency} ${v.fine_amount}`).join('\n');
-    const text = `Challan Summary:\n${items}\n\nTotal Fine: ${calcResult.currency} ${calcResult.total_fine}\n${calcResult.compounding_available ? `Compoundable for: ${calcResult.currency} ${calcResult.total_compounding_fee}` : 'Not Compoundable'}`;
-    await Share.share({ message: text });
-  };
+  // ── mParivahan-style Vehicle Search Result screen ─────────────────────────
+  if (vehicleInfo) {
+    const isActive = vehicleInfo.vehicle_status?.toUpperCase() === 'ACTIVE';
+    const fields: [string, string][] = [
+      ['Vehicle Number',       vehicleInfo.vehicle_number],
+      ['Owner Name',           vehicleInfo.owner_name],
+      ['Registering Authority',vehicleInfo.registering_authority],
+      ['Vehicle Class',        vehicleInfo.vehicle_class],
+      ['Fuel Type',            vehicleInfo.fuel_type],
+      ['Emission Norm',        vehicleInfo.emission_norm],
+      ['Vehicle Age',          vehicleInfo.vehicle_age],
+      ['Hypothecated',         vehicleInfo.hypothecated],
+    ];
+    const dateFields: [string, string][] = [
+      ['Vehicle Status',       vehicleInfo.vehicle_status],
+      ['Registration Date',    vehicleInfo.registration_date],
+      ['Fitness Valid Upto',   vehicleInfo.fitness_valid_upto],
+      ['Tax Valid Upto',       vehicleInfo.tax_valid_upto],
+      ['Insurance Valid Upto', vehicleInfo.insurance_valid_upto],
+      ['PUCC Valid Upto',      vehicleInfo.pucc_valid_upto],
+    ];
 
-  const showHMV = selectedCountry === 'IN';
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
 
+        {/* Header */}
+        <View style={styles.vsHeader}>
+          <TouchableOpacity style={styles.vsBack} onPress={() => setVehicleInfo(null)}>
+            <Ionicons name="arrow-back" size={24} color="#1f2937" />
+          </TouchableOpacity>
+          <Text style={styles.vsHeaderTitle}>Vehicle Search</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <ScrollView style={{ flex: 1, backgroundColor: '#fff' }} contentContainerStyle={{ paddingBottom: 110 }}>
+          {/* Top info fields */}
+          {fields.map(([label, value]) => (
+            <View key={label} style={styles.vsRow}>
+              <Text style={styles.vsLabel}>{label}</Text>
+              <Text style={styles.vsValue}>{value || '—'}</Text>
+            </View>
+          ))}
+
+          {/* Impound check link */}
+          <TouchableOpacity style={styles.vsLinkRow}>
+            <Text style={styles.vsLinkText}>
+              Tap to Check the impound/seizure document status
+            </Text>
+          </TouchableOpacity>
+
+          {/* Date / status fields */}
+          {dateFields.map(([label, value]) => (
+            <View key={label} style={styles.vsRow}>
+              <Text style={styles.vsLabel}>{label}</Text>
+              <Text style={[
+                styles.vsValue,
+                label === 'Vehicle Status' && { color: isActive ? '#16a34a' : '#dc2626', fontWeight: '700' }
+              ]}>
+                {value || '—'}
+              </Text>
+            </View>
+          ))}
+
+          {/* Pending Challans */}
+          <View style={styles.vsChallanHeader}>
+            <Ionicons name="receipt-outline" size={18} color="#0891b2" />
+            <Text style={styles.vsChallanTitle}>Pending Challans</Text>
+            {totalFine > 0 && <Text style={styles.vsChallanTotal}>₹{totalFine} due</Text>}
+          </View>
+
+          {challans.length === 0 ? (
+            <View style={styles.vsNoChallan}>
+              <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
+              <Text style={styles.vsNoChallanText}>No pending challans found</Text>
+            </View>
+          ) : challans.map((c, i) => (
+            <View key={i} style={styles.vsChallanRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.vsChallanOffence}>{c.offence}</Text>
+                <Text style={styles.vsChallanMeta}>{c.challan_no} · {c.date}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.vsChallanAmt}>₹{c.amount}</Text>
+                <Text style={[styles.vsChallanStatus, { color: c.status === 'Pending' ? '#ef4444' : '#16a34a' }]}>
+                  {c.status}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Bottom action buttons */}
+        <View style={styles.vsBottomBar}>
+          <TouchableOpacity style={styles.vsBtn}>
+            <Text style={styles.vsBtnText}>Create Virtual RC</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.vsBtn, { backgroundColor: '#0369a1' }]}>
+            <Text style={styles.vsBtnText}>View Challan</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Vehicle Search — default screen ───────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
-      {/* Header & Connectivity Badge */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('calculator_title')}</Text>
+
+      {/* Header */}
+      <View style={styles.vsHeader}>
+        <View style={{ width: 40 }} />
+        <Text style={styles.vsHeaderTitle}>Vehicle Search</Text>
         <View style={[styles.badge, { backgroundColor: isConnected ? '#dcfce7' : '#fee2e2' }]}>
           <Text style={[styles.badgeText, { color: isConnected ? '#166534' : '#991b1b' }]}>
-            {isConnected ? t('online_badge') : t('offline_badge')}
+            {isConnected ? 'Online' : 'Offline'}
           </Text>
         </View>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        
-        {/* Country Selector */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.countryScroll}>
-          {COUNTRIES.map(c => (
-            <TouchableOpacity 
-              key={c.code}
-              style={[styles.pillBtn, selectedCountry === c.code && styles.pillBtnActive]}
-              onPress={() => {
-                setSelectedCountry(c.code);
-                if (c.code !== 'IN') setSelectedVehicle('lmv');
-              }}
-            >
-              <Text style={[styles.pillText, selectedCountry === c.code && styles.pillTextActive]}>
-                {c.flag} {c.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* State Selector (India Only) */}
-        {selectedCountry === 'IN' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('state_province')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {STATES.map(s => (
-                <TouchableOpacity 
-                  key={s}
-                  style={[styles.stateBtn, selectedState === s && styles.stateBtnActive]}
-                  onPress={() => setSelectedState(s)}
-                >
-                  <Text style={[styles.stateText, selectedState === s && styles.stateTextActive]}>{s}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Vehicle Selector */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('vehicle_type')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vehicleRow}>
-            {VEHICLE_TYPES.filter(v => showHMV || (v.id !== 'hmv' && v.id !== 'commercial')).map(v => (
-              <TouchableOpacity 
-                key={v.id}
-                style={[styles.vehicleCard, selectedVehicle === v.id && styles.vehicleCardActive]}
-                onPress={() => setSelectedVehicle(v.id)}
-              >
-                <MaterialCommunityIcons 
-                  name={v.icon as any} 
-                  size={28} 
-                  color={selectedVehicle === v.id ? '#6366f1' : '#64748b'} 
-                />
-                <Text style={[styles.vehicleText, selectedVehicle === v.id && styles.vehicleTextActive]}>
-                  {v.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={20} color="#94a3b8" />
-          <TextInput 
-            style={styles.searchInput}
-            placeholder={t('search_violations')}
-            placeholderTextColor="#94a3b8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+      {/* Search bar */}
+      <View style={styles.vsSearchBar}>
+        <View style={styles.vsSearchInput}>
+          <Ionicons name="car-outline" size={20} color="#6b7280" />
+          <TextInput
+            style={styles.vsSearchText}
+            placeholder="Enter Vehicle Number"
+            placeholderTextColor="#9ca3af"
+            value={plateInput}
+            autoCapitalize="characters"
+            returnKeyType="search"
+            onSubmitEditing={lookupVehicle}
+            onChangeText={text => {
+              setPlateInput(text);
+              setVehicleNumber(text);
+              setLookupError('');
+            }}
           />
         </View>
+        <TouchableOpacity style={styles.vsSearchBtn} onPress={lookupVehicle} disabled={lookupLoading}>
+          <Ionicons name={lookupLoading ? 'sync' : 'search'} size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-        {/* Repeat Offense Toggle */}
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleText}>{t('first_offense')}</Text>
-          <Switch
-            value={isRepeatOffense}
-            onValueChange={setIsRepeatOffense}
-            trackColor={{ false: '#cbd5e1', true: '#a5b4fc' }}
-            thumbColor={isRepeatOffense ? '#4f46e5' : '#f8fafc'}
-          />
-          <Text style={[styles.toggleText, isRepeatOffense && styles.toggleTextActive]}>{t('repeat_offense')}</Text>
-        </View>
+      {lookupError ? (
+        <Text style={styles.lookupError}>{lookupError}</Text>
+      ) : null}
 
-        {/* Violations List */}
-        {loading ? (
-          <View style={{ marginTop: 20 }}>
-            {[1, 2, 3, 4, 5].map(i => (
-              <View key={i} style={{ backgroundColor: '#e2e8f0', height: 60, borderRadius: 12, marginBottom: 10, opacity: 0.5 }} />
-            ))}
-          </View>
-        ) : errorState && violations.length === 0 ? (
-          <View style={{ alignItems: 'center', marginTop: 60 }}>
-            <Ionicons name="cloud-offline" size={60} color="#94a3b8" />
-            <Text style={{ fontSize: 18, color: '#475569', marginTop: 16 }}>Network Error</Text>
-            <TouchableOpacity style={{ marginTop: 16, padding: 12, backgroundColor: '#4f46e5', borderRadius: 8 }} onPress={fetchViolations}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry Connection</Text>
-            </TouchableOpacity>
-          </View>
-        ) : Object.keys(filteredAndGroupedViolations).length === 0 ? (
-          <View style={{ alignItems: 'center', marginTop: 60 }}>
-            <Ionicons name="document-text-outline" size={60} color="#cbd5e1" />
-            <Text style={{ fontSize: 16, color: '#475569', marginTop: 16, fontWeight: 'bold' }}>No violations found</Text>
-            <Text style={{ fontSize: 14, color: '#94a3b8', marginTop: 8, textAlign: 'center' }}>Try searching with different keywords or changing the selected state.</Text>
-          </View>
-        ) : (
-          Object.entries(filteredAndGroupedViolations).map(([category, items]) => (
-            <View key={category} style={styles.categoryGroup}>
-              <Text style={styles.categoryTitle}>{category}</Text>
-              <View style={styles.listContainer}>
-                {items.map((item, idx) => {
-                  const isSelected = selectedIds.has(item.violation_code);
-                  return (
-                    <TouchableOpacity 
-                      key={`${item.violation_code}-${idx}`} 
-                      style={[styles.itemRow, isSelected && styles.itemRowSelected]}
-                      onPress={() => toggleSelection(item.violation_code)}
-                      activeOpacity={0.7}
-                      accessibilityLabel={item.violation_name}
-                      accessibilityHint="Selects this violation to add to calculation"
-                    >
-                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                        {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
-                      </View>
-                      <View style={styles.itemTextContainer}>
-                        <Text style={styles.itemTitle}>{item.violation_name}</Text>
-                        {item.mv_act_section && (
-                          <Text style={styles.itemSubtitle}>{item.mv_act_section}</Text>
-                        )}
-                      </View>
-                      <Text style={styles.itemAmount}>
-                        {item.currency} {item.min_fine_local}
-                        {item.max_fine_local && item.max_fine_local !== item.min_fine_local ? `–${item.max_fine_local}` : ''}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          ))
-        )}
-
-      </ScrollView>
-
-      {/* Calculate Sticky Button */}
-      {selectedIds.size > 0 && (
-        <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.calcBtn} onPress={calculateFine}>
-            <LinearGradient colors={['#4f46e5', '#4338ca']} style={styles.calcBtnGradient}>
-              <Text style={styles.calcBtnText}>{t('calculate')} ({selectedIds.size})</Text>
-              <Ionicons name="calculator" size={20} color="#fff" />
-            </LinearGradient>
-          </TouchableOpacity>
+      {/* Empty state */}
+      {!lookupLoading && (
+        <View style={styles.vsEmptyState}>
+          <Ionicons name="car-sport-outline" size={72} color="#d1d5db" />
+          <Text style={styles.vsEmptyTitle}>Search your vehicle</Text>
+          <Text style={styles.vsEmptySubtitle}>
+            Enter a registration number to view RC details, insurance, fitness validity and pending challans.
+          </Text>
         </View>
       )}
 
-      {/* Result Modal */}
-      <Modal visible={showResultModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('calculation_result')}</Text>
-              <TouchableOpacity onPress={() => setShowResultModal(false)}>
-                <Ionicons name="close-circle" size={28} color="#94a3b8" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalScroll}>
-              {calcResult?.violations.map((v, i) => (
-                <View key={i} style={styles.resultCard}>
-                  <Text style={styles.resultVioName}>{v.violation_name}</Text>
-                  <Text style={styles.resultVioAmt}>{calcResult.currency} {v.fine_amount}</Text>
-                </View>
-              ))}
-
-              <View style={styles.totalBox}>
-                <Text style={styles.totalLabel}>{t('total_fine')}</Text>
-                <Text style={styles.totalValue}>{calcResult?.currency} {calcResult?.total_fine}</Text>
-              </View>
-
-              {calcResult?.compounding_available && (
-                <View style={styles.compoundingBox}>
-                  <Ionicons name="shield-checkmark" size={20} color="#10b981" />
-                  <Text style={styles.compoundingText}>
-                    Pay <Text style={styles.boldText}>{calcResult.currency} {calcResult.total_compounding_fee}</Text> to compound (settle without court)
-                  </Text>
-                </View>
-              )}
-
-              <Text style={styles.disclaimerText}>
-                Disclaimer: Amounts shown are estimates and subject to change based on actual traffic police jurisdiction and latest amendments.
-              </Text>
-            </ScrollView>
-
-            <TouchableOpacity style={styles.shareBtn} onPress={shareSummary}>
-              <Ionicons name="share-social" size={20} color="#fff" />
-              <Text style={styles.shareBtnText}>{t('share_summary')}</Text>
-            </TouchableOpacity>
-          </View>
+      {lookupLoading && (
+        <View style={styles.vsEmptyState}>
+          <Ionicons name="sync" size={48} color="#0891b2" />
+          <Text style={[styles.vsEmptyTitle, { color: '#0891b2', marginTop: 16 }]}>Fetching vehicle details…</Text>
         </View>
-      </Modal>
-
+      )}
     </SafeAreaView>
   );
 }
@@ -489,320 +295,242 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
   },
-  countryScroll: {
-    marginBottom: 20,
-  },
-  pillBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  pillBtnActive: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#6366f1',
-  },
-  pillText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  pillTextActive: {
-    color: '#4f46e5',
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
-  stateBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#f1f5f9',
-    marginRight: 8,
-  },
-  stateBtnActive: {
-    backgroundColor: '#1e293b',
-  },
-  stateText: {
-    fontSize: 14,
-    color: '#475569',
-    fontWeight: '500',
-  },
-  stateTextActive: {
-    color: '#fff',
-  },
-  vehicleRow: {
-    gap: 12,
-  },
-  vehicleCard: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+  plateRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  plateInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  vehicleCardActive: {
     borderColor: '#6366f1',
-    backgroundColor: '#e0e7ff',
-  },
-  vehicleText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    marginTop: 6,
-  },
-  vehicleTextActive: {
-    color: '#4f46e5',
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 20,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#0f172a',
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 24,
-  },
-  toggleText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#64748b',
-    marginHorizontal: 12,
-  },
-  toggleTextActive: {
-    color: '#1e293b',
-  },
-  categoryGroup: {
-    marginBottom: 24,
-  },
-  categoryTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  listContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  itemRowSelected: {
-    backgroundColor: '#e0e7ff',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#cbd5e1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxSelected: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
-  },
-  itemTextContainer: {
-    flex: 1,
-    marginLeft: 14,
-    marginRight: 10,
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  itemSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  itemAmount: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#4f46e5',
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-  },
-  calcBtn: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#4f46e5',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  calcBtnGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
     gap: 10,
   },
-  calcBtnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  modalOverlay: {
+  plateInput: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    justifyContent: 'flex-end',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: 1,
   },
-  modalContent: {
+  lookupBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#4f46e5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lookupError: {
+    fontSize: 13,
+    color: '#ef4444',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  // ── Vehicle Search result (mParivahan style) ─────────────────────────────
+  vsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: '85%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  modalScroll: {
-    marginBottom: 20,
-  },
-  resultCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#e5e7eb',
   },
-  resultVioName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#334155',
+  vsBack: {
+    width: 40,
+    justifyContent: 'center',
+  },
+  vsHeaderTitle: {
     flex: 1,
-    paddingRight: 10,
-  },
-  resultVioAmt: {
-    fontSize: 16,
+    textAlign: 'center',
+    fontSize: 17,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111827',
   },
-  totalBox: {
+  vsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    padding: 20,
-    borderRadius: 16,
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    backgroundColor: '#fff',
   },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#64748b',
+  vsLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    flex: 1,
   },
-  totalValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#4f46e5',
+  vsValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
   },
-  compoundingBox: {
+  vsLinkRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f0f9ff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0f2fe',
+  },
+  vsLinkText: {
+    fontSize: 13,
+    color: '#0284c7',
+    fontWeight: '500',
+  },
+  vsChallanHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ecfdf5',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#a7f3d0',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#f8fafc',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#e5e7eb',
+    marginTop: 8,
+  },
+  vsChallanTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  vsChallanTotal: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ef4444',
+  },
+  vsNoChallan: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+  },
+  vsNoChallanText: {
+    fontSize: 14,
+    color: '#16a34a',
+    fontWeight: '600',
+  },
+  vsChallanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    backgroundColor: '#fff',
     gap: 12,
   },
-  compoundingText: {
-    flex: 1,
+  vsChallanOffence: {
     fontSize: 14,
-    color: '#065f46',
-    lineHeight: 20,
+    fontWeight: '600',
+    color: '#1e293b',
   },
-  boldText: {
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  disclaimerText: {
+  vsChallanMeta: {
     fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 24,
-    textAlign: 'center',
-    lineHeight: 16,
+    color: '#9ca3af',
+    marginTop: 3,
   },
-  shareBtn: {
+  vsChallanAmt: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#ef4444',
+  },
+  vsChallanStatus: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  vsBottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  vsBtn: {
+    flex: 1,
+    backgroundColor: '#0891b2',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  vsBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  // ── Vehicle Search default screen ─────────────────────────────────────────
+  vsSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1e293b',
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    gap: 10,
   },
-  shareBtnText: {
-    color: '#fff',
-    fontSize: 16,
+  vsSearchInput: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    height: 48,
+    gap: 10,
+  },
+  vsSearchText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    letterSpacing: 0.5,
+  },
+  vsSearchBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#0891b2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vsEmptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    gap: 12,
+  },
+  vsEmptyTitle: {
+    fontSize: 18,
     fontWeight: '700',
-  }
+    color: '#374151',
+    marginTop: 12,
+  },
+  vsEmptySubtitle: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
 });

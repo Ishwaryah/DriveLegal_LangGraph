@@ -389,9 +389,30 @@ export default function DriveLegalAssistant() {
                   msg.sender === 'user' ? styles.userBubble : styles.aiBubble,
                   borderStyle, highContrast && {backgroundColor: msg.sender === 'user' ? '#333' : '#000'}
                 ]}>
-                  {renderFormattedText(msg.text, msg.sender === 'user')}
+                  {renderFormattedText(showEnglish && msg.textEn ? msg.textEn : msg.text, msg.sender === 'user')}
                 </View>
-                
+
+                {msg.sender === 'ai' && msg.textEn && msg.detectedLang && msg.detectedLang !== 'en' && (
+                  <View style={styles.langToggleRow}>
+                    <TouchableOpacity
+                      onPress={() => setShowEnglish(false)}
+                      style={[styles.langToggleBtn, !showEnglish && styles.langToggleBtnActive]}
+                      accessibilityLabel="Show in original language"
+                    >
+                      <Text style={[styles.langToggleText, !showEnglish && styles.langToggleTextActive]}>
+                        {t('show_in_native')}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setShowEnglish(true)}
+                      style={[styles.langToggleBtn, showEnglish && styles.langToggleBtnActive]}
+                      accessibilityLabel="Show in English"
+                    >
+                      <Text style={[styles.langToggleText, showEnglish && styles.langToggleTextActive]}>EN</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
                 {msg.sender === 'ai' && index === chatHistory.length - 1 && msg.suggestions && (
                   <View style={styles.suggestionsRow}>
                     {msg.suggestions.map((s, i) => (
@@ -764,6 +785,31 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#f3f0ea',
-  }
+  },
+  langToggleRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+    gap: 6,
+  },
+  langToggleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f9fafb',
+  },
+  langToggleBtnActive: {
+    backgroundColor: '#d97706',
+    borderColor: '#d97706',
+  },
+  langToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  langToggleTextActive: {
+    color: '#fff',
+  },
 });
 

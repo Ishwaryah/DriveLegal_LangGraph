@@ -32,6 +32,7 @@ export default function LiveNearYouScreen() {
   const {
     country,
     countryCode,
+    state,
     stateCode,
     locationName,
     activeAlerts,
@@ -42,8 +43,8 @@ export default function LiveNearYouScreen() {
     setManualLocation,
   } = useGeoFineAlert();
 
-  const [manualCountry, setManualCountry] = useState('India');
-  const [manualState, setManualState] = useState('Tamil Nadu');
+  const [manualCountry, setManualCountry] = useState(country || 'India');
+  const [manualState, setManualState] = useState(state || 'Tamil Nadu');
   const [showManualModal, setShowManualModal] = useState(false);
 
   const stateBoundaryAlert = activeAlerts.find(a => a.type === 'state_boundary') ?? null;
@@ -157,9 +158,9 @@ export default function LiveNearYouScreen() {
               </View>
               <View style={styles.ruleTextContainer}>
                 <Text style={styles.ruleTitle}>
-                  Speed limit · <Text style={styles.ruleTitleBold}>50 km/h</Text>
+                  Speed limit · <Text style={styles.ruleTitleBold}>{speedZoneLimit || 50} km/h</Text>
                 </Text>
-                <Text style={styles.ruleSubtitle}>Urban arterial · TN Rule §125</Text>
+                <Text style={styles.ruleSubtitle}>{speedZoneLimit ? 'Detected speed zone' : 'General road'} · {stateCode || 'Global'} Rules</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </TouchableOpacity>

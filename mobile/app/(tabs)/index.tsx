@@ -21,7 +21,7 @@ import { useLocalDB, Fine } from '../../hooks/useLocalDB';
 export default function HomeScreen() {
   const router = useRouter();
   const { t, profile, notificationsEnabled, highContrast } = useSettings();
-  const { stateCode, countryCode, isOffline, permissionDenied } = useGeoFineAlert();
+  const { state, stateCode, countryCode, isOffline, permissionDenied, locationName, speedZoneLimit, activeAlerts } = useGeoFineAlert();
   const { getTopViolations } = useLocalDB();
   const { width: windowWidth } = useWindowDimensions();
   const width = Math.min(windowWidth, 420);
@@ -33,7 +33,19 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      const violations = await getTopViolations(stateCode || 'ALL');
+      // Use the full state name for database matching
+      let violations = await getTopViolations(state || 'ALL');
+      
+      // FALLBACK: If no violations found in DB (e.g. before sync), show some standard ones
+      if (violations.length === 0) {
+        violations = [
+          { id: 9991, offence_code: 'NO HELMET', amount_inr: 1000, vehicle_class: 'TWO WHEELER', state: 'ALL', source_url: '', fetched_at: '' },
+          { id: 9992, offence_code: 'OVERSPEEDING', amount_inr: 2000, vehicle_class: 'ALL', state: 'ALL', source_url: '', fetched_at: '' },
+          { id: 9993, offence_code: 'DRUNK DRIVING', amount_inr: 10000, vehicle_class: 'ALL', state: 'ALL', source_url: '', fetched_at: '' },
+          { id: 9994, offence_code: 'NO SEATBELT', amount_inr: 1000, vehicle_class: 'ALL', state: 'ALL', source_url: '', fetched_at: '' },
+        ] as Fine[];
+      }
+      
       setTopViolations(violations);
 
       const savedSearches = await AsyncStorage.getItem('recentSearches');
@@ -42,11 +54,12 @@ export default function HomeScreen() {
       }
     };
     loadData();
-  }, [stateCode]);
+  }, [state]);
 
   const hour = new Date().getHours();
   const greetingWord = hour < 12 ? 'GOOD MORNING' : hour < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
-  const greeting = `${greetingWord}, ${profile.name.split(' ')[0].toUpperCase()}`;
+  const displayName = profile.name ? profile.name.split(' ')[0].toUpperCase() : 'USER';
+  const greeting = `${greetingWord}, ${displayName}`;
 
   const bg = highContrast ? '#000' : '#FAF8F5';
   const textPrimary = highContrast ? '#FFF' : '#1c1c1c';
@@ -98,21 +111,28 @@ export default function HomeScreen() {
               </View>
               <Text style={[styles.locationLabel, {fontSize: fs(12)}]}>{t('location_label')}</Text>
             </View>
-            <Text style={[styles.locationTitle, {fontSize: fs(22)}]}>Anna Salai, Chennai</Text>
-            <Text style={[styles.locationSubtitle, {fontSize: fs(13)}]}>Tamil Nadu • Urban arterial road</Text>
+            <Text style={[styles.locationTitle, {fontSize: fs(22)}]}>{locationName || 'Detecting location...'}</Text>
+            <Text style={[styles.locationSubtitle, {fontSize: fs(13)}]}>{state || 'Global Rules'} • {speedZoneLimit ? 'Regulated Zone' : 'Standard Road'}</Text>
             
             <View style={styles.pillsRow}>
               <View style={[styles.pill, borderStyle]}>
                 <Text style={[styles.pillLabel, {fontSize: fs(10)}]}>{t('speed')}</Text>
-                <Text style={[styles.pillValueOrange, { color: accent, fontSize: fs(14) }]}>50 <Text style={[styles.pillUnitOrange, {fontSize: fs(11)}]}>kmph</Text></Text>
+                <Text style={[styles.pillValueOrange, { color: accent, fontSize: fs(14) }]}>
+                  {locationName ? (speedZoneLimit || 50) : '---'} 
+                  <Text style={[styles.pillUnitOrange, {fontSize: fs(11)}]}> kmph</Text>
+                </Text>
               </View>
               <View style={[styles.pill, borderStyle, { backgroundColor: highContrast ? '#000' : 'rgba(239, 68, 68, 0.15)' }]}>
                 <Text style={[styles.pillLabel, { color: highContrast ? '#FFF' : '#fca5a5', fontSize: fs(10) }]}>{t('fine_zone')}</Text>
-                <Text style={[styles.pillValue, { color: highContrast ? accent : '#f87171', fontSize: fs(14) }]}>School</Text>
+                <Text style={[styles.pillValue, { color: highContrast ? accent : '#f87171', fontSize: fs(14) }]}>
+                  {!locationName ? '...' : speedZoneLimit ? 'Active' : 'None'}
+                </Text>
               </View>
               <View style={[styles.pill, borderStyle]}>
                 <Text style={[styles.pillLabel, {fontSize: fs(10)}]}>{t('helmet')}</Text>
-                <Text style={[styles.pillValue, {fontSize: fs(14)}]}>{t('mandatory')}</Text>
+                <Text style={[styles.pillValue, {fontSize: fs(14)}]}>
+                  {!locationName ? '...' : t('mandatory')}
+                </Text>
               </View>
             </View>
           </LinearGradient>
@@ -122,9 +142,9 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={[styles.fineContextCard, borderStyle, highContrast && {backgroundColor: '#000'}]}
           activeOpacity={0.85}
-          onPress={() => router.push('/(tabs)/fines')}
-          accessibilityLabel="Local Fines"
-          accessibilityHint="Navigates to the fines schedule for your area"
+          onPress={() => router.push('/(tabs)/zones/live')}
+          accessibilityLabel="Live Location Map"
+          accessibilityHint="Navigates to the live map and geofencing zones"
         >
           <View style={styles.fineContextLeft}>
             <Text style={[styles.fineContextFlag, {fontSize: fs(24)}]}>
@@ -133,9 +153,9 @@ export default function HomeScreen() {
             <View>
               <Text style={[styles.fineContextTitle, { color: textPrimary, fontSize: fs(14) }]}>
                 {stateCode
-                  ? `You're in ${stateCode} — Tap to see local fines`
+                  ? `You're in ${stateCode} — Tap for live map`
                   : permissionDenied
-                  ? 'Enable location to see local fines'
+                  ? 'Enable location for live map'
                   : 'Detecting your location…'}
               </Text>
               {isOffline && stateCode && (

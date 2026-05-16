@@ -452,6 +452,65 @@ async def calculate_fine(request: FineCalculateRequest = Body(...)):
         return {"status": "error", "message": str(e)}
 
 
+@app.get(
+    "/api/v1/vehicle/info/{reg_no}",
+    summary="RC details lookup — owner, registration, fitness, insurance, PUCC (via RapidAPI)",
+)
+async def get_vehicle_info(reg_no: str):
+    """
+    Fetches Registration Certificate details from RapidAPI.
+    Returns the same fields shown in mParivahan Vehicle Search.
+    """
+    if not rapid_api_provider:
+        return {
+            "status": "service_unavailable",
+            "message": (
+                "Live RC lookup requires a RAPIDAPI_KEY in backend/.env. "
+                "Get a free key at rapidapi.com and subscribe to "
+                "'RTO Vehicle Information Verification India'."
+            ),
+        }
+
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(
+        None,
+        lambda: rapid_api_provider.get_vehicle_info(reg_no)
+    )
+    return result
+
+
+@app.get(
+    "/api/v1/vehicle/challans/{reg_no}",
+    summary="Pending challan lookup for a vehicle number (via RapidAPI)",
+)
+async def get_vehicle_challans(reg_no: str):
+    if not rapid_api_provider:
+        return {"status": "service_unavailable", "message": "RAPIDAPI_KEY not configured in backend/.env"}
+
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(
+        None,
+        lambda: rapid_api_provider.get_challans(reg_no)
+    )
+    if result["status"] == "success":
+        challans = result.get("challans", [])
+        return {
+            "status": "ok",
+            "challan_count": len(challans),
+            "total_fine": sum(int(c.get("amount", 0)) for c in challans),
+            "challans": challans,
+        }
+    if result["status"] == "provider_down":
+        return {
+            "status": "demo",
+            "challan_count": 0,
+            "total_fine": 0,
+            "challans": [],
+            "message": "RapidAPI provider temporarily unavailable",
+        }
+    return result
+
+
 @app.post(
     "/challan/calculate",
     summary="Vehicle-number challan lookup (via RapidAPI live lookup)",

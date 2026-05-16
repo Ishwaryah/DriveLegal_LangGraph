@@ -10,9 +10,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useGeoFineAlert } from '../../../hooks/useGeoFineAlert';
+
 
 export default function SpeedLimitsScreen() {
   const router = useRouter();
+  const { state, stateCode, locationName, isOffline } = useGeoFineAlert();
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -22,7 +26,7 @@ export default function SpeedLimitsScreen() {
         <View style={styles.offlineBanner}>
           <Ionicons name="cloud-offline" size={16} color="#B45309" />
           <Text style={styles.offlineBannerText}>
-            Offline · Showing cached rules for Tamil Nadu
+            {isOffline ? 'Offline' : 'Live'} · Showing rules for {state || 'your region'}
           </Text>
           <Text style={styles.offlineBannerTime}>2 min ago</Text>
         </View>
@@ -32,7 +36,7 @@ export default function SpeedLimitsScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#1f2937" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Speed limits · TN</Text>
+          <Text style={styles.headerTitle}>Speed limits · {stateCode || 'Global'}</Text>
           <View style={styles.cachedBadge}>
             <Text style={styles.cachedText}>Cached</Text>
           </View>
@@ -46,8 +50,8 @@ export default function SpeedLimitsScreen() {
               <Ionicons name="download-outline" size={20} color="#10B981" />
             </View>
             <View style={styles.packTextContainer}>
-              <Text style={styles.packTitle}>Tamil Nadu offline pack</Text>
-              <Text style={styles.packSubtitle}>244 MB · Updated 2 days ago · Includes all 38 districts</Text>
+              <Text style={styles.packTitle}>{state || 'Local'} offline pack</Text>
+              <Text style={styles.packSubtitle}>Active rules for {locationName || 'your current area'}</Text>
             </View>
             <View style={styles.syncedBadge}>
               <Ionicons name="checkmark" size={12} color="#059669" />
@@ -68,7 +72,7 @@ export default function SpeedLimitsScreen() {
                 </View>
                 <View style={styles.itemTextContainer}>
                   <Text style={styles.itemTitle}>Urban arterial</Text>
-                  <Text style={styles.itemSubtitle}>Anna Salai, Mount Rd</Text>
+                  <Text style={styles.itemSubtitle}>{locationName || 'Current arterial road'}</Text>
                 </View>
               </View>
               

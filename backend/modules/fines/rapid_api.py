@@ -4,52 +4,108 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
+CONSENT_TEXT = (
+    "I hereby give my consent to fetch the vehicle registration details "
+    "for informational and verification purposes."
+)
+
+
 class RapidAPIChallanProvider:
     """
-    Integration with RapidAPI for live RTO/Challan data.
-    Uses 'RTO Vehicle Information' or similar APIs available on RapidAPI.
+    Integration with RapidAPI for live RTO/Challan + RC data.
+    Host: rto-vehicle-information-verification-india.p.rapidapi.com
     """
-    
+
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://rto-vehicle-information-verification-india.p.rapidapi.com"
         self.headers = {
             "x-rapidapi-key": self.api_key,
             "x-rapidapi-host": "rto-vehicle-information-verification-india.p.rapidapi.com",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+        }
+
+    def _post(self, path: str, payload: dict, timeout: int = 10) -> Dict[str, Any]:
+        try:
+            r = requests.post(
+                f"{self.base_url}{path}",
+                json=payload,
+                headers=self.headers,
+                timeout=timeout,
+            )
+            if r.status_code == 200:
+                return {"http_ok": True, "data": r.json()}
+            if r.status_code == 401:
+                return {"http_ok": False, "status": "error", "message": "Invalid RapidAPI key — update RAPIDAPI_KEY in backend/.env"}
+            if r.status_code == 429:
+                retry = r.headers.get("Retry-After", "unknown")
+                return {"http_ok": False, "status": "error", "message": f"Rate limit hit — retry after {retry}s"}
+            if r.status_code >= 500:
+                return {"http_ok": False, "status": "provider_down", "message": "RapidAPI provider unavailable (5xx)"}
+            return {"http_ok": False, "status": "error", "message": f"HTTP {r.status_code}"}
+        except requests.exceptions.Timeout:
+            return {"http_ok": False, "status": "error", "message": "Request timed out"}
+        except Exception as e:
+            logger.error("RapidAPI request failed: %s", e)
+            return {"http_ok": False, "status": "error", "message": str(e)}
+
+    def get_vehicle_info(self, vehicle_number: str) -> Dict[str, Any]:
+        """
+        Fetch RC (Registration Certificate) details for a vehicle number.
+        Returns a normalised dict with owner_name, reg_date, fuel, class, etc.
+        """
+        reg = vehicle_number.replace(" ", "").replace("-", "").upper()
+        resp = self._post(
+            "/api/v1/rc/vehicleinfo",
+            {"reg_no": reg, "consent": "Y", "consent_text": CONSENT_TEXT},
+        )
+
+        if not resp["http_ok"]:
+            return resp
+
+        data = resp["data"]
+        # Different providers wrap results differently; handle both patterns
+        result = data.get("result") or data.get("data") or data
+        if data.get("status") not in (None, "success", True, 1, "1"):
+            return {"status": "error", "message": data.get("message", "Lookup failed")}
+
+        return {
+            "status": "success",
+            "vehicle_info": {
+                "vehicle_number":       result.get("reg_no", reg),
+                "owner_name":           result.get("owner_name", "—"),
+                "registering_authority": result.get("reg_authority_cd") or result.get("rto", "—"),
+                "vehicle_class":        result.get("vehicle_class_desc") or result.get("class_desc", "—"),
+                "fuel_type":            result.get("fuel_desc") or result.get("fuel_type", "—"),
+                "emission_norm":        result.get("emission_norms_desc") or result.get("norms_desc", "—"),
+                "vehicle_age":          result.get("vehicle_age", "—"),
+                "hypothecated":         result.get("financer") or result.get("hypothecation", "No"),
+                "vehicle_status":       result.get("rc_status") or result.get("status_as_on", "ACTIVE"),
+                "registration_date":    result.get("reg_date") or result.get("registration_date", "—"),
+                "fitness_valid_upto":   result.get("fit_valid_upto") or result.get("fitness_upto", "—"),
+                "tax_valid_upto":       result.get("tax_valid_upto") or result.get("tax_upto", "—"),
+                "insurance_valid_upto": result.get("insurance_valid_upto") or result.get("insurance_upto", "—"),
+                "pucc_valid_upto":      result.get("pucc_valid_upto") or result.get("pucc_upto", "NA"),
+                "maker_model":          result.get("maker_model") or result.get("model", "—"),
+                "color":                result.get("color", "—"),
+            },
         }
 
     def get_challans(self, vehicle_number: str) -> Dict[str, Any]:
-        """
-        Fetch pending challans for a given vehicle registration number.
-        """
-        # Note: Endpoint and payload structure depend on the specific RapidAPI provider chosen.
-        # This implementation assumes a common structure for RTO/Challan APIs.
-        endpoint = f"{self.base_url}/api/v1/challan"
-        payload = {"reg_no": vehicle_number}
-        
-        try:
-            response = requests.post(endpoint, json=payload, headers=self.headers, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("status") == "success":
-                    return {
-                        "status": "success",
-                        "challans": data.get("result", {}).get("challans", []),
-                        "vehicle_details": data.get("result", {}).get("vehicle_details", {})
-                    }
-                return {"status": "error", "message": data.get("message", "API returned failure status")}
-            elif response.status_code == 401:
-                return {"status": "error", "message": "Invalid RapidAPI Key"}
-            elif response.status_code == 429:
-                retry_after = response.headers.get("Retry-After", "unknown")
-                return {"status": "error", "message": f"RapidAPI rate limit hit — retry after {retry_after}s. Upgrade plan if quota is exhausted."}
-            elif response.status_code >= 500:
-                return {"status": "provider_down", "message": "RapidAPI provider is temporarily unavailable (5xx). Try again shortly."}
-            else:
-                return {"status": "error", "message": f"API Error: {response.status_code}"}
-        except requests.exceptions.Timeout:
-            return {"status": "error", "message": "RapidAPI Request Timed Out"}
-        except Exception as e:
-            logger.error(f"RapidAPI request failed: {e}")
-            return {"status": "error", "message": str(e)}
+        """Fetch pending challans for a vehicle number."""
+        reg = vehicle_number.replace(" ", "").replace("-", "").upper()
+        resp = self._post("/api/v1/challan", {"reg_no": reg})
+
+        if not resp["http_ok"]:
+            return resp
+
+        data = resp["data"]
+        result = data.get("result") or {}
+        if data.get("status") not in (None, "success", True, 1, "1"):
+            return {"status": "error", "message": data.get("message", "Challan lookup failed")}
+
+        return {
+            "status": "success",
+            "challans": result.get("challans", []),
+            "vehicle_details": result.get("vehicle_details", {}),
+        }
