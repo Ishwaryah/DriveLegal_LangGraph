@@ -19,6 +19,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { API_BASE } from '../../config/api';
 import { useSettings } from '../../hooks/useSettings';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width: windowWidth } = Dimensions.get('window');
 const fontScale = Math.min(windowWidth, 420) / 375;
@@ -157,6 +158,96 @@ export default function ChallanCalculatorScreen() {
       }
     }
   }, [vehicleInfo]);
+
+  const handlePlateCamera = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Needed', 'Camera access is required to scan license plates.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      setLookupLoading(true);
+      setLookupError('');
+      
+      const imageUri = result.assets[0].uri;
+      
+      // Prepare FormData for file upload
+      const formData = new FormData();
+      formData.append('file', {
+        uri: Platform.OS === 'ios' ? imageUri.replace('file://', '') : imageUri,
+        name: 'plate.jpg',
+        type: 'image/jpeg',
+      } as any);
+
+      const response = await fetch(`${API_BASE}/api/v1/cv/plate-ocr`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Server responded with an error.');
+      }
+
+      const data = await response.json();
+      if (data.success && data.extracted_plate) {
+        const plate = data.extracted_plate;
+        setPlateInput(plate);
+        setVehicleNumber(plate);
+        
+        // Auto-trigger the lookup after a tiny delay so the UI registers it
+        setTimeout(async () => {
+          setLookupLoading(true);
+          try {
+            const [infoRes, challanRes] = await Promise.all([
+              fetch(`${API_BASE}/api/v1/vehicle/info/${plate}`),
+              fetch(`${API_BASE}/api/v1/vehicle/challans/${plate}`),
+            ]);
+            const infoData = await infoRes.json();
+            const challanData = await challanRes.json();
+
+            if (infoData.status === 'success') {
+              setVehicleInfo(infoData.vehicle_info);
+            } else {
+              setLookupError(infoData.message || 'Vehicle details not found.');
+            }
+
+            if (challanData.status === 'ok' || challanData.status === 'demo') {
+              setChallans(challanData.challans || []);
+              setTotalFine(challanData.total_fine || 0);
+            }
+          } catch {
+            setLookupError('Failed to fetch details for the scanned plate.');
+          } finally {
+            setLookupLoading(false);
+          }
+        }, 100);
+
+        Alert.alert(
+          'Plate Scanned Successfully',
+          `Detected plate: ${plate} (${data.method})`
+        );
+      } else {
+        setLookupError(data.error || 'Failed to extract plate number. Please enter manually.');
+      }
+    } catch (err: any) {
+      setLookupError('OCR Scan failed. Please enter the plate number manually.');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const lookupVehicle = async () => {
     const plate = plateInput.replace(/[\s-]/g, '').toUpperCase();
@@ -433,6 +524,13 @@ export default function ChallanCalculatorScreen() {
                       setLookupError('');
                     }}
                   />
+                  <TouchableOpacity 
+                    onPress={handlePlateCamera} 
+                    disabled={lookupLoading}
+                    style={{ padding: 6, marginLeft: 4 }}
+                  >
+                    <Ionicons name="camera-outline" size={22} color="#0891b2" />
+                  </TouchableOpacity>
                 </View>
                 <TouchableOpacity style={styles.vsSearchBtn} onPress={lookupVehicle} disabled={lookupLoading}>
                   <Ionicons name={lookupLoading ? 'sync' : 'search'} size={22} color="#fff" />

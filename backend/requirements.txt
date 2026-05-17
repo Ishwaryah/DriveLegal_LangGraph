@@ -12,3 +12,7 @@ python-dotenv
 sentence-transformers
 groq
 google-genai
+easyocr
+mediapipe
+opencv-python
+pytesseract

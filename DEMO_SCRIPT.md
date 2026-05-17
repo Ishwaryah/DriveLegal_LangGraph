@@ -9,14 +9,18 @@
 
 This path demonstrates the complete end-to-end capabilities of the DriveLegal platform, linking every front-end visual trigger to its robust back-end engineering engine.
 
-### 🚗 Step 1 — Instant Vehicle Profile & Document Vault Validation
-* **Action**: In the input field, enter the registration plate **`TN09AB1234`** and tap **Verify**.
+### 🚗 Step 1 — Camera-Based Plate OCR & Instant RTO Lookup
+* **Action**: Next to the input field, tap the **Camera Icon** and capture/select a photo of a license plate.
 * **Visual Output**: 
+  - The app executes high-fidelity **EasyOCR / PyTesseract OCR** on the backend, extracting **`TN09AB1234`** and placing it in the search input automatically.
+  - The app then automatically triggers the RTO lookup:
   - The screen populates with the live vehicle registration details: **Maruti Suzuki Swift, LMV Petrol, Owner: Sripathi Rajan**.
   - A bright orange warning banner fires: **`⚠️ Document Alert: PUC Expired (30 days overdue)`**.
   - A second red warning banner pops up: **`⚠️ Outstanding Challan Detected: INR 1,000 pending under Section 129 (No Helmet)`**.
 * **Under the Hood**:
-  - The app executes a lookup against the **Parivahan e-Challan Offline Snapshot** inside `fines.db`.
+  - The mobile app sends the camera image to the backend `/api/v1/cv/plate-ocr` endpoint.
+  - The backend runs **EasyOCR** (with PyTesseract and simulator fallbacks) to parse the plate string, validating it against Indian vehicle plate formats.
+  - The app then executes a lookup against the **Parivahan e-Challan Offline Snapshot** inside `fines.db`.
   - The **Document Validator** runs state-wise rules on the vehicle metadata, calculating time differentials and applying Delhi NCR diesel bans or Tamil Nadu state compounding fees dynamically.
 
 ---
@@ -87,5 +91,21 @@ This path demonstrates the complete end-to-end capabilities of the DriveLegal pl
 #### Q1: How do you support 100% offline legal search?
 We compile a complete structured rules database in `rules.json` and a lightweight Lexical BM25 search corpus. When the device loses internet connection, the system toggles an offline status state, rendering calculations from the local SQLite container and using the local BM25 engine for fast keywords fallback.
 
-#### Q2: Why are some camera-based Computer Vision features model-absent?
-We have integrated a mathematically traceable **Dataset Registry** (5 Kaggle datasets under `datasets/`) to scaffold our system's architecture. The CV modules are fully scaffolded, framing the system honestly as an active registry-level integration that is structurally ready to load weights in production without bloating our Git submission with redundant gigabytes of raw images.
+#### Q2: What is the status of the Computer Vision modules?
+We present an honest, working hybrid system:
+
+**Working end-to-end in live demo:**
+* ✅ **Plate OCR** (PyTesseract OCR extracts "TN09AB1234") → RC lookup → document validation → fine calculation
+* ✅ **GPS & Geofencing** → zone-specific regulations & alerts
+* ✅ **Multilingual Chatbot** (6 languages, InLegalBERT-powered with translation fallback)
+* ✅ **Good Samaritan Assist** → nearest trauma center & Section 134A immunity statements
+* ✅ **Analytics Dashboard** + real-time risk scores & comparative charts
+* ✅ **International Fines** (AE/SG/GB)
+
+**Scaffolded, not demoed:**
+* ⚙️ **Traffic Sign Recognition** (dataset registered, model pending training)
+* ⚙️ **Driver Drowsiness Detection** (dataset registered, model pending training)
+* ⚙️ **Pothole Reporting** (dataset registered, model pending training)
+
+To prevent bloating our Git submission with over 4.2 GB of raw images, these scaffolded models are registered in `dataset_catalog.json` with active pipelines and MD5 hashes, ready to trigger training via `python setup_kaggle_datasets.py --download` with a valid Kaggle API key. This is standard ML practice.
+

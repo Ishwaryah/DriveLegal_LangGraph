@@ -59,7 +59,7 @@ from backend.modules.multilingual_intent import (
     violation_code_to_offence_type,
 )
 from backend.modules.legal_formatter import format_legal_response, build_violation_row
-from backend.routers import vehicle_lookup, emergency, analytics
+from backend.routers import vehicle_lookup, emergency, analytics, cv
 
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -844,6 +844,7 @@ app.include_router(fines_v1_router)
 app.include_router(vehicle_lookup.router)
 app.include_router(emergency.router)
 app.include_router(analytics.router)
+app.include_router(cv.router)
 
 # ── Entry Point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
