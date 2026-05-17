@@ -392,7 +392,7 @@ def main():
 
     with open(RULES_JSON, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
-    print(f"\n✅  rules.json  written  ({len(rules_list)} rules)")
+    print(f"\n[OK]  rules.json  written  ({len(rules_list)} rules)")
 
     # ── Expand seed_fines.csv ─────────────────────────────────────────────────
     fine_records = expand_seed_fines(violations_csv_rows, state_csv_rows, rules_list)
@@ -404,12 +404,12 @@ def main():
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(fine_records)
-    print(f"✅  seed_fines.csv written ({len(fine_records)} rows)")
+    print(f"[OK]  seed_fines.csv written ({len(fine_records)} rows)")
 
     # ── Reset vector DB so HybridSearch re-indexes on next start ─────────────
     if os.path.exists(VECTOR_DB):
         shutil.rmtree(VECTOR_DB)
-        print("✅  vector_db cleared — will be re-indexed on server start")
+        print("[OK]  vector_db cleared — will be re-indexed on server start")
 
     print("\nNext step: python -m backend.modules.fines.seed")
     print("=" * 60)

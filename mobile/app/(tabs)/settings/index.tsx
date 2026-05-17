@@ -13,21 +13,59 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSettings } from '../../../hooks/useSettings';
 import { useSync } from '../../../hooks/useSync';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { t, language, setLanguage, profile, updateProfile, notificationsEnabled, setNotificationsEnabled, highContrast, setHighContrast, defaultCountry, setDefaultCountry, defaultVehicleType, setDefaultVehicleType } = useSettings();
+  const {
+    t, language, setLanguage, profile, updateProfile,
+    notificationsEnabled, setNotificationsEnabled,
+    highContrast, setHighContrast, defaultCountry, setDefaultCountry,
+    savedVehicles, addSavedVehicle, removeSavedVehicle, activeVehicleId, setActiveVehicleId
+  } = useSettings();
   const { syncStatus, triggerSync, isSyncing } = useSync();
-  
+
   const [langModalVisible, setLangModalVisible] = useState(false);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [tempName, setTempName] = useState(profile.name);
+
+  // Garage states
+  const [isAddingVehicle, setIsAddingVehicle] = useState(false);
+  const [newVehicleNickName, setNewVehicleNickName] = useState('');
+  const [newVehiclePlateNumber, setNewVehiclePlateNumber] = useState('');
+  const [newVehicleType, setNewVehicleType] = useState('4w');
+
+  const handleSaveVehicle = async () => {
+    if (!newVehicleNickName.trim()) {
+      Alert.alert("Error", "Please enter a vehicle nickname.");
+      return;
+    }
+    await addSavedVehicle({
+      nickName: newVehicleNickName.trim(),
+      plateNumber: newVehiclePlateNumber.trim().toUpperCase(),
+      type: newVehicleType,
+    });
+    setNewVehicleNickName('');
+    setNewVehiclePlateNumber('');
+    setNewVehicleType('4w');
+    setIsAddingVehicle(false);
+  };
+
+  const handleRemoveVehicle = (id: string, name: string) => {
+    Alert.alert(
+      "Remove Vehicle",
+      `Are you sure you want to remove ${name} from your garage?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: () => removeSavedVehicle(id) }
+      ]
+    );
+  };
 
   const clearCache = async () => {
     try {
@@ -52,11 +90,11 @@ export default function ProfileScreen() {
   ];
 
   const languages: { code: 'en' | 'hi' | 'ta' | 'te' | 'kn'; nativeName: string; romanName: string }[] = [
-    { code: 'en', nativeName: 'English',  romanName: 'English' },
-    { code: 'hi', nativeName: 'हिंदी',    romanName: 'Hindi' },
-    { code: 'ta', nativeName: 'தமிழ்',    romanName: 'Tamil' },
-    { code: 'te', nativeName: 'తెలుగు',   romanName: 'Telugu' },
-    { code: 'kn', nativeName: 'ಕನ್ನಡ',    romanName: 'Kannada' },
+    { code: 'en', nativeName: 'English', romanName: 'English' },
+    { code: 'hi', nativeName: 'हिंदी', romanName: 'Hindi' },
+    { code: 'ta', nativeName: 'தமிழ்', romanName: 'Tamil' },
+    { code: 'te', nativeName: 'తెలుగు', romanName: 'Telugu' },
+    { code: 'kn', nativeName: 'ಕನ್ನಡ', romanName: 'Kannada' },
   ];
 
   const handleSaveProfile = () => {
@@ -131,9 +169,16 @@ export default function ProfileScreen() {
               icon="car-outline"
               iconBg="#FEF3C7"
               iconColor="#B45309"
-              label="Default Vehicle"
-              value={vehicleTypes.find(v => v.code === defaultVehicleType)?.label || defaultVehicleType}
-              onPress={() => setVehicleModalVisible(true)}
+              label="My Garage"
+              value={
+                savedVehicles.length > 0
+                  ? `${savedVehicles.find(v => v.id === activeVehicleId)?.nickName || 'Select Active'} (${savedVehicles.length})`
+                  : 'Manage Vehicles'
+              }
+              onPress={() => {
+                setIsAddingVehicle(false);
+                setVehicleModalVisible(true);
+              }}
             />
             <SettingsItem
               icon="language-outline"
@@ -195,7 +240,7 @@ export default function ProfileScreen() {
               iconColor="#4B5563"
               label="App Version"
               value="1.0.0"
-              onPress={() => {}}
+              onPress={() => { }}
               isLast
             />
 
@@ -272,26 +317,122 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Vehicle Modal */}
+      {/* Vehicle Modal (Garage Manager) */}
       <Modal animationType="slide" transparent={true} visible={vehicleModalVisible} onRequestClose={() => setVehicleModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { minHeight: 450, maxHeight: '85%' }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Default Vehicle Type</Text>
+              <Text style={styles.modalTitle}>My Garage</Text>
               <TouchableOpacity onPress={() => setVehicleModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#1f2937" />
               </TouchableOpacity>
             </View>
-            {vehicleTypes.map((type) => (
-              <TouchableOpacity
-                key={type.code}
-                style={[styles.langOption, defaultVehicleType === type.code && styles.langOptionSelected]}
-                onPress={() => { setDefaultVehicleType(type.code); setVehicleModalVisible(false); }}
-              >
-                <Text style={[styles.langLabel, defaultVehicleType === type.code && styles.langLabelSelected]}>{type.label}</Text>
-                {defaultVehicleType === type.code && <Ionicons name="checkmark" size={20} color="#D97706" />}
-              </TouchableOpacity>
-            ))}
+
+            {isAddingVehicle ? (
+              // Add Vehicle Form
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+                <Text style={styles.inputLabel}>NICKNAME</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={newVehicleNickName}
+                  onChangeText={setNewVehicleNickName}
+                  placeholder="e.g. My Honda City, Duke 390"
+                />
+
+                <Text style={[styles.inputLabel, { marginTop: 12 }]}>REGISTRATION NUMBER (OPTIONAL)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={newVehiclePlateNumber}
+                  onChangeText={text => setNewVehiclePlateNumber(text.toUpperCase())}
+                  placeholder="e.g. MH12AB1234"
+                  autoCapitalize="characters"
+                />
+
+                <Text style={[styles.inputLabel, { marginTop: 12 }]}>VEHICLE TYPE</Text>
+                <View style={styles.vehicleTypeRow}>
+                  {[
+                    { id: '2w', label: 'Two-wheeler', icon: 'motorbike' },
+                    { id: '4w', label: 'Car', icon: 'car' },
+                    { id: 'cv', label: 'Commercial', icon: 'truck' }
+                  ].map((v) => {
+                    const isSel = newVehicleType === v.id;
+                    return (
+                      <TouchableOpacity
+                        key={v.id}
+                        onPress={() => setNewVehicleType(v.id)}
+                        style={[
+                          styles.typeCard,
+                          isSel && styles.typeCardSelected
+                        ]}
+                      >
+                        <MaterialCommunityIcons name={v.icon as any} size={22} color={isSel ? '#D97706' : '#6b7280'} />
+                        <Text style={[styles.typeCardLabel, isSel && styles.typeCardLabelSelected]}>{v.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+                  <TouchableOpacity style={[styles.saveButton, { flex: 1, backgroundColor: '#f3f4f6' }]} onPress={() => setIsAddingVehicle(false)}>
+                    <Text style={[styles.saveButtonText, { color: '#4b5563' }]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveVehicle}>
+                    <Text style={styles.saveButtonText}>Add Vehicle</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            ) : (
+              // Saved Vehicles List
+              <View style={{ flex: 1 }}>
+                <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+                  {savedVehicles.length === 0 ? (
+                    <View style={styles.emptyGarage}>
+                      <Ionicons name="car-outline" size={48} color="#d1d5db" />
+                      <Text style={styles.emptyGarageText}>No vehicles in your garage yet.</Text>
+                    </View>
+                  ) : (
+                    savedVehicles.map((vehicle) => {
+                      const isActive = activeVehicleId === vehicle.id;
+                      const iconName = vehicle.type === '2w' ? 'motorbike' : vehicle.type === 'cv' ? 'truck' : 'car';
+                      return (
+                        <View key={vehicle.id} style={styles.garageListItem}>
+                          <TouchableOpacity
+                            style={styles.garageListItemLeft}
+                            onPress={() => setActiveVehicleId(vehicle.id)}
+                          >
+                            <View style={[styles.garageListIcon, isActive && styles.garageListIconActive]}>
+                              <MaterialCommunityIcons name={iconName as any} size={20} color={isActive ? '#fff' : '#6b7280'} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text style={[styles.garageListNick, isActive && styles.garageListNickActive]}>{vehicle.nickName}</Text>
+                              <Text style={styles.garageListPlate}>{vehicle.plateNumber || 'No Plate Number'}</Text>
+                            </View>
+                            <View style={[styles.radioOuter, isActive && styles.radioOuterSelected]}>
+                              {isActive && <View style={styles.radioInner} />}
+                            </View>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.garageListItemDelete}
+                            onPress={() => handleRemoveVehicle(vehicle.id, vehicle.nickName)}
+                          >
+                            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })
+                  )}
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={[styles.saveButton, { marginTop: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]}
+                  onPress={() => setIsAddingVehicle(true)}
+                >
+                  <Ionicons name="add" size={20} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.saveButtonText}>Add New Vehicle</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -542,5 +683,104 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  vehicleTypeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  typeCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fff',
+  },
+  typeCardSelected: {
+    borderColor: '#D97706',
+    backgroundColor: '#FEF3C7',
+  },
+  typeCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4b5563',
+  },
+  typeCardLabelSelected: {
+    color: '#D97706',
+  },
+  emptyGarage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 8,
+  },
+  emptyGarageText: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  garageListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    gap: 12,
+  },
+  garageListItemLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  garageListIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  garageListIconActive: {
+    backgroundColor: '#D97706',
+  },
+  garageListNick: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  garageListNickActive: {
+    color: '#D97706',
+    fontWeight: '700',
+  },
+  garageListPlate: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 2,
+  },
+  garageListItemDelete: {
+    padding: 8,
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  radioOuterSelected: {
+    borderColor: '#D97706',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#D97706',
   },
 });

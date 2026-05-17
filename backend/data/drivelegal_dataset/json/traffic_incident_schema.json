@@ -1,0 +1,16 @@
+{
+  "api": "HERE Traffic API",
+  "response_stub": {
+    "incident_id": "INC_99182",
+    "location": {
+      "description": "NH-48 Near Krishnagiri Toll Plaza",
+      "latitude": 12.5292,
+      "longitude": 78.2161
+    },
+    "incident_type": "Accident",
+    "severity": "Critical",
+    "delay_seconds": 1800,
+    "rerouting_advice": "Take state highway SH-17 diversion to bypass toll gridlock.",
+    "active": true
+  }
+}

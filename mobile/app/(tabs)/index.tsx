@@ -20,7 +20,7 @@ import { useLocalDB, Fine } from '../../hooks/useLocalDB';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { t, profile, notificationsEnabled, highContrast } = useSettings();
+  const { t, profile, notificationsEnabled, highContrast, savedVehicles, activeVehicleId, setActiveVehicleId } = useSettings();
   const { state, stateCode, countryCode, isOffline, permissionDenied, locationName, speedZoneLimit, activeAlerts } = useGeoFineAlert();
   const { getTopViolations } = useLocalDB();
   const { width: windowWidth } = useWindowDimensions();
@@ -90,6 +90,62 @@ export default function HomeScreen() {
             {notificationsEnabled && <View style={styles.notificationDot} />}
           </TouchableOpacity>
         </View>
+
+        {/* Garage Quick Switcher */}
+        {savedVehicles.length > 0 && (
+          <View style={styles.garageContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.garageScrollContent}
+            >
+              <View style={styles.garageLabelContainer}>
+                <Ionicons name="car-sport-outline" size={fs(14)} color={textSecondary} />
+                <Text style={[styles.garageLabel, { color: textSecondary, fontSize: fs(11) }]}>MY GARAGE</Text>
+              </View>
+              {savedVehicles.map((vehicle) => {
+                const isActive = activeVehicleId === vehicle.id;
+                const iconName = vehicle.type === '2w' ? 'motorbike' : vehicle.type === 'cv' ? 'truck' : 'car';
+                return (
+                  <TouchableOpacity
+                    key={vehicle.id}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveVehicleId(vehicle.id)}
+                    style={[
+                      styles.garageChip,
+                      isActive ? styles.garageChipActive : styles.garageChipInactive,
+                      borderStyle,
+                    ]}
+                  >
+                    <MaterialCommunityIcons 
+                      name={iconName as any} 
+                      size={fs(15)} 
+                      color={isActive ? '#fff' : accent} 
+                    />
+                    <Text 
+                      style={[
+                        styles.garageChipText, 
+                        isActive ? styles.garageChipTextActive : styles.garageChipTextInactive,
+                        { fontSize: fs(12) }
+                      ]}
+                    >
+                      {vehicle.nickName} {vehicle.plateNumber ? `(${vehicle.plateNumber})` : ''}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => router.push('/(tabs)/settings')}
+                style={[styles.garageChipAdd, borderStyle]}
+              >
+                <Ionicons name="add" size={fs(14)} color={accent} />
+                <Text style={[styles.garageChipTextAdd, { color: accent, fontSize: fs(12) }]}>Manage</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
 
         {/* Location Card */}
         <TouchableOpacity 
@@ -598,6 +654,74 @@ const styles = StyleSheet.create({
   recentSearchText: {
     fontSize: 13,
     color: '#4b5563',
+  },
+  garageContainer: {
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  garageScrollContent: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  garageLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginRight: 6,
+  },
+  garageLabel: {
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  garageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  garageChipActive: {
+    backgroundColor: '#d97706',
+    borderColor: '#d97706',
+  },
+  garageChipInactive: {
+    backgroundColor: '#FAF8F5',
+    borderColor: '#E5E7EB',
+  },
+  garageChipText: {
+    fontWeight: '600',
+  },
+  garageChipTextActive: {
+    color: '#fff',
+  },
+  garageChipTextInactive: {
+    color: '#1c1c1c',
+  },
+  garageChipAdd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+    backgroundColor: '#FEF3C7',
+  },
+  garageChipTextAdd: {
+    fontWeight: '700',
   },
 });
 

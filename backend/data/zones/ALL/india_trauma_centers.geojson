@@ -1,0 +1,575 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2667, 13.0524]
+      },
+      "properties": {
+        "name": "Government Royapettah Hospital",
+        "state": "TN",
+        "city": "Chennai",
+        "level": "Level 1 Trauma",
+        "phone": "044-28193000",
+        "beds_approx": 450,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=13.0524&lng=80.2667"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.2750, 13.0825]
+      },
+      "properties": {
+        "name": "Rajiv Gandhi Government General Hospital",
+        "state": "TN",
+        "city": "Chennai",
+        "level": "Level 1 Trauma",
+        "phone": "044-25305000",
+        "beds_approx": 1500,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=13.0825&lng=80.2750"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [76.9734, 11.0028]
+      },
+      "properties": {
+        "name": "Coimbatore Medical College Hospital",
+        "state": "TN",
+        "city": "Coimbatore",
+        "level": "Level 2 Trauma",
+        "phone": "0422-2301393",
+        "beds_approx": 1000,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=11.0028&lng=76.9734"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [72.8421, 19.0024]
+      },
+      "properties": {
+        "name": "KEM Hospital & Seth G.S. Medical College",
+        "state": "MH",
+        "city": "Mumbai",
+        "level": "Level 1 Trauma",
+        "phone": "022-24107000",
+        "beds_approx": 1800,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=19.0024&lng=72.8421"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [72.8601, 19.0365]
+      },
+      "properties": {
+        "name": "Sion Hospital (LTMMC)",
+        "state": "MH",
+        "city": "Mumbai",
+        "level": "Level 1 Trauma",
+        "phone": "022-24076381",
+        "beds_approx": 1400,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=19.0365&lng=72.8601"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [73.8739, 18.5284]
+      },
+      "properties": {
+        "name": "Sassoon General Hospital",
+        "state": "MH",
+        "city": "Pune",
+        "level": "Level 2 Trauma",
+        "phone": "020-26128000",
+        "beds_approx": 1200,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=18.5284&lng=73.8739"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2100, 28.5672]
+      },
+      "properties": {
+        "name": "AIIMS Jai Prakash Narayan Apex Trauma Center",
+        "state": "DL",
+        "city": "New Delhi",
+        "level": "Level 1 Trauma",
+        "phone": "011-26593444",
+        "beds_approx": 250,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=28.5672&lng=77.2100"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2081, 28.5710]
+      },
+      "properties": {
+        "name": "Safdarjung Hospital Trauma Center",
+        "state": "DL",
+        "city": "New Delhi",
+        "level": "Level 1 Trauma",
+        "phone": "011-26730000",
+        "beds_approx": 2900,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=28.5710&lng=77.2081"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2014, 28.6253]
+      },
+      "properties": {
+        "name": "Ram Manohar Lohia Hospital",
+        "state": "DL",
+        "city": "New Delhi",
+        "level": "Level 1 Trauma",
+        "phone": "011-23365525",
+        "beds_approx": 1400,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=28.6253&lng=77.2014"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.5971, 12.9431]
+      },
+      "properties": {
+        "name": "NIMHANS Trauma Block",
+        "state": "KA",
+        "city": "Bengaluru",
+        "level": "Level 1 Trauma",
+        "phone": "080-26995000",
+        "beds_approx": 800,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=12.9431&lng=77.5971"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.5742, 12.9634]
+      },
+      "properties": {
+        "name": "Victoria Hospital (BMCRI)",
+        "state": "KA",
+        "city": "Bengaluru",
+        "level": "Level 1 Trauma",
+        "phone": "080-26701150",
+        "beds_approx": 1000,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=12.9634&lng=77.5742"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.6244, 12.9333]
+      },
+      "properties": {
+        "name": "St. John's Medical College Hospital",
+        "state": "KA",
+        "city": "Bengaluru",
+        "level": "Level 2 Trauma",
+        "phone": "080-22065000",
+        "beds_approx": 1350,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=12.9333&lng=77.6244"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [72.6040, 23.0531]
+      },
+      "properties": {
+        "name": "Ahmedabad Civil Hospital Trauma Center",
+        "state": "GJ",
+        "city": "Ahmedabad",
+        "level": "Level 1 Trauma",
+        "phone": "079-22683721",
+        "beds_approx": 2000,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=23.0531&lng=72.6040"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [72.5714, 23.0232]
+      },
+      "properties": {
+        "name": "SVP Institute of Medical Sciences",
+        "state": "GJ",
+        "city": "Ahmedabad",
+        "level": "Level 1 Trauma",
+        "phone": "079-66770000",
+        "beds_approx": 1500,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=23.0232&lng=72.5714"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [72.8256, 21.1764]
+      },
+      "properties": {
+        "name": "Government Medical College & New Civil Hospital",
+        "state": "GJ",
+        "city": "Surat",
+        "level": "Level 2 Trauma",
+        "phone": "0261-2244175",
+        "beds_approx": 1000,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=21.1764&lng=72.8256"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [75.8153, 26.8996]
+      },
+      "properties": {
+        "name": "SMS Hospital Trauma Center",
+        "state": "RJ",
+        "city": "Jaipur",
+        "level": "Level 1 Trauma",
+        "phone": "0141-2560291",
+        "beds_approx": 2500,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=26.8996&lng=75.8153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [75.8647, 26.7725]
+      },
+      "properties": {
+        "name": "Mahatma Gandhi Hospital Trauma Center",
+        "state": "RJ",
+        "city": "Jaipur",
+        "level": "Level 2 Trauma",
+        "phone": "0141-2771777",
+        "beds_approx": 1400,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=26.7725&lng=75.8647"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [73.0182, 26.2736]
+      },
+      "properties": {
+        "name": "Dr. S.N. Medical College & MDM Hospital",
+        "state": "RJ",
+        "city": "Jodhpur",
+        "level": "Level 2 Trauma",
+        "phone": "0291-2434381",
+        "beds_approx": 1000,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=26.2736&lng=73.0182"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.9161, 26.8687]
+      },
+      "properties": {
+        "name": "KGMU Trauma Center",
+        "state": "UP",
+        "city": "Lucknow",
+        "level": "Level 1 Trauma",
+        "phone": "0522-2257540",
+        "beds_approx": 350,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=26.8687&lng=80.9161"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.9392, 26.7485]
+      },
+      "properties": {
+        "name": "SGPGI Trauma Center",
+        "state": "UP",
+        "city": "Lucknow",
+        "level": "Level 1 Trauma",
+        "phone": "0522-2668700",
+        "beds_approx": 900,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=26.7485&lng=80.9392"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.7423, 28.9868]
+      },
+      "properties": {
+        "name": "LLRM Medical College & Trauma Center",
+        "state": "UP",
+        "city": "Meerut",
+        "level": "Level 2 Trauma",
+        "phone": "0121-2760888",
+        "beds_approx": 1000,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=28.9868&lng=77.7423"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [88.3444, 22.5398]
+      },
+      "properties": {
+        "name": "IPGMER & SSKM Hospital Trauma Center",
+        "state": "WB",
+        "city": "Kolkata",
+        "level": "Level 1 Trauma",
+        "phone": "033-22041100",
+        "beds_approx": 1500,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=22.5398&lng=88.3444"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [88.3789, 22.5937]
+      },
+      "properties": {
+        "name": "RG Kar Medical College & Hospital",
+        "state": "WB",
+        "city": "Kolkata",
+        "level": "Level 2 Trauma",
+        "phone": "033-25557676",
+        "beds_approx": 1200,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=22.5937&lng=88.3789"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [88.3621, 22.5731]
+      },
+      "properties": {
+        "name": "Medical College and Hospital",
+        "state": "WB",
+        "city": "Kolkata",
+        "level": "Level 1 Trauma",
+        "phone": "033-22123773",
+        "beds_approx": 1500,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=22.5731&lng=88.3621"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [78.4554, 17.4225]
+      },
+      "properties": {
+        "name": "NIMS Trauma Center",
+        "state": "TS",
+        "city": "Hyderabad",
+        "level": "Level 1 Trauma",
+        "phone": "040-23489000",
+        "beds_approx": 1500,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=17.4225&lng=78.4554"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [78.4744, 17.3781]
+      },
+      "properties": {
+        "name": "Osmania General Hospital",
+        "state": "TS",
+        "city": "Hyderabad",
+        "level": "Level 1 Trauma",
+        "phone": "040-24600146",
+        "beds_approx": 1100,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=17.3781&lng=78.4744"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [78.5034, 17.4248]
+      },
+      "properties": {
+        "name": "Gandhi Hospital",
+        "state": "TS",
+        "city": "Hyderabad",
+        "level": "Level 1 Trauma",
+        "phone": "040-27505566",
+        "beds_approx": 1200,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=17.4248&lng=78.5034"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [83.3032, 17.7088]
+      },
+      "properties": {
+        "name": "King George Hospital",
+        "state": "AP",
+        "city": "Visakhapatnam",
+        "level": "Level 1 Trauma",
+        "phone": "0891-2564891",
+        "beds_approx": 1200,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=17.7088&lng=83.3032"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [80.6384, 16.5165]
+      },
+      "properties": {
+        "name": "Government General Hospital",
+        "state": "AP",
+        "city": "Vijayawada",
+        "level": "Level 1 Trauma",
+        "phone": "0866-2430033",
+        "beds_approx": 800,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=16.5165&lng=80.6384"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [79.4032, 13.6335]
+      },
+      "properties": {
+        "name": "Sri Venkateswara Institute of Medical Sciences (SVIMS)",
+        "state": "AP",
+        "city": "Tirupati",
+        "level": "Level 1 Trauma",
+        "phone": "0877-2287777",
+        "beds_approx": 900,
+        "24x7": true,
+        "zone_type": "TRAUMA_CENTER",
+        "alert_radius_meters": 2000,
+        "search_endpoint": "/api/v1/emergency/nearest-hospital?lat=13.6335&lng=79.4032"
+      }
+    }
+  ]
+}

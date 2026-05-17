@@ -1,0 +1,51 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_NH_48_001",
+        "zone_name": "NH-48 Mumbai-Pune Expressway",
+        "highway_code": "NH-48",
+        "speed_limit_kmph": 120,
+        "truck_speed_limit_kmph": 80,
+        "zone_type": "HIGHWAY_SPEED_CORRIDOR",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 2000,
+        "buffer_meters": 100,
+        "alert_message": "NH-48 Speed corridor active. Max speed 120 km/h."
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [73.5000, 18.7000],
+          [73.7501, 18.8897],
+          [74.0000, 19.1000]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_NH_65_001",
+        "zone_name": "NH-65 Pune-Solapur Highway Corridor",
+        "highway_code": "NH-65",
+        "speed_limit_kmph": 100,
+        "truck_speed_limit_kmph": 80,
+        "zone_type": "HIGHWAY_SPEED_CORRIDOR",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 2000,
+        "buffer_meters": 100,
+        "alert_message": "NH-65 Speed corridor active. Max speed 100 km/h."
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [73.8567, 18.5204],
+          [74.5000, 18.3000],
+          [75.0000, 18.0000]
+        ]
+      }
+    }
+  ]
+}

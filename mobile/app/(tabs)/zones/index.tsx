@@ -17,7 +17,7 @@ export default function BrowseRulesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         {/* HEADER */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>
@@ -30,7 +30,7 @@ export default function BrowseRulesScreen() {
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
+
           {/* QUICK ANSWER BANNER */}
           <View style={styles.bannerContainer}>
             <View style={styles.bannerIconContainer}>
@@ -40,7 +40,7 @@ export default function BrowseRulesScreen() {
               <Text style={styles.bannerTitle}>Want a quick answer?</Text>
               <Text style={styles.bannerSubtitle}>Ask the assistant — it knows your local rules.</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.bannerButton}
               onPress={() => router.push('/ask')}
             >
@@ -55,7 +55,7 @@ export default function BrowseRulesScreen() {
 
             <View style={styles.gridContainer}>
               {/* Category 1 */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.categoryCard}
                 onPress={() => router.push('/zones/speed-limits')}
               >
@@ -115,7 +115,7 @@ export default function BrowseRulesScreen() {
         </ScrollView>
 
         {/* FLOATING MAP BUTTON */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.floatingMapButton}
           onPress={() => router.push('/zones/live')}
         >

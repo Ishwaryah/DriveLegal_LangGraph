@@ -1,0 +1,142 @@
+{
+  "source": "CMV Rules 1989, Schedule IV",
+  "categories": [
+    {
+      "code": "MCWOG",
+      "full_name": "Motor Cycle Without Gear",
+      "description": "Motorcycles/scooters without gear (gearless scooters, mopeds) below 50cc",
+      "minimum_age": 16,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": false
+    },
+    {
+      "code": "MCWG",
+      "full_name": "Motor Cycle With Gear",
+      "description": "Motorcycles with manual gearbox above 50cc",
+      "minimum_age": 18,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": false
+    },
+    {
+      "code": "LMV",
+      "full_name": "Light Motor Vehicle",
+      "description": "Private motor cars, jeeps, small passenger/goods vehicles under 7500kg unladen weight",
+      "minimum_age": 18,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": false
+    },
+    {
+      "code": "LMV-TR",
+      "full_name": "Light Motor Vehicle - Transport",
+      "description": "Commercial passenger vehicles, taxis, delivery vans, and light commercial vehicles under 7500kg",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    },
+    {
+      "code": "HMV",
+      "full_name": "Heavy Motor Vehicle",
+      "description": "Heavy transport vehicles including multi-axle freight trucks, commercial buses, etc.",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    },
+    {
+      "code": "HGMV",
+      "full_name": "Heavy Goods Motor Vehicle",
+      "description": "Heavy commercial cargo trucks and dumpers",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    },
+    {
+      "code": "HPMV",
+      "full_name": "Heavy Passenger Motor Vehicle",
+      "description": "Heavy commercial passenger buses and coaches",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    },
+    {
+      "code": "MGV",
+      "full_name": "Medium Goods Vehicle",
+      "description": "Medium commercial freight trucks, tempos, and load carriers",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    },
+    {
+      "code": "Transport",
+      "full_name": "Transport Category",
+      "description": "Unified endorsement for operating any transport/commercial vehicle",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    },
+    {
+      "code": "Articulated Vehicle",
+      "full_name": "Articulated Vehicle",
+      "description": "Heavy duty commercial trailer trucks and articulated goods carriers",
+      "minimum_age": 20,
+      "requires_ll_first": true,
+      "ll_validity_months": 6,
+      "test_type": "Practical",
+      "transport_category": true
+    }
+  ],
+  "violation_implications": [
+    {
+      "scenario": "driving without licence",
+      "applicable_section": "Section 3 / Section 181",
+      "fine_inr": 5000,
+      "imprisonment_months": 3,
+      "notes": "Driving a vehicle in any public place without holding an active, valid driving license."
+    },
+    {
+      "scenario": "driving wrong category",
+      "applicable_section": "Section 3 / Section 181",
+      "fine_inr": 5000,
+      "imprisonment_months": 3,
+      "notes": "Driving a class of vehicle (e.g. Heavy Goods Vehicle) without holding an endorsement for that specific category on the DL."
+    },
+    {
+      "scenario": "driving during suspension",
+      "applicable_section": "Section 182",
+      "fine_inr": 10000,
+      "imprisonment_months": 3,
+      "notes": "Driving a motor vehicle after being disqualified from holding a license or while the license is suspended."
+    },
+    {
+      "scenario": "minor driving",
+      "applicable_section": "Section 199A",
+      "fine_inr": 25000,
+      "imprisonment_months": 36,
+      "notes": "Juvenile driving in a public place. Fine of Rs. 25,000 and imprisonment up to 3 years for the vehicle owner/guardian. Registration of the vehicle will be cancelled for 1 year, and the minor will be disqualified from holding a DL until age 25."
+    },
+    {
+      "scenario": "learner driving without L-board",
+      "applicable_section": "Rule 3 CMV Rules / Section 177",
+      "fine_inr": 500,
+      "imprisonment_months": 0,
+      "notes": "Learner license holder driving a vehicle without displaying the mandatory 'L' board in red color at the front and rear, or driving without a licensed companion."
+    }
+  ]
+}

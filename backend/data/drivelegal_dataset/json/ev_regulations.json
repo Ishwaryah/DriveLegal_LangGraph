@@ -1,0 +1,97 @@
+{
+  "puc_required": false,
+  "puc_exemption_clause": "Rule 115 of Central Motor Vehicles Rules (CMVR), 1989 exempts battery-operated vehicles (BOVs) from tailpipe emission test certificates.",
+  "registration_rules": {
+    "fee_waiver": "CMVR Rule 81 exempts electric vehicles from payment of fees for issue or renewal of registration certificate.",
+    "plate_color": "Mandatory green background plate. Private EVs: White lettering. Commercial/Transport EVs: Yellow lettering.",
+    "validity_years": {
+      "private": 15,
+      "commercial": 5
+    }
+  },
+  "charging_zone_restrictions": {
+    "non_ev_parking_fine": 500,
+    "non_ev_parking_section": "Section 177 - Obstruction to traffic and misuse of dedicated charging berths.",
+    "charging_time_limit_minutes": 120,
+    "overstay_penalty_per_minute": 5.0
+  },
+  "subsidy_eligibility": {
+    "fame_ii": {
+      "incentive_per_kwh": 10000,
+      "max_subsidy_percentage_of_cost": 15.0,
+      "eligible_categories": [
+        "Two-Wheeler (private)",
+        "Three-Wheeler (commercial)",
+        "Four-Wheeler (commercial)"
+      ]
+    },
+    "state_wise_top_up": {
+      "Delhi": {
+        "subsidy_per_kwh": 5000,
+        "max_subsidy": 15000,
+        "road_tax_waiver": 100.0,
+        "registration_fee_waiver": 100.0
+      },
+      "Maharashtra": {
+        "subsidy_per_kwh": 5000,
+        "max_subsidy": 10000,
+        "early_bird_bonus": 5000,
+        "road_tax_waiver": 100.0,
+        "registration_fee_waiver": 100.0
+      },
+      "Gujarat": {
+        "subsidy_per_kwh": 10000,
+        "max_subsidy": 20000,
+        "road_tax_waiver": 50.0,
+        "registration_fee_waiver": 100.0
+      },
+      "Tamil Nadu": {
+        "subsidy_per_kwh": 0,
+        "max_subsidy": 0,
+        "road_tax_waiver": 100.0,
+        "registration_fee_waiver": 100.0,
+        "additional_incentives": "100% road tax waiver for all EVs till December 2025"
+      },
+      "Karnataka": {
+        "subsidy_per_kwh": 0,
+        "max_subsidy": 0,
+        "road_tax_waiver": 100.0,
+        "registration_fee_waiver": 100.0,
+        "additional_incentives": "100% exemption on road tax and registration fees for all EVs"
+      },
+      "Uttar Pradesh": {
+        "subsidy_per_kwh": 5000,
+        "max_subsidy": 100000,
+        "road_tax_waiver": 100.0,
+        "registration_fee_waiver": 100.0,
+        "note": "100% tax and registration waiver for first 3 years of EV policy (since Oct 2022)"
+      }
+    }
+  },
+  "insurance_requirements": {
+    "third_party_discount": 15.0,
+    "irdai_circular_ref": "IRDA/NL/REG/MOT/2019 - Mandatory third-party insurance discounts for clean energy vehicles.",
+    "battery_pack_coverage": "Own Damage (OD) insurance must specify separate replacement value for the Lithium-ion battery, representing up to 50% of total vehicle IDV."
+  },
+  "permitted_roads": {
+    "e_rickshaw": {
+      "expressways": "Strictly Prohibited",
+      "national_highways": "Prohibited in fast lanes; allowed only on service lanes",
+      "urban_arteries": "Permitted, speed capped at 25 km/h"
+    },
+    "e_scooter": {
+      "low_speed_under_25kmh": {
+        "expressways": "Prohibited",
+        "national_highways": "Prohibited",
+        "license_required": false,
+        "helmet_required": true
+      },
+      "high_speed_above_25kmh": {
+        "expressways": "Prohibited for vehicles under 50cc equivalent (less than 4kW)",
+        "national_highways": "Permitted in outer lane",
+        "license_required": true,
+        "helmet_required": true
+      }
+    }
+  }
+}

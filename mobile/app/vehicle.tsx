@@ -14,7 +14,7 @@ const VEHICLES = [
 
 export default function VehicleScreen() {
   const router = useRouter();
-  const { selectedVehicleId, setSelectedVehicleId } = useSettings();
+  const { selectedVehicleId, setSelectedVehicleId, addSavedVehicle } = useSettings();
   const [selectedId, setSelectedId] = useState(selectedVehicleId || '4w');
   const [vehicleNumber, setVehicleNumber] = useState('');
 
@@ -37,6 +37,15 @@ export default function VehicleScreen() {
     } else {
       await AsyncStorage.removeItem('vehicle_number');
     }
+    
+    // Auto-create garage entry on onboarding completion
+    const nick = selectedId === '2w' ? 'My Two-wheeler' : selectedId === 'cv' ? 'My Truck' : 'My Car';
+    await addSavedVehicle({
+      type: selectedId,
+      plateNumber: vehicleNumber.trim().toUpperCase(),
+      nickName: nick,
+    });
+
     router.push('/(tabs)');
   };
 

@@ -1,0 +1,255 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_001",
+        "zone_name": "Dadar School Cluster East",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8400, 19.0150],
+            [72.8460, 19.0150],
+            [72.8460, 19.0210],
+            [72.8400, 19.0210],
+            [72.8400, 19.0150]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_002",
+        "zone_name": "Dadar School Cluster West",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8350, 19.0190],
+            [72.8430, 19.0190],
+            [72.8430, 19.0250],
+            [72.8350, 19.0250],
+            [72.8350, 19.0190]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_003",
+        "zone_name": "Bandra West School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8250, 19.0520],
+            [72.8330, 19.0520],
+            [72.8330, 19.0580],
+            [72.8250, 19.0580],
+            [72.8250, 19.0520]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_004",
+        "zone_name": "Bandra East School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8320, 19.0560],
+            [72.8380, 19.0560],
+            [72.8380, 19.0620],
+            [72.8320, 19.0620],
+            [72.8320, 19.0560]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_005",
+        "zone_name": "Andheri West School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8350, 19.1120],
+            [72.8430, 19.1120],
+            [72.8430, 19.1180],
+            [72.8350, 19.1180],
+            [72.8350, 19.1120]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_006",
+        "zone_name": "Andheri East School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8420, 19.1170],
+            [72.8480, 19.1170],
+            [72.8480, 19.1230],
+            [72.8420, 19.1230],
+            [72.8420, 19.1170]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_007",
+        "zone_name": "Borivali West School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8500, 19.2250],
+            [72.8580, 19.2250],
+            [72.8580, 19.2310],
+            [72.8500, 19.2310],
+            [72.8500, 19.2250]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_008",
+        "zone_name": "Borivali East School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8450, 19.2290],
+            [72.8530, 19.2290],
+            [72.8530, 19.2350],
+            [72.8450, 19.2350],
+            [72.8450, 19.2290]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_009",
+        "zone_name": "Thane West School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.9700, 19.1920],
+            [72.9780, 19.1920],
+            [72.9780, 19.1980],
+            [72.9700, 19.1980],
+            [72.9700, 19.1920]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_SZ_010",
+        "zone_name": "Thane East School Cluster",
+        "zone_type": "SCHOOL_ZONE",
+        "speed_limit_kmph": 25,
+        "time_window": "07:00-09:00,13:00-15:00",
+        "fine_section": "Section 112",
+        "fine_amount_inr": 1000,
+        "alert_message": "School zone — speed limit 25 km/h"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.9750, 19.1970],
+            [72.9830, 19.1970],
+            [72.9830, 19.2030],
+            [72.9750, 19.2030],
+            [72.9750, 19.1970]
+          ]
+        ]
+      }
+    }
+  ]
+}

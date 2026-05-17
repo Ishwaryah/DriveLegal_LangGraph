@@ -1,0 +1,16 @@
+{
+  "api": "DigiLocker Partner API",
+  "document_types": [
+    "DRIVING_LICENSE",
+    "REGISTRATION_CERTIFICATE"
+  ],
+  "verification_response": {
+    "digilocker_id": "DL_90182379",
+    "document_type": "DRIVING_LICENSE",
+    "document_number": "TN0720180009871",
+    "holder_name": "Santhosh Kumar",
+    "valid_till": "2038-12-31",
+    "verification_status": "VERIFIED_OFFICIAL",
+    "signing_authority": "Ministry of Road Transport and Highways"
+  }
+}

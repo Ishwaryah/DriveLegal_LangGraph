@@ -65,6 +65,13 @@ const _PLACEHOLDER: any = {
   'safe_driver': { en: 'Safe driver', ta: 'பாதுகாப்பான ஓட்டுநர்', hi: 'सुरक्षित ड्राइवर', te: 'సురక్షిత డ్రైవర్' },
 }; // _PLACEHOLDER kept only to preserve git diff readability — unused at runtime
 
+export interface SavedVehicle {
+  id: string;
+  plateNumber: string;
+  type: string; // '2w', '4w', 'cv'
+  nickName: string;
+}
+
 interface SettingsContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -84,6 +91,11 @@ interface SettingsContextType {
   setDefaultVehicleType: (type: string) => void;
   vehicleNumber: string;
   setVehicleNumber: (num: string) => void;
+  savedVehicles: SavedVehicle[];
+  addSavedVehicle: (vehicle: Omit<SavedVehicle, 'id'>) => Promise<void>;
+  removeSavedVehicle: (id: string) => Promise<void>;
+  activeVehicleId: string | null;
+  setActiveVehicleId: (id: string | null) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -98,6 +110,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [defaultCountryState, setDefaultCountryState] = useState('IN');
   const [defaultVehicleTypeState, setDefaultVehicleTypeState] = useState('2W');
   const [vehicleNumberState, setVehicleNumberState] = useState('');
+  const [savedVehicles, setSavedVehiclesState] = useState<SavedVehicle[]>([]);
+  const [activeVehicleId, setActiveVehicleIdState] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -113,6 +127,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const savedDefaultCountry = await AsyncStorage.getItem('defaultCountry');
       const savedDefaultVehicle = await AsyncStorage.getItem('defaultVehicleType');
       const savedVehicleNumber = await AsyncStorage.getItem('vehicle_number');
+      const savedVehiclesStr = await AsyncStorage.getItem('saved_vehicles');
+      const savedActiveVehicleId = await AsyncStorage.getItem('active_vehicle_id');
 
       const SUPPORTED: Language[] = ['en', 'hi', 'ta', 'te', 'kn'];
       if (savedLang && SUPPORTED.includes(savedLang as Language)) {
@@ -146,6 +162,31 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
       if (savedVehicleNumber) {
         setVehicleNumberState(savedVehicleNumber);
+      }
+
+      // Garage Migration & Setup
+      let initialVehicles: SavedVehicle[] = [];
+      if (savedVehiclesStr) {
+        initialVehicles = JSON.parse(savedVehiclesStr);
+        setSavedVehiclesState(initialVehicles);
+      } else if (savedVehicle || savedVehicleNumber) {
+        // Migrate legacy onboarding values to garage
+        const migrated: SavedVehicle = {
+          id: 'default_migrated',
+          plateNumber: savedVehicleNumber || '',
+          type: savedVehicle || '4w',
+          nickName: savedVehicle === '2w' ? 'My Two-wheeler' : savedVehicle === 'cv' ? 'My Truck' : 'My Car',
+        };
+        initialVehicles = [migrated];
+        setSavedVehiclesState(initialVehicles);
+        await AsyncStorage.setItem('saved_vehicles', JSON.stringify(initialVehicles));
+      }
+
+      if (savedActiveVehicleId) {
+        setActiveVehicleIdState(savedActiveVehicleId);
+      } else if (initialVehicles.length > 0) {
+        setActiveVehicleIdState(initialVehicles[0].id);
+        await AsyncStorage.setItem('active_vehicle_id', initialVehicles[0].id);
       }
     } catch (e) {
       console.error('Failed to load settings', e);
@@ -199,6 +240,56 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('vehicle_number', num);
   };
 
+  const addSavedVehicle = async (vehicle: Omit<SavedVehicle, 'id'>) => {
+    const newVehicle: SavedVehicle = {
+      ...vehicle,
+      id: Math.random().toString(36).substring(2, 11),
+    };
+    setSavedVehiclesState(prev => {
+      const updated = [...prev, newVehicle];
+      AsyncStorage.setItem('saved_vehicles', JSON.stringify(updated));
+      if (updated.length === 1 || !activeVehicleId) {
+        setActiveVehicleId(newVehicle.id, updated);
+      }
+      return updated;
+    });
+  };
+
+  const removeSavedVehicle = async (id: string) => {
+    setSavedVehiclesState(prev => {
+      const updated = prev.filter(v => v.id !== id);
+      AsyncStorage.setItem('saved_vehicles', JSON.stringify(updated));
+      if (activeVehicleId === id) {
+        if (updated.length > 0) {
+          setActiveVehicleId(updated[0].id, updated);
+        } else {
+          setActiveVehicleId(null, updated);
+        }
+      }
+      return updated;
+    });
+  };
+
+  const setActiveVehicleId = async (id: string | null, latestSavedVehicles = savedVehicles) => {
+    setActiveVehicleIdState(id);
+    if (id) {
+      await AsyncStorage.setItem('active_vehicle_id', id);
+      const vehicle = latestSavedVehicles.find(v => v.id === id);
+      if (vehicle) {
+        setSelectedVehicleIdState(vehicle.type);
+        setVehicleNumberState(vehicle.plateNumber);
+        await AsyncStorage.setItem('selected_vehicle_id', vehicle.type);
+        await AsyncStorage.setItem('vehicle_number', vehicle.plateNumber);
+      }
+    } else {
+      await AsyncStorage.removeItem('active_vehicle_id');
+      setSelectedVehicleIdState(null);
+      setVehicleNumberState('');
+      await AsyncStorage.removeItem('selected_vehicle_id');
+      await AsyncStorage.removeItem('vehicle_number');
+    }
+  };
+
   const t = (key: string, params?: Record<string, string>) => {
     let text = strings[key]?.[language as keyof typeof strings[string]] || strings[key]?.['en'] || key;
     if (params) {
@@ -221,7 +312,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       highContrast: highContrastState, setHighContrast,
       defaultCountry: defaultCountryState, setDefaultCountry,
       defaultVehicleType: defaultVehicleTypeState, setDefaultVehicleType,
-      vehicleNumber: vehicleNumberState, setVehicleNumber
+      vehicleNumber: vehicleNumberState, setVehicleNumber,
+      savedVehicles, addSavedVehicle, removeSavedVehicle,
+      activeVehicleId, setActiveVehicleId
     }}>
       {children}
     </SettingsContext.Provider>

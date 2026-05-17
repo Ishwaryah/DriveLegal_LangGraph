@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 # zone_check is last because its keywords are very broad.
 _INTENT_PRIORITY = [
     "procedure_query",
-    "general_query",
     "fine_lookup",
+    "general_query",
     "rule_query",
     "zone_check",
 ]

@@ -1,0 +1,108 @@
+{
+  "source": "Insurance Information Bureau of India (IIB)",
+  "verification_endpoint": "https://iib.gov.in/IIBDMSP/mactDetails.action",
+  "fine_for_no_insurance": {
+    "first_offence_inr": 2000,
+    "subsequent_offence_inr": 4000,
+    "section": "Section 196 MV Act",
+    "imprisonment_possible": true
+  },
+  "companies": [
+    {
+      "iib_code": "1",
+      "company_name": "National Insurance Company Ltd",
+      "short_code": "NIC",
+      "type": "PSU",
+      "policy_verification_url": "https://nationalinsurance.nic.co.in",
+      "helpline": "1800-345-0330"
+    },
+    {
+      "iib_code": "2",
+      "company_name": "The New India Assurance Co. Ltd",
+      "short_code": "NIA",
+      "type": "PSU",
+      "policy_verification_url": "https://www.newindia.co.in",
+      "helpline": "1800-209-1415"
+    },
+    {
+      "iib_code": "3",
+      "company_name": "The Oriental Insurance Co. Ltd",
+      "short_code": "OIC",
+      "type": "PSU",
+      "policy_verification_url": "https://orientalinsurance.org.in",
+      "helpline": "1800-11-8485"
+    },
+    {
+      "iib_code": "4",
+      "company_name": "United India Insurance Co. Ltd",
+      "short_code": "UIIC",
+      "type": "PSU",
+      "policy_verification_url": "https://uiic.co.in",
+      "helpline": "1800-425-33333"
+    },
+    {
+      "iib_code": "5",
+      "company_name": "ICICI Lombard General Insurance Co. Ltd",
+      "short_code": "ICICIL",
+      "type": "Private",
+      "policy_verification_url": "https://www.icicilombard.com",
+      "helpline": "1800-2666"
+    },
+    {
+      "iib_code": "6",
+      "company_name": "HDFC ERGO General Insurance Co. Ltd",
+      "short_code": "HDFCERGO",
+      "type": "Private",
+      "policy_verification_url": "https://www.hdfcergo.com",
+      "helpline": "1800-2700-700"
+    },
+    {
+      "iib_code": "7",
+      "company_name": "Bajaj Allianz General Insurance Co. Ltd",
+      "short_code": "BAGIC",
+      "type": "Private",
+      "policy_verification_url": "https://www.bajajallianz.com",
+      "helpline": "1800-209-5858"
+    },
+    {
+      "iib_code": "8",
+      "company_name": "Tata AIG General Insurance Co. Ltd",
+      "short_code": "TATA-AIG",
+      "type": "Private",
+      "policy_verification_url": "https://www.tataaig.com",
+      "helpline": "1800-266-7780"
+    },
+    {
+      "iib_code": "9",
+      "company_name": "Reliance General Insurance Co. Ltd",
+      "short_code": "RGICL",
+      "type": "Private",
+      "policy_verification_url": "https://www.reliancegeneral.co.in",
+      "helpline": "1800-3009"
+    },
+    {
+      "iib_code": "10",
+      "company_name": "IFFCO Tokio General Insurance Co. Ltd",
+      "short_code": "IFFCO-TOKIO",
+      "type": "Private",
+      "policy_verification_url": "https://www.iffcotokio.co.in",
+      "helpline": "1800-103-5499"
+    },
+    {
+      "iib_code": "11",
+      "company_name": "SBI General Insurance Co. Ltd",
+      "short_code": "SBIG",
+      "type": "Private",
+      "policy_verification_url": "https://www.sbigeneral.in",
+      "helpline": "1800-102-1111"
+    },
+    {
+      "iib_code": "12",
+      "company_name": "Kotak Mahindra General Insurance Co. Ltd",
+      "short_code": "KOTAK",
+      "type": "Private",
+      "policy_verification_url": "https://www.kotakgeneral.com",
+      "helpline": "1800-266-4545"
+    }
+  ]
+}
