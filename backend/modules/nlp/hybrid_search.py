@@ -68,16 +68,16 @@ class HybridSearch:
         try:
             from chromadb.utils import embedding_functions  # type: ignore
             self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name="all-MiniLM-L6-v2"
+                model_name="law-ai/InLegalBERT"
             )
-            logger.info("SentenceTransformer embeddings loaded.")
+            logger.info("SentenceTransformer embeddings loaded (InLegalBERT).")
         except Exception as e:
             logger.warning("Local embeddings unavailable (%s). Using BM25-only fallback.", e)
 
         # ── ChromaDB ──────────────────────────────────────────────────────────
         self.client = chromadb.PersistentClient(path=self.persist_directory)
-        embedding_tag    = "st" if self.embedding_function else "none"
-        collection_name  = f"drivelegal_{embedding_tag}_v5"
+        embedding_tag    = "st_inlegalbert" if self.embedding_function else "none"
+        collection_name  = f"drivelegal_{embedding_tag}_v1"
 
         self.collection = self.client.get_or_create_collection(
             name=collection_name,

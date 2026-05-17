@@ -422,7 +422,7 @@ SPECIFIC FINE OVERRIDES IN {state.upper()}:
 
         client = chromadb.PersistentClient(path="./drivelegal_chroma_db")
         ef = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
+            model_name="law-ai/InLegalBERT"
         )
         collection = client.get_or_create_collection(
             name=collection_name,
