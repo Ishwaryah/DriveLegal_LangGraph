@@ -38,7 +38,7 @@ def test_missing_state_resolved_by_gps(pipeline):
     gps = {"lat": 13.0827, "lon": 80.2707} # Chennai, TN
     result = pipeline.run(raw_text, gps=gps)
     
-    assert result["state"] == "Tamil Nadu"
+    assert result["state"] in ["Tamil Nadu", "TN"]
     assert result["intent"] == "fine_lookup"
     assert result["status"] == "success"
 

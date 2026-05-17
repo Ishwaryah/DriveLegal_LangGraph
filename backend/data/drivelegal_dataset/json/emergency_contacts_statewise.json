@@ -82,8 +82,8 @@
         {
           "name": "KEM Hospital & Seth G.S. Medical College",
           "city": "Mumbai",
-          "lat": 19.0024,
-          "lng": 72.8421,
+          "lat": 18.9989,
+          "lng": 72.8404,
           "level": "Level 1 Trauma",
           "phone": "022-24107000",
           "24x7": true
@@ -219,8 +219,8 @@
         {
           "name": "Victoria Hospital (BMCRI)",
           "city": "Bengaluru",
-          "lat": 12.9634,
-          "lng": 77.5742,
+          "lat": 12.9638,
+          "lng": 77.5755,
           "level": "Level 1 Trauma",
           "phone": "080-26701150",
           "24x7": true
@@ -527,6 +527,15 @@
         "supreme_court_guideline": "S. Rajaseekaran vs Union of India (2016)"
       },
       "trauma_centers": [
+        {
+          "name": "Rajiv Gandhi Hospital",
+          "city": "Hyderabad",
+          "lat": 17.4065,
+          "lng": 78.5435,
+          "level": "Level 1 Trauma",
+          "phone": "040-23489000",
+          "24x7": true
+        },
         {
           "name": "NIMS Trauma Center",
           "city": "Hyderabad",

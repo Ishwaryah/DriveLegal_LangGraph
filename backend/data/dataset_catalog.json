@@ -24617,5 +24617,95 @@
     "type": "geojson",
     "category": "zones",
     "last_modified": "2026-05-13T15:13:40.816951"
+  },
+  {
+    "path": "datasets/indian_traffic_signs/metadata.json",
+    "size_bytes": 409,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.085023",
+    "md5": "31b965e462b961d73db384d6b70658df",
+    "kaggle_source": "ashishjangra27/indian-traffic-signs"
+  },
+  {
+    "path": "datasets/indian_traffic_signs/traffic_sign_classes.csv",
+    "size_bytes": 886,
+    "type": "csv",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.113122",
+    "md5": "c9b66d8edc812363dcd5865b1efa10f9",
+    "kaggle_source": "ashishjangra27/indian-traffic-signs"
+  },
+  {
+    "path": "datasets/indian_license_plates/metadata.json",
+    "size_bytes": 405,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.134891",
+    "md5": "799fce26b2e0156107124d1c482d63b0",
+    "kaggle_source": "nickyves/indian-number-plates-dataset"
+  },
+  {
+    "path": "datasets/indian_license_plates/ocr_annotations.json",
+    "size_bytes": 581,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.158598",
+    "md5": "502968cf2538e48dbd0a9c4c679dca36",
+    "kaggle_source": "nickyves/indian-number-plates-dataset"
+  },
+  {
+    "path": "datasets/pothole_detection/metadata.json",
+    "size_bytes": 362,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.184511",
+    "md5": "5b77b98125b18ff39c5d8e6d7ade4981",
+    "kaggle_source": "atulyakumar98/pothole-detection-dataset"
+  },
+  {
+    "path": "datasets/pothole_detection/pothole_coords.csv",
+    "size_bytes": 420,
+    "type": "csv",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.204818",
+    "md5": "64020df00b4461ea9b873f8c0b5038ec",
+    "kaggle_source": "atulyakumar98/pothole-detection-dataset"
+  },
+  {
+    "path": "datasets/driver_drowsiness/metadata.json",
+    "size_bytes": 369,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.228200",
+    "md5": "92ee4b691d7820ea14b1c78de57e36b7",
+    "kaggle_source": "driver-drowsiness-detection"
+  },
+  {
+    "path": "datasets/driver_drowsiness/drowsiness_facial_landmarks.json",
+    "size_bytes": 375,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.248926",
+    "md5": "c657cde9fd79739d9064fc7ecdd520b0",
+    "kaggle_source": "driver-drowsiness-detection"
+  },
+  {
+    "path": "datasets/traffic_violation_cctv/metadata.json",
+    "size_bytes": 422,
+    "type": "json",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.268465",
+    "md5": "8c6ed372d9584807df90b8a539d90e00",
+    "kaggle_source": "traffic-violation-cctv-dataset"
+  },
+  {
+    "path": "datasets/traffic_violation_cctv/cctv_violation_logs.csv",
+    "size_bytes": 495,
+    "type": "csv",
+    "category": "kaggle_camera_features",
+    "last_modified": "2026-05-17T18:19:54.294147",
+    "md5": "cb6f58cec2aeeacccbbe7099f2b53d80",
+    "kaggle_source": "traffic-violation-cctv-dataset"
   }
 ]

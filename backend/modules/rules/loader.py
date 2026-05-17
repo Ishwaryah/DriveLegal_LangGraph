@@ -123,6 +123,7 @@ class RulesLoader:
             enriched["description"]     = override.get("description") or rule["description"]
             enriched["is_state_override"] = True
             enriched["state_fine_data"]   = override.get("fine_data")
+            return enriched
         return rule
 
     def get_by_dataset_id(self, dataset_id: str) -> Optional[Dict]:

@@ -88,7 +88,129 @@ class HybridSearch:
         self.bm25: Optional[BM25Okapi] = None
         self.documents: List[Dict]     = []   # flat list of indexable chunks
 
+        # ── Multilingual Translation Fallback ────────────────────────────────
+        self._init_multilingual_dicts()
+        self.translator_pipeline = None
+        try:
+            from transformers import pipeline
+            self.translator_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-mul-en")
+            logger.info("Translation pipeline loaded (opus-mt-mul-en).")
+        except Exception as e:
+            logger.warning("Translation pipeline unavailable (%s). Using dictionary-only fallback.", e)
+
         self._build_corpus()
+
+    def _init_multilingual_dicts(self):
+        """Load all translation dictionaries for Hindi, Tamil, Telugu, Kannada, Marathi."""
+        self.phrase_map = {}
+        self.word_map = {}
+        
+        multilingual_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "data", "drivelegal_dataset", "multilingual")
+        )
+        
+        # 1. Load common violations translations
+        common_path = os.path.join(multilingual_dir, "common_violations_translations.json")
+        if os.path.exists(common_path):
+            try:
+                with open(common_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for key, langs in data.items():
+                        english_val = langs.get("en", "")
+                        if not english_val:
+                            continue
+                        for lang_code, regional_phrase in langs.items():
+                            if lang_code != "en" and regional_phrase:
+                                # Map full phrase to English equivalent
+                                self.phrase_map[regional_phrase.strip().lower()] = english_val
+            except Exception as e:
+                logger.warning("Failed to load common violations translations: %s", e)
+
+        # 2. Load language-specific term dictionaries
+        for lang in ["hindi", "tamil", "telugu", "kannada", "marathi"]:
+            term_path = os.path.join(multilingual_dir, f"traffic_terms_{lang}.json")
+            if os.path.exists(term_path):
+                try:
+                    with open(term_path, "r", encoding="utf-8") as f:
+                        terms = json.load(f)
+                        for eng_key, val in terms.items():
+                            val_str = str(val).strip()
+                            # e.g., "போக்குவரத்து (Pokkuvarathu)"
+                            # Extract native script and transliterated word
+                            parts = val_str.split("(")
+                            native_word = parts[0].strip().lower()
+                            self.word_map[native_word] = eng_key
+                            
+                            if len(parts) > 1:
+                                translit_word = parts[1].replace(")", "").strip().lower()
+                                self.word_map[translit_word] = eng_key
+                except Exception as e:
+                    logger.warning("Failed to load terms dictionary traffic_terms_%s.json: %s", lang, e)
+
+    def translate_query_to_english(self, query: str) -> str:
+        """
+        Translates regional/multilingual query (Hindi, Tamil, etc.) to English.
+        Utilizes high-fidelity local dictionaries first, with fallback to an
+        offline-safe HuggingFace translation pipeline if available.
+        """
+        if not query:
+            return ""
+            
+        cleaned_query = query.strip().lower()
+        
+        # Step 1: Check if query contains non-ASCII characters or regional terms
+        is_english = True
+        try:
+            query.encode('ascii')
+            # Check if any words match our transliterated word_map (e.g. "abaratham" or "yatayat")
+            words = cleaned_query.split()
+            if not any(w in self.word_map for w in words):
+                is_english = True
+            else:
+                is_english = False
+        except UnicodeEncodeError:
+            is_english = False
+            
+        if is_english:
+            return query
+
+        logger.info("Detecting regional query: '%s'. Applying translation pipeline...", query)
+
+        # Step 2: Try to translate using local dictionary first (high precision for common traffic phrases)
+        translated_query = cleaned_query
+        
+        # A. Phrase-level replacements (longest first)
+        sorted_phrases = sorted(self.phrase_map.keys(), key=len, reverse=True)
+        for regional_phrase in sorted_phrases:
+            if regional_phrase in translated_query:
+                translated_query = translated_query.replace(regional_phrase, self.phrase_map[regional_phrase])
+
+        # B. Word-level replacements
+        words = translated_query.split()
+        translated_words = []
+        for w in words:
+            clean_w = w.strip(".,?!;:()[]\"'")
+            if clean_w in self.word_map:
+                translated_words.append(self.word_map[clean_w])
+            else:
+                translated_words.append(w)
+        
+        dict_translated = " ".join(translated_words)
+
+        # Step 3: Optional HuggingFace pipeline translation
+        if hasattr(self, "translator_pipeline") and self.translator_pipeline is not None:
+            try:
+                res = self.translator_pipeline(query)
+                if res and isinstance(res, list) and len(res) > 0:
+                    hf_translation = res[0].get("translation_text", "")
+                    if hf_translation:
+                        logger.info("HF Pipeline translation: '%s'", hf_translation)
+                        return hf_translation
+            except Exception as e:
+                logger.warning("HF Pipeline translation failed: %s. Using local dictionary translation.", e)
+
+        logger.info("Local dictionary translation: '%s'", dict_translated)
+        return dict_translated
 
     # ── Corpus construction ───────────────────────────────────────────────────
 
@@ -257,6 +379,12 @@ class HybridSearch:
         Returns at most top_k unique results sorted by combined score (descending).
         Filters by country to ensure relevant legal context.
         """
+        # Multilingual Translation Fallback
+        original_query = query
+        query = self.translate_query_to_english(query)
+        if query != original_query:
+            logger.info("Translated search query: '%s' -> '%s'", original_query, query)
+
         results: Dict[str, Dict] = {}   # chunk_id → result entry
 
         # 1. Vector search
