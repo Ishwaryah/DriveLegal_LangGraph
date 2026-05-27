@@ -46,11 +46,6 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-# Also expose dataset loader path (data_loader.py is not a proper package)
-_DATASET_DIR = os.path.join(os.path.dirname(__file__), "data", "drivelegal_dataset")
-if _DATASET_DIR not in sys.path:
-    sys.path.insert(0, _DATASET_DIR)
-
 # ── Module Imports ────────────────────────────────────────────────────────────
 from backend.modules.nlp.pipeline import NLPPipeline
 from backend.modules.fines.lookup import FineLookup
@@ -59,18 +54,11 @@ from backend.modules.geofencing.engine import GeofencingEngine
 from backend.modules.response.builder import ResponseBuilder
 from backend.modules.sync.router import router as sync_router
 from backend.modules.nlp.hybrid_search import HybridSearch
-from backend.modules.nlp.country_detector import detect_country
 from backend.modules.ai import GroqProvider
 from backend.modules.fines.router_v1 import router as fines_v1_router
 from backend.modules.fines.rapid_api import RapidAPIChallanProvider
 from backend.modules.agent.engine import AgentEngine
-from backend.modules.multilingual_intent import (
-    detect_language,
-    extract_intent_multilingual,
-    translate_to_english,
-    violation_code_to_offence_type,
-)
-from backend.modules.legal_formatter import format_legal_response, build_violation_row
+from backend.modules.multilingual_intent import detect_language
 from backend.routers import vehicle_lookup, emergency, analytics, cv
 
 
@@ -168,7 +156,7 @@ async def startup_event():
     await session_manager.connect()
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(_request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}")
     return JSONResponse(
         status_code=500,
@@ -176,14 +164,14 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(_request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"status": "error", "message": exc.detail},
     )
 
 @app.exception_handler(CircuitBreakerError)
-async def circuit_breaker_handler(request: Request, exc: CircuitBreakerError):
+async def circuit_breaker_handler(_request: Request, _exc: CircuitBreakerError):
     return JSONResponse(
         status_code=503,
         content={"status": "error", "message": "Service temporarily unavailable due to upstream failure."},

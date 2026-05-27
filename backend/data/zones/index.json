@@ -6,7 +6,29 @@
       "files": [
         "TN/chennai_school_zones.geojson",
         "TN/chennai_no_horn.geojson",
+        "TN/chennai_hospital_zones.geojson",
         "TN/nh_corridors.geojson"
+      ]
+    },
+    {
+      "code": "DL",
+      "name": "Delhi",
+      "files": [
+        "DL/delhi_hospital_zones.geojson"
+      ]
+    },
+    {
+      "code": "MH",
+      "name": "Maharashtra",
+      "files": [
+        "MH/mumbai_hospital_zones.geojson"
+      ]
+    },
+    {
+      "code": "KA",
+      "name": "Karnataka",
+      "files": [
+        "KA/bengaluru_hospital_zones.geojson"
       ]
     }
   ],

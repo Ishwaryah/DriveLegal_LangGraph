@@ -35,6 +35,7 @@ Configuration files (all in the same directory as this module):
   system_prompt.txt     — LLM system prompt (edit without touching Python)
 """
 
+import re
 import time
 import os
 import logging
@@ -420,7 +421,8 @@ class AgentEngine:
         "digilocker", "rc", "dl ", "blood alcohol", "bac", "tinted",
         "exhaust", "headlight", "honk", "horn", "ambulance", "emergency",
         "parking", "overload", "juvenile", "minor driving", "number plate",
-        "registration", "fitness", "registration certificate",
+        "registration", "fitness", "registration certificate", "where am i", "locate", "location", "police", "hospital",
+        "what about", "what about in", "and in", "demerit", "points", "revoke", "impound",
     ]
     _CLOSING_TERMS = [
         "thanks", "thank you", "ok thanks", "bye", "goodbye",
@@ -523,6 +525,42 @@ class AgentEngine:
         vehicle = self._detect_vehicle(clean_text)
         state   = intl_state or (context_state.title() if context_state else self._detect_state(clean_text))
 
+        # ── Location / Emergency queries ──────────────────────────────────────
+        is_location_query = any(k in clean_text for k in ["where am i", "my location", "where i'm located", "locate me", "my address"])
+        is_emergency_query = any(k in clean_text for k in ["emergency", "hospital", "police", "trauma", "ambulance", "accident"])
+
+        if is_location_query and gps:
+            result = self.tool_executor.execute("get_location_info", {}, gps)
+            tools_used.append({"tool": "get_location_info", "result": result})
+            if result.get("found"):
+                response_parts.append(f"📍 Your current location is: **{result.get('address')}**")
+            else:
+                response_parts.append("📍 Sorry, I couldn't determine your location from the GPS coordinates.")
+                
+        if is_emergency_query and gps:
+            result = self.tool_executor.execute("get_emergency_info", {}, gps)
+            tools_used.append({"tool": "get_emergency_info", "result": result})
+            if result.get("found") and result.get("emergency_data"):
+                data = result["emergency_data"]
+                resp = "🚨 **Emergency Information** 🚨\n\n"
+                
+                if data.get("state_contacts"):
+                    helplines = data["state_contacts"].get("helplines", {})
+                    resp += f"**Helplines ({data.get('resolved_state', 'Local')}):**\n"
+                    if helplines.get("ambulance"): resp += f"• Ambulance: {helplines['ambulance']}\n"
+                    if helplines.get("police"): resp += f"• Police: {helplines['police']}\n"
+                    if helplines.get("highway_patrol"): resp += f"• Highway Patrol: {helplines['highway_patrol']}\n"
+                    if helplines.get("women_helpline"): resp += f"• Women Helpline: {helplines['women_helpline']}\n"
+                    resp += "\n"
+                
+                if data.get("nearest_trauma_centers"):
+                    resp += "**Nearest Hospitals/Trauma Centers:**\n"
+                    for t in data["nearest_trauma_centers"][:3]:
+                        resp += f"• {t.get('name')} ({t.get('distance_km', 0)} km)\n"
+                    resp += "\n"
+                
+                response_parts.append(resp)
+
         # ── Fine lookup ───────────────────────────────────────────────────────
         fine_triggered = (
             any(k in clean_text for k in fb["fine_keywords"])
@@ -568,8 +606,8 @@ class AgentEngine:
                         f"No fine data found for '{display_name}' ({label}) in this location."
                     )
 
-            # Attach rule for first detected offence
-            if offence:
+            # Attach rule only for India queries (rules.json is MV-Act based)
+            if offence and country == "IN":
                 rule_result = self.tool_executor.execute(
                     "lookup_rule", {"offence_code": offence}, gps
                 )
@@ -612,10 +650,17 @@ class AgentEngine:
             tools_used.append({"tool": "check_zone", "result": zone_result})
             if zone_result.get("found"):
                 for z in zone_result.get("zones", []):
-                    multiplier = z.get("fine_multiplier", 1.0)
-                    mult_note  = f" (fine multiplier: {multiplier}×)" if multiplier > 1.0 else ""
+                    multiplier   = z.get("fine_multiplier", 1.0)
+                    mult_note    = f" (fine ×{multiplier})" if multiplier and multiplier > 1.0 else ""
+                    speed        = z.get("speed_limit_kmh")
+                    speed_note   = f" | Speed limit: {speed} km/h" if speed else ""
+                    rules_list   = z.get("rules", [])
+                    description  = z.get("description", "")
+                    zone_detail  = (", ".join(rules_list) if rules_list
+                                    else description if description
+                                    else z.get("zone_type", "").replace("_", " ").title())
                     response_parts.append(
-                        f"📍 Active zone: **{z['name']}**{mult_note} — {', '.join(z.get('rules', []))}"
+                        f"📍 Active zone: **{z['name']}**{mult_note}{speed_note}\n   {zone_detail}"
                     )
             else:
                 # GPS was provided but no zone matched — give useful confirmation
@@ -694,12 +739,24 @@ class AgentEngine:
         return "GENERAL"
 
     def _detect_state(self, text: str) -> str:
-        """Detect Indian state from text using config keyword map."""
+        """Detect Indian state from text using config keyword map.
+
+        Short keywords (≤3 chars, e.g. 'tn', 'dl', 'tr', 'ar') are matched as
+        whole words only — surrounded by non-alphanumeric or string boundary —
+        to avoid false positives like 'tr' in 'triple' or 'ar' in 'near'.
+        """
         for state, keywords in self._state_cfg.items():
             if state.startswith("_"):
                 continue
-            if any(k in text for k in keywords):
-                return state
+            for k in keywords:
+                if len(k) <= 3:
+                    # Word-boundary match for short codes
+                    if re.search(r'(?<![a-z0-9])' + re.escape(k) + r'(?![a-z0-9])', text):
+                        return state
+                else:
+                    # Full substring match is fine for longer terms
+                    if k in text:
+                        return state
         return "ALL"
 
     def _detect_country(self, text: str) -> tuple:
@@ -715,8 +772,8 @@ class AgentEngine:
         # Abu Dhabi explicit (checked after UAE block)
         if "abu dhabi" in text:
             return "AE", "ABU_DHABI"
-        # United Kingdom
-        if any(k in text for k in ["united kingdom", "london", "britain", "england", "scotland", "wales", "british", " uk ", " uk\n", "uk traffic", "uk law"]):
+        # United Kingdom — match " uk " / "uk." / "uk?" / " uk\n" (word-boundary style)
+        if any(k in text for k in ["united kingdom", "london", "britain", "england", "scotland", "wales", "british", "uk traffic", "uk law"]) or re.search(r'(?<![a-z0-9])uk(?![a-z0-9])', text):
             return "GB", "ALL"
         # Singapore
         if any(k in text for k in ["singapore", "spore", " sg "]):

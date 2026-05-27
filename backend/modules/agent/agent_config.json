@@ -34,11 +34,13 @@
     ],
     "fine_keywords": [
       "fine", "penalty", "challan", "amount", "how much", "cost",
-      "charge", "fee", "bail", "jurmana", "jharama", "kitna"
+      "charge", "fee", "bail", "jurmana", "jharama", "kitna",
+      "caught", "what if", "punish", "penalize"
     ],
     "rule_keywords": [
       "rule", "law", "legal", "section", "act", "allowed",
-      "permitted", "regulation", "provision", "niyam", "kanoon"
+      "permitted", "regulation", "provision", "niyam", "kanoon",
+      "demerit", "black points", "points revoked", "revoke license"
     ],
     "zone_keywords": [
       "zone", "area", "here", "location", "nearby", "restriction",
@@ -140,6 +142,8 @@
     "TINTED_GLASS":        "Illegal Tinted Windows (Sec 177)",
     "VEHICLE_MODIFICATION":"Illegal Vehicle Modification (Sec 52)",
     "HIGH_BEAM":           "Misuse of High-Beam Headlights",
-    "HORN_HONKING":        "Unnecessary Honking / Horn in Silent Zone"
+    "HORN_HONKING":        "Unnecessary Honking / Horn in Silent Zone",
+    "PARKING_VIOLATION":   "Illegal Parking / No-Parking Zone Violation",
+    "NO_PARKING":          "Parking in No-Parking Zone"
   }
 }

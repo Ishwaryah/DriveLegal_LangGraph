@@ -154,6 +154,48 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
             "required": ["description"],
         },
     },
+    {
+        "name": "get_location_info",
+        "description": (
+            "Retrieves the readable address based on the user's GPS coordinates. "
+            "Use this when the user asks 'where am I located' or 'what is my location'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "lat": {
+                    "type": "number",
+                    "description": "GPS latitude of the user's location.",
+                },
+                "lon": {
+                    "type": "number",
+                    "description": "GPS longitude of the user's location.",
+                },
+            },
+            "required": ["lat", "lon"],
+        },
+    },
+    {
+        "name": "get_emergency_info",
+        "description": (
+            "Retrieves emergency contacts, nearest police stations, hospitals/trauma centers, and highway helplines. "
+            "Use this when the user asks for emergency numbers, highway helplines, or nearest police/hospitals."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "lat": {
+                    "type": "number",
+                    "description": "GPS latitude of the user's location.",
+                },
+                "lon": {
+                    "type": "number",
+                    "description": "GPS longitude of the user's location.",
+                },
+            },
+            "required": [],
+        },
+    },
 ]
 
 
@@ -265,6 +307,8 @@ class ToolExecutor:
             "check_zone":    self._check_zone,
             "search_rules":  self._search_rules,
             "suggest_offence_categories": self._suggest_offence_categories,
+            "get_location_info": self._get_location_info,
+            "get_emergency_info": self._get_emergency_info,
         }
         handler = handlers.get(tool_name)
         if not handler:
@@ -440,11 +484,14 @@ class ToolExecutor:
             "found": True,
             "zones": [
                 {
-                    "name":            z.get("name", "Unknown Zone"),
+                    "name":            (z.get("name") or z.get("zone_id") or "Unknown Zone"),
                     "zone_type":       z.get("zone_type"),
                     "fine_multiplier": z.get("fine_multiplier", 1.0),
                     "active_hours":    z.get("active_hours", "ALL"),
-                    "rules":           z.get("rules", []),
+                    # Accept either "rules" (old schema) or "offences" (new hospital schema)
+                    "rules":           z.get("rules") or z.get("offences") or [],
+                    "description":     z.get("description", ""),
+                    "speed_limit_kmh": z.get("speed_limit_kmh"),
                 }
                 for z in zones
             ],
@@ -594,3 +641,40 @@ class ToolExecutor:
             "found": True,
             "suggestions": suggestions[:5]
         }
+
+    # ── get_location_info ────────────────────────────────────────────────────────
+    
+    def _get_location_info(self, params: Dict, gps: Optional[Dict]) -> Dict:
+        lat = params.get("lat") or (gps.get("lat") if gps else None)
+        lon = params.get("lon") or (gps.get("lon") if gps else None)
+
+        if lat is None or lon is None:
+            return {"found": False, "message": "GPS coordinates not available to determine location."}
+
+        try:
+            import urllib.request
+            import json
+            url = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json"
+            req = urllib.request.Request(url, headers={'User-Agent': 'DriveLegal/2.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                address = data.get("display_name", "Unknown address")
+                return {"found": True, "address": address, "details": data.get("address", {})}
+        except Exception as e:
+            logger.error("[ToolExecutor] Reverse geocoding error: %s", e)
+            return {"found": False, "error": f"Failed to fetch address: {str(e)}"}
+
+    # ── get_emergency_info ───────────────────────────────────────────────────────
+    
+    def _get_emergency_info(self, params: Dict, gps: Optional[Dict]) -> Dict:
+        lat = params.get("lat") or (gps.get("lat") if gps else 0.0)
+        lon = params.get("lon") or (gps.get("lon") if gps else 0.0)
+        
+        try:
+            from backend.services.emergency_service import EmergencyService
+            svc = EmergencyService()
+            report = svc.handle_accident_report(float(lat), float(lon))
+            return {"found": True, "emergency_data": report}
+        except Exception as e:
+            logger.error("[ToolExecutor] Emergency info error: %s", e)
+            return {"found": False, "error": str(e)}

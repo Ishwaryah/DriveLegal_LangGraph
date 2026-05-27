@@ -77,7 +77,10 @@
       "state_overrides": [],
       "related_offence_codes": [
         "DANGEROUS_DRIVING",
-        "RED_LIGHT_JUMPING"
+        "RASH_DRIVING",
+        "ROAD_RAGE",
+        "WRONG_OVERTAKING",
+        "STUNT_DRIVING"
       ],
       "penalty_ref": "MV_184_FINE"
     },
@@ -140,7 +143,7 @@
       "section": "Section 177",
       "act": "Motor Vehicles (Amendment) Act 2019",
       "title": "General Violation of Traffic Rules",
-      "description": "Violation of any rule or regulation not covered by specific sections",
+      "description": "Violation of any rule or regulation not covered by specific sections. Includes: jumping a red light / traffic signal, using illegal tinted windows (VLT below permissible limits), misuse of high-beam headlights in city limits, unnecessary honking, and other miscellaneous traffic rule violations.",
       "applies_to": [
         "ALL"
       ],
@@ -151,7 +154,12 @@
       "related_offence_codes": [
         "GENERAL",
         "RULE_VIOLATION",
-        "MINOR"
+        "MINOR",
+        "RED_LIGHT_JUMPING",
+        "TINTED_GLASS",
+        "HIGH_BEAM",
+        "HORN_HONKING",
+        "NO_NUMBER_PLATE"
       ],
       "penalty_ref": "MV177_FINE"
     },
@@ -521,10 +529,10 @@
       "rule_id": "MV194C",
       "section": "Section 194C",
       "act": "Motor Vehicles (Amendment) Act 2019",
-      "title": "Violation of Motorcycle Safety Rules",
-      "description": "Driving motorcycle without safety equipment or violating rules specific to two-wheelers",
+      "title": "Triple Riding / Violation of Motorcycle Safety Rules",
+      "description": "Section 194C prohibits triple riding (more than two persons) on a two-wheeler. The maximum permitted is 1 rider + 1 pillion passenger. Children below 4 years of age or 3 feet in height may be allowed additionally in some states. Fine: ₹1,000. Additionally covers failure to follow safety rules specific to two-wheelers.",
       "applies_to": [
-        "ALL"
+        "TWO_WHEELER"
       ],
       "vehicle_classes": [
         "Two-Wheeler",
@@ -533,10 +541,12 @@
       ],
       "state_overrides": [],
       "related_offence_codes": [
+        "TRIPLE_RIDING",
         "MOTORCYCLE",
         "TWO-WHEELER",
         "SAFETY_RULES",
-        "SCOOTER"
+        "SCOOTER",
+        "SECTION_194C"
       ],
       "penalty_ref": "MV194C_FINE"
     },
@@ -668,10 +678,10 @@
     },
     {
       "rule_id": "MV199",
-      "section": "Section 199",
+      "section": "Section 199 / Section 199A",
       "act": "Motor Vehicles (Amendment) Act 2019",
       "title": "Offences by Juveniles / Underage Driving",
-      "description": "Motor vehicle driven by a person under 18 years of age. Guardian/owner held liable.",
+      "description": "Under Section 199A, when a motor vehicle is driven by a person under 18 years of age: (1) The guardian or registered owner is held liable — NOT the juvenile. (2) Fine: ₹25,000. (3) Imprisonment: Up to 3 years for the guardian/owner. (4) The vehicle's Registration Certificate (RC) will be cancelled. (5) The juvenile will be tried under the Juvenile Justice (Care and Protection of Children) Act 2015. Minimum legal driving age in India: 18 years (16 years for vehicles up to 50cc without gear).",
       "applies_to": [
         "ALL"
       ],
@@ -680,6 +690,7 @@
       ],
       "state_overrides": [],
       "related_offence_codes": [
+        "JUVENILE_DRIVING",
         "UNDERAGE_DRIVING",
         "JUVENILE",
         "MINOR_DRIVING",
@@ -729,6 +740,119 @@
         "CORRUPTION"
       ],
       "penalty_ref": "MV210B_FINE"
+    },
+    {
+      "rule_id": "MV190_PUC",
+      "section": "Section 190(2)",
+      "act": "Motor Vehicles (Amendment) Act 2019",
+      "title": "Driving Without Valid PUC Certificate",
+      "description": "Every motor vehicle must have a valid Pollution Under Control (PUC) certificate. PUC validity: 6 months for petrol/diesel vehicles; 1 year for CNG vehicles; electric vehicles are exempt. Fine under Section 190(2): ₹10,000 and/or imprisonment up to 6 months. The vehicle can also be seized. PUC certificates can be obtained at authorised emission testing centres. Verify your PUC status at parivahan.gov.in.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["NO_PUC", "PUC_VIOLATION", "EMISSION_VIOLATION"],
+      "penalty_ref": "MV190_FINE"
+    },
+    {
+      "rule_id": "MV52_MOD",
+      "section": "Section 52",
+      "act": "Motor Vehicles Act 1988",
+      "title": "Illegal Vehicle Modification",
+      "description": "No owner of a motor vehicle shall alter the motor vehicle in a manner not permitted by the manufacturer or not in compliance with the certificate of registration. This includes: modification of engine, chassis, exhaust system (louder than 80 dB), body structure, suspension, lighting or any structural alteration. A modified exhaust (aftermarket or free-flow) that exceeds noise limits is illegal and liable to fine of ₹5,000 and vehicle seizure. The vehicle's fitness certificate may be cancelled.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["VEHICLE_MODIFICATION", "EXHAUST_MODIFICATION", "ILLEGAL_MODIFICATION"],
+      "penalty_ref": "MV52_FINE"
+    },
+    {
+      "rule_id": "MV_SIGNAL_JUMPING",
+      "section": "Section 177",
+      "act": "Motor Vehicles (Amendment) Act 2019",
+      "title": "Jumping Traffic Signal / Red Light",
+      "description": "Disobeying a traffic signal (red light) is a traffic rule violation under Section 177 of the Motor Vehicles Act. Fine: ₹1,000 for first offence; ₹5,000 for repeat offence. In Delhi, the fine is fixed at ₹5,000. The offence is recorded against the driving licence. Repeated signal violations may lead to licence suspension. Some states classify signal jumping under Section 184 (Dangerous Driving) which attracts higher penalties.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [
+        {"state": "DL", "description": "Delhi: fine fixed at ₹5,000 for signal jumping", "effective_date": "2024-01-01"}
+      ],
+      "related_offence_codes": ["RED_LIGHT_JUMPING", "SIGNAL_VIOLATION", "TRAFFIC_SIGNAL"],
+      "penalty_ref": "MV177_FINE"
+    },
+    {
+      "rule_id": "MV_TINTED_GLASS",
+      "section": "Section 100A (CMV Rules) / Section 177",
+      "act": "Central Motor Vehicles Rules 1989",
+      "title": "Illegal Tinted Windows / Dark Film on Glass",
+      "description": "Rule 100A of the Central Motor Vehicles Rules 1989 prescribes minimum Visual Light Transmission (VLT) for vehicle glass: Windscreen (front): minimum 70% VLT; Side and rear windows: minimum 50% VLT. Applying sun film or dark tinting that reduces VLT below these limits is illegal. Fine: ₹1,000–₹5,000 under Section 177 of the MV Act; the film must be removed. The Supreme Court of India reaffirmed this in 2012 (Avishek Goenka v. Union of India). Factory-fitted tinted glass conforming to standards is permitted.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["TINTED_GLASS", "WINDOW_FILM", "DARK_GLASS", "ILLEGAL_TINT"],
+      "penalty_ref": "MV177_FINE"
+    },
+    {
+      "rule_id": "MV_HIGH_BEAM",
+      "section": "Section 177 / Rule 104 (CMV Rules)",
+      "act": "Central Motor Vehicles Rules 1989",
+      "title": "Misuse of High-Beam Headlights",
+      "description": "Rule 104 of the Central Motor Vehicles Rules 1989 requires drivers to dip headlights (switch to low beam) when within 150 metres of an oncoming vehicle on highways, and at all times in urban/city areas unless visibility requires otherwise. Using high-beam headlights in city limits is a traffic rule violation under Section 177 MV Act (fine ₹1,000–₹5,000). Flashing high-beam repeatedly at other drivers is considered aggressive driving. Always use low beam (dipper) in cities and when facing oncoming traffic.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["HIGH_BEAM", "HEADLIGHT_VIOLATION", "DIPPER_RULE"],
+      "penalty_ref": "MV177_FINE"
+    },
+    {
+      "rule_id": "MV_SILENT_ZONE",
+      "section": "Section 190 / Noise Pollution Rules 2000",
+      "act": "Environment Protection Act 1986 / Motor Vehicles Act",
+      "title": "Honking / Horn Use in Silent Zones",
+      "description": "Honking is prohibited in designated silent zones — areas within 100 metres of schools, hospitals, courts, and places of worship. The Noise Pollution (Regulation and Control) Rules 2000 set limits of 50 dB (day) / 40 dB (night) in silent zones. Using pressure horns, air horns, or multi-toned horns is illegal on all public roads (Rule 119, CMV Rules 1989). Fine for unnecessary/excessive use of horn: ₹1,000–₹2,000 under Section 190 MV Act. A 'No Horn' sign must be obeyed. Loud horns can also be seized by police.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["HORN_HONKING", "SILENT_ZONE", "NO_HORN_ZONE", "NOISE_POLLUTION"],
+      "penalty_ref": "MV190_FINE"
+    },
+    {
+      "rule_id": "MV_NUMBER_PLATE",
+      "section": "Section 192 / Rule 50 (CMV Rules)",
+      "act": "Central Motor Vehicles Rules 1989 / Motor Vehicles Act 1988",
+      "title": "No / Invalid / Fancy Number Plate",
+      "description": "Every motor vehicle must display a High Security Registration Plate (HSRP) with the state code and vehicle registration number in prescribed font (IND font) and size. Using a vehicle without a number plate, with an obscured plate, a fancy/designer plate, or a non-HSRP plate is illegal under Section 192 MV Act. Fine: ₹2,000–₹5,000; vehicle may be seized. HSRP retrofitting is mandatory for vehicles registered before April 2019 in most states. Registration number must be visible from the front and rear.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["NO_NUMBER_PLATE", "NO_RC", "FAKE_PLATE", "FANCY_PLATE", "SECTION_192"],
+      "penalty_ref": "MV192_FINE"
+    },
+    {
+      "rule_id": "MV_HOSPITAL_ZONE",
+      "section": "Section 177 / Noise Pollution Rules 2000",
+      "act": "Motor Vehicles Act / Environment Protection Act 1986",
+      "title": "Traffic Rules in Hospital Zones",
+      "description": "Within 100 metres of a hospital: (1) Speed limit: 15–25 kmph (check local signage). (2) Honking is strictly prohibited — hospital areas are designated silent zones under Noise Pollution Rules 2000. (3) No parking in front of hospital emergency entrances. (4) Ambulance/emergency vehicles must be given immediate right of way under Section 194E. Violation of silence in hospital zones: fine ₹1,000–₹2,000. Obstruction of emergency vehicle: fine ₹10,000 + up to 6 months imprisonment.",
+      "applies_to": ["ALL"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["HORN_HONKING", "HOSPITAL_ZONE", "SILENT_ZONE"],
+      "penalty_ref": "MV177_FINE"
+    },
+    {
+      "rule_id": "UAE_DEMERIT_POINTS",
+      "section": "UAE Federal Traffic Law No. 21 of 1995",
+      "act": "UAE Federal Traffic Law",
+      "title": "UAE Black Points (Demerit Points) System",
+      "description": "The UAE uses a 24-point demerit (black point) system. Accumulating 24 points within 1 year results in licence revocation for 3 months. Thresholds: 12 points — warning letter; 16 points — suspension 3 months; 20 points — suspension 6 months; 24 points — revocation 3 months + mandatory re-test. Drunk driving: 23 black points. Street racing: 23 points. Running red light: 12 points. Speeding >80 km/h over limit: 12 points. After revocation, driver must pass a road test before reinstatement. Commercial vehicle drivers face stricter limits under RTA regulations.",
+      "compoundable": false,
+      "imprisonment": null,
+      "tags": ["uae", "dubai", "abu dhabi", "demerit points", "black points", "licence revocation", "points system", "traffic points", "how many points", "uae licence"],
+      "applies_to": ["AE"],
+      "vehicle_classes": ["All"],
+      "state_overrides": [],
+      "related_offence_codes": ["UAE_DEMERIT", "BLACK_POINTS_SYSTEM"],
+      "penalty_ref": "UAE_BLACK_POINTS"
     },
     {
       "rule_id": "FAQ_FAQ001",

@@ -1,0 +1,63 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_KEM_HOSP_001",
+        "zone_type": "hospital_silent_zone",
+        "state": "MH",
+        "city": "Mumbai",
+        "name": "KEM Hospital Parel Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "KEM Hospital Mumbai silent zone — honking prohibited, 30 km/h limit. Mumbai Traffic Police order; Noise Pollution Rules 2000.",
+        "source": "https://mumbaitrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8350, 19.0010],
+            [72.8410, 19.0010],
+            [72.8410, 19.0060],
+            [72.8350, 19.0060],
+            [72.8350, 19.0010]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MH_HINDUJA_HOSP_002",
+        "zone_type": "hospital_silent_zone",
+        "state": "MH",
+        "city": "Mumbai",
+        "name": "Hinduja Hospital Mahim Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Hinduja Hospital silent zone — no honking, 30 km/h speed limit.",
+        "source": "https://mumbaitrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8390, 19.0390],
+            [72.8450, 19.0390],
+            [72.8450, 19.0440],
+            [72.8390, 19.0440],
+            [72.8390, 19.0390]
+          ]
+        ]
+      }
+    }
+  ]
+}

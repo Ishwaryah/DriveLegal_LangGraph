@@ -1,0 +1,92 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "DL_AIIMS_HOSP_001",
+        "zone_type": "hospital_silent_zone",
+        "state": "DL",
+        "city": "Delhi",
+        "name": "AIIMS Delhi Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "AIIMS hospital silent zone — honking prohibited, 30 km/h limit. Delhi Traffic Police standing order; Noise Pollution Rules 2000.",
+        "source": "https://delhitrafficpolice.nic.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2060, 28.5650],
+            [77.2130, 28.5650],
+            [77.2130, 28.5700],
+            [77.2060, 28.5700],
+            [77.2060, 28.5650]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "DL_SAFDARJUNG_HOSP_002",
+        "zone_type": "hospital_silent_zone",
+        "state": "DL",
+        "city": "Delhi",
+        "name": "Safdarjung Hospital Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Safdarjung Hospital silent zone — no honking, 30 km/h speed limit.",
+        "source": "https://delhitrafficpolice.nic.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2070, 28.5720],
+            [77.2130, 28.5720],
+            [77.2130, 28.5770],
+            [77.2070, 28.5770],
+            [77.2070, 28.5720]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "DL_GTB_HOSP_003",
+        "zone_type": "hospital_silent_zone",
+        "state": "DL",
+        "city": "Delhi",
+        "name": "GTB Hospital Dilshad Garden Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "GTB Hospital Delhi silent zone — no pressure horn, 30 km/h limit.",
+        "source": "https://delhitrafficpolice.nic.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.3155, 28.6790],
+            [77.3210, 28.6790],
+            [77.3210, 28.6840],
+            [77.3155, 28.6840],
+            [77.3155, 28.6790]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "TN_CHN_HOSP_001",
+        "zone_type": "hospital_silent_zone",
+        "state": "TN",
+        "city": "Chennai",
+        "name": "Apollo Hospitals Greams Road Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Hospital silent zone — no honking, 30 km/h limit. Noise Pollution (Regulation & Control) Rules, 2000; Section 177 MV Act.",
+        "source": "https://chennaicitytrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.2530, 13.0575],
+            [80.2580, 13.0575],
+            [80.2580, 13.0615],
+            [80.2530, 13.0615],
+            [80.2530, 13.0575]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "TN_CHN_HOSP_002",
+        "zone_type": "hospital_silent_zone",
+        "state": "TN",
+        "city": "Chennai",
+        "name": "Government General Hospital Park Town Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Hospital silent zone — no honking, 30 km/h speed limit.",
+        "source": "https://chennaicitytrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.2780, 13.0820],
+            [80.2830, 13.0820],
+            [80.2830, 13.0860],
+            [80.2780, 13.0860],
+            [80.2780, 13.0820]
+          ]
+        ]
+      }
+    }
+  ]
+}

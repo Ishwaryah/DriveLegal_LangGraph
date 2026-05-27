@@ -61,7 +61,7 @@
   "MOBILE_PHONE": [
     "mobile", "phone", "call while driving", "talking on phone",
     "using phone", "using mobile", "phone driving",
-    "texting while driving", "text while driving",
+    "texting", "texting while driving", "text while driving", "text and drive",
     "hand held", "handheld device", "distracted driving",
     "phone chalate", "mobile chalate", "mobile use",
     "calling while driving", "whatsapp driving",
@@ -69,11 +69,20 @@
   ],
 
   "SECTION_179": [
-    "wrong way", "one way", "wrong side", "wrong direction",
-    "reverse direction", "ulti taraf", "ulta side",
+    "wrong way", "wrong-way", "one way", "one-way", "wrong side", "wrong-side",
+    "wrong direction", "reverse direction", "ulti taraf", "ulta side",
     "against traffic", "counter flow", "driving wrong side",
-    "going wrong way", "opposite lane",
+    "going wrong way", "opposite lane", "driving wrong-way", "driving wrong way",
     "section 179", "sec 179", "mv act 179"
+  ],
+
+  "PARKING_VIOLATION": [
+    "parking", "park", "no parking", "illegal parking",
+    "disabled parking", "disabled spot", "handicap parking",
+    "parking fine", "parking ticket", "wrong parking",
+    "double parking", "blocking traffic", "fire hydrant",
+    "tow away", "impound", "parking zone", "parking restriction",
+    "no-parking", "parking violation", "parking offense"
   ],
 
   "SECTION_184": [

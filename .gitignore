@@ -44,6 +44,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# ── Debug / analysis scripts (root-level one-shots) ──────────────────────────
+test_results_raw.json
+TEST_REPORT.md
+analyse_results_*.py
+check_vectordb.py
+db_patch_*.py
+inspect_db.py
+quick_spot_check.py
+show_failures.py
+test_mocked.py
+test_50_cases.py
+
 # ── Generated / runtime data ──────────────────────────────────────────────────
 # Vector DB indexes are rebuilt at startup — no need to commit
 backend/data/vector_db/

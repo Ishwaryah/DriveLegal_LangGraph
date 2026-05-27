@@ -1,0 +1,63 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "KA_MANIPAL_HOSP_001",
+        "zone_type": "hospital_silent_zone",
+        "state": "KA",
+        "city": "Bengaluru",
+        "name": "Manipal Hospital HAL Airport Road Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Manipal Hospital Bengaluru silent zone — honking prohibited, 30 km/h limit. Karnataka Traffic Police order; Noise Pollution Rules 2000.",
+        "source": "https://karnatakapolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.6380, 12.9755],
+            [77.6440, 12.9755],
+            [77.6440, 12.9800],
+            [77.6380, 12.9800],
+            [77.6380, 12.9755]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "KA_VICTORIA_HOSP_002",
+        "zone_type": "hospital_silent_zone",
+        "state": "KA",
+        "city": "Bengaluru",
+        "name": "Victoria Hospital Ambedkar Veedhi Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Victoria Government Hospital Bengaluru silent zone — no honking, 30 km/h.",
+        "source": "https://karnatakapolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.5845, 12.9739],
+            [77.5895, 12.9739],
+            [77.5895, 12.9780],
+            [77.5845, 12.9780],
+            [77.5845, 12.9739]
+          ]
+        ]
+      }
+    }
+  ]
+}
