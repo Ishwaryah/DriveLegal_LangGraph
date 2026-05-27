@@ -1,0 +1,156 @@
+{
+  "_comment": "Keyword map for the keyword-fallback offence detector in engine.py. Each key is an UPPER_SNAKE_CASE offence code. Values are lists of lowercase phrases/substrings to match against user text. Edit freely — no code change needed to add synonyms.",
+
+  "NO_HELMET": [
+    "helmet", "no helmet", "without helmet", "bina helmet", "helmet nahi",
+    "head gear", "headgear", "protective gear", "helmetless",
+    "not wearing helmet", "without head protection",
+    "194d", "section 194d", "sec 194d", "194 d",
+    "topi nahi", "head protection", "crash helmet"
+  ],
+
+  "DRUNK_DRIVING": [
+    "drunk", "drunken", "alcohol", "daaru", "daru", "sharab",
+    "drink and drive", "drink drive", "drinking and driving",
+    "dui", "dwi", "under influence", "under the influence",
+    "intoxicated", "intoxication", "impaired driving",
+    "breathalyser", "breathalyzer", "breath test", "blood alcohol",
+    "bac", "0.03", "0.03 mg", "nasha", "nashay mein",
+    "madira", "madira peekar", "whisky chalate",
+    "section 185", "sec 185", "mv act 185", "185 mv act"
+  ],
+
+  "SPEED_EXCESS": [
+    "speed", "speeding", "overspeeding", "over speed", "overspeed",
+    "over-speeding", "fast", "tez", "tez gadi", "tez chalana",
+    "high speed", "above speed limit", "exceed speed limit",
+    "exceeding speed", "speed limit exceeded", "above limit",
+    "rashly at high speed", "100 kmph", "120 kmph",
+    "speed limit", "speed check", "speed camera",
+    "section 183", "sec 183", "mv act 183", "183 mv"
+  ],
+
+  "RED_LIGHT_JUMPING": [
+    "red light", "signal jump", "jumping red", "jump signal",
+    "ran a red", "run red light", "red signal", "traffic signal",
+    "signal violation", "signal tod", "break signal",
+    "traffic light", "jumped the signal", "cross red light",
+    "signal tooda", "lal batti", "lal light",
+    "section 177", "sec 177", "mv act 177"
+  ],
+
+  "NO_LICENSE": [
+    "no license", "without license", "no licence", "without licence",
+    "licence nahi", "license nahi", "unlicensed", "no dl",
+    "driving without dl", "bina license", "bina licence",
+    "no driving license", "no driving licence",
+    "expired license", "expired licence", "expired dl",
+    "disqualified", "cancelled license",
+    "section 3", "section 4", "section 180", "sec 3 mv",
+    "180 mv", "mv act 3"
+  ],
+
+  "NO_SEATBELT": [
+    "seatbelt", "seat belt", "no seatbelt", "without seatbelt",
+    "belt nahi", "safety belt", "bina seatbelt", "not wearing belt",
+    "not wearing seatbelt", "seat belt nahi", "no belt",
+    "without safety belt", "seat-belt",
+    "194b", "section 194b", "sec 194b"
+  ],
+
+  "MOBILE_PHONE": [
+    "mobile", "phone", "call while driving", "talking on phone",
+    "using phone", "using mobile", "phone driving",
+    "texting while driving", "text while driving",
+    "hand held", "handheld device", "distracted driving",
+    "phone chalate", "mobile chalate", "mobile use",
+    "calling while driving", "whatsapp driving",
+    "section 184", "sec 184", "mv act 184"
+  ],
+
+  "SECTION_179": [
+    "wrong way", "one way", "wrong side", "wrong direction",
+    "reverse direction", "ulti taraf", "ulta side",
+    "against traffic", "counter flow", "driving wrong side",
+    "going wrong way", "opposite lane",
+    "section 179", "sec 179", "mv act 179"
+  ],
+
+  "SECTION_184": [
+    "dangerous", "rash driving", "rashly", "recklessly",
+    "rash and negligent", "hazardous", "careless driving",
+    "negligent driving", "dangerous driving", "road rage",
+    "aggressive driving", "rashly drive", "laparwahi",
+    "section 184", "sec 184"
+  ],
+
+  "NO_INSURANCE": [
+    "insurance", "no insurance", "without insurance",
+    "bima nahi", "uninsured", "insurance nahi",
+    "third party insurance", "no valid insurance",
+    "insurance expired", "expired insurance", "policy expired",
+    "no tp insurance", "no third party",
+    "section 196", "sec 196", "mv act 196", "196 mv"
+  ],
+
+  "SECTION_194D": [
+    "194d", "section 194d", "sec 194d"
+  ],
+
+  "NO_PUC": [
+    "puc", "pucc", "puc certificate", "pollution certificate",
+    "pollution under control", "emission certificate", "emission test",
+    "no puc", "without puc", "puc expired", "expired puc",
+    "pollution norms", "emission norms", "fc certificate",
+    "section 190", "sec 190", "190(2)", "mv act 190"
+  ],
+
+  "TRIPLE_RIDING": [
+    "triple riding", "triple ride", "three on bike", "three people on bike",
+    "3 on bike", "3 riders", "three riders", "three persons on two wheeler",
+    "3 persons on bike", "extra pillion", "third person on bike",
+    "section 194c", "sec 194c", "mv act 194c", "194c"
+  ],
+
+  "NO_NUMBER_PLATE": [
+    "number plate", "license plate", "no plate", "no number plate",
+    "without number plate", "missing number plate", "missing plate",
+    "fancy number plate", "illegal number plate", "no reg plate",
+    "registration plate", "no registration number", "without number",
+    "section 192", "sec 192", "mv act 192", "192 mv"
+  ],
+
+  "JUVENILE_DRIVING": [
+    "minor", "juvenile", "underage", "underage driving", "minor driving",
+    "below 18", "under 18", "teenager driving", "kid driving", "child driving",
+    "minors", "juvenile driving", "underage driver",
+    "section 199", "section 199a", "sec 199a", "mv act 199"
+  ],
+
+  "TINTED_GLASS": [
+    "tinted", "tinted windows", "tinted glass", "dark film", "window film",
+    "sun film", "dark windows", "black film", "tint", "illegal tint",
+    "window tint", "car tint", "vlt", "visual light transmission",
+    "section 100", "rule 100", "cmv rule 100"
+  ],
+
+  "VEHICLE_MODIFICATION": [
+    "exhaust modification", "modified exhaust", "loud exhaust",
+    "aftermarket exhaust", "modify exhaust", "exhaust noise",
+    "illegal modification", "vehicle modification", "modified vehicle",
+    "altered vehicle", "engine modification", "body modification",
+    "section 52", "sec 52", "mv act 52"
+  ],
+
+  "HIGH_BEAM": [
+    "high beam", "high-beam", "full beam", "main beam", "bright lights",
+    "blinding lights", "high beam in city", "flashing lights at night",
+    "dipper", "dipper rule", "dip headlight", "low beam"
+  ],
+
+  "HORN_HONKING": [
+    "honk", "honking", "horn", "no horn zone", "silent zone",
+    "horn near hospital", "blowing horn", "air horn", "pressure horn",
+    "unnecessary honking", "horn rule", "noise pollution"
+  ]
+}

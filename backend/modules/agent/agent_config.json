@@ -1,0 +1,145 @@
+{
+  "_comment": "Runtime configuration for AgentEngine. Edit any value here — no Python code change required. Restart the server after editing.",
+
+  "groq": {
+    "_comment": "Groq LLM parameters. model_label appears in API responses.",
+    "model": "llama-3.3-70b-versatile",
+    "model_label": "groq-llama3",
+    "max_tokens": 1024,
+    "temperature": 0.1,
+    "max_tool_iterations": 5
+  },
+
+  "hybrid_search": {
+    "_comment": "Controls the NLP vector-search fallback.",
+    "top_k": 3,
+    "score_threshold": 0.15,
+    "content_max_chars": 400,
+    "rule_query_word_limit": 5
+  },
+
+  "hallucination_guard": {
+    "_comment": "Safeguards against implausible model outputs.",
+    "max_fine_amount_inr": 50000,
+    "disclaimer": "⚠️ Informational only. Verify at echallan.parivahan.gov.in.",
+    "verify_url": "https://echallan.parivahan.gov.in"
+  },
+
+  "fallback": {
+    "_comment": "Keyword lists and canned responses for the keyword-only fallback path.",
+    "greetings": [
+      "hi", "hello", "hey", "good morning", "good evening",
+      "good afternoon", "namaste", "namaskar", "jai hind",
+      "hola", "howdy", "greetings", "sup", "yo"
+    ],
+    "fine_keywords": [
+      "fine", "penalty", "challan", "amount", "how much", "cost",
+      "charge", "fee", "bail", "jurmana", "jharama", "kitna"
+    ],
+    "rule_keywords": [
+      "rule", "law", "legal", "section", "act", "allowed",
+      "permitted", "regulation", "provision", "niyam", "kanoon"
+    ],
+    "zone_keywords": [
+      "zone", "area", "here", "location", "nearby", "restriction",
+      "limit", "boundary", "school zone", "no horn", "silent zone"
+    ],
+    "clarification_keywords": [
+      "which state", "what state", "vehicle", "what city", "which city",
+      "which vehicle", "what vehicle", "where are you", "your location"
+    ],
+    "not_found_keywords": [
+      "couldn't find", "no data", "not found", "don't have",
+      "unavailable", "no fine data", "no record", "not in database"
+    ],
+    "insufficient_info_keywords": [
+      "gibberish", "rephrase", "sorry", "don't understand",
+      "unclear", "invalid", "not a valid query"
+    ],
+    "greeting_response": "Hello! 👋 I'm DriveLegal AI — your Indian traffic law assistant.\n\nYou can ask me things like:\n• \"What's the fine for no helmet?\"\n• \"Drunk driving penalty in Tamil Nadu\"\n• \"What are the rules for using high beam?\"\n• \"Speed limit in a school zone\"\n\nHow can I help you today?",
+    "unknown_query_response": "Sorry, I didn't understand that query. Try asking about a specific traffic rule or fine — e.g. 'fine for no helmet in Tamil Nadu'.",
+    "no_info_response": "I couldn't find specific information. Please rephrase or consult echallan.parivahan.gov.in."
+  },
+
+  "vehicle_types": {
+    "_comment": "Maps vehicle class codes to matching keywords. GENERAL is the default.",
+    "TWO_WHEELER": [
+      "bike", "scooter", "motorcycle", "two wheeler", "two-wheeler",
+      "2w", "moped", "scooty", "motorbike", "cycle", "geared bike",
+      "activa", "pulsar", "bajaj", "royal enfield"
+    ],
+    "HGV": [
+      "truck", "bus", "heavy", "lorry", "hgv", "heavy goods",
+      "transport vehicle", "maxi cab", "tipper", "tanker",
+      "articulated", "trailer", "semi-trailer"
+    ],
+    "3W": [
+      "auto", "rickshaw", "three wheeler", "three-wheeler",
+      "3w", "autorickshaw", "auto rickshaw", "e-rickshaw",
+      "tuk tuk", "tempos", "three-wheeled"
+    ],
+    "LMV": [
+      "car", "jeep", "suv", "lmv", "sedan", "hatchback",
+      "taxi", "cab", "van", "light motor", "swift", "innova",
+      "fortuner", "maruti", "honda", "hyundai", "four wheeler", "4w"
+    ]
+  },
+
+  "states": {
+    "_comment": "Maps Indian state names to city/abbreviation keywords. Add cities freely.",
+    "Tamil Nadu":       ["tamil nadu", "tn", "chennai", "coimbatore", "madurai", "trichy", "salem", "vellore", "tirunelveli", "erode", "tiruppur"],
+    "Delhi":            ["delhi", "dl", "new delhi", "ncr", "dwarka", "rohini", "janakpuri"],
+    "Maharashtra":      ["maharashtra", "mh", "mumbai", "pune", "nagpur", "nashik", "aurangabad", "thane", "navi mumbai", "solapur"],
+    "Karnataka":        ["karnataka", "ka", "bangalore", "bengaluru", "mysuru", "mysore", "hubli", "mangalore", "belgaum", "dharwad"],
+    "Kerala":           ["kerala", "kl", "kochi", "cochin", "thiruvananthapuram", "trivandrum", "kozhikode", "calicut", "thrissur", "kollam"],
+    "Uttar Pradesh":    ["uttar pradesh", "up", "lucknow", "noida", "agra", "kanpur", "varanasi", "ghaziabad", "allahabad", "prayagraj", "meerut"],
+    "Gujarat":          ["gujarat", "gj", "ahmedabad", "surat", "vadodara", "baroda", "rajkot", "gandhinagar", "bhavnagar"],
+    "Rajasthan":        ["rajasthan", "rj", "jaipur", "jodhpur", "udaipur", "kota", "ajmer", "bikaner"],
+    "West Bengal":      ["west bengal", "wb", "kolkata", "calcutta", "howrah", "durgapur", "asansol", "siliguri"],
+    "Telangana":        ["telangana", "ts", "hyderabad", "secunderabad", "warangal", "nizamabad", "karimnagar"],
+    "Andhra Pradesh":   ["andhra pradesh", "ap", "visakhapatnam", "vizag", "vijayawada", "guntur", "tirupati", "nellore", "kurnool"],
+    "Punjab":           ["punjab", "pb", "chandigarh", "ludhiana", "amritsar", "jalandhar", "patiala", "mohali"],
+    "Haryana":          ["haryana", "hr", "gurugram", "gurgaon", "faridabad", "ambala", "rohtak", "hisar", "panipat"],
+    "Madhya Pradesh":   ["madhya pradesh", "mp", "bhopal", "indore", "gwalior", "jabalpur", "ujjain", "sagar"],
+    "Bihar":            ["bihar", "br", "patna", "gaya", "bhagalpur", "muzaffarpur", "darbhanga"],
+    "Odisha":           ["odisha", "od", "bhubaneswar", "cuttack", "rourkela", "sambalpur", "berhampur"],
+    "Assam":            ["assam", "as", "guwahati", "dibrugarh", "silchar", "jorhat", "tezpur"],
+    "Jharkhand":        ["jharkhand", "jh", "ranchi", "jamshedpur", "dhanbad", "bokaro"],
+    "Uttarakhand":      ["uttarakhand", "uk", "dehradun", "haridwar", "roorkee", "nainital", "haldwani"],
+    "Himachal Pradesh": ["himachal pradesh", "hp", "shimla", "manali", "dharamsala", "solan", "mandi"],
+    "Goa":              ["goa", "ga", "panaji", "vasco", "margao", "mapusa"],
+    "Chhattisgarh":     ["chhattisgarh", "cg", "raipur", "bilaspur", "durg", "korba"],
+    "Tripura":          ["tripura", "tr", "agartala"],
+    "Manipur":          ["manipur", "mn", "imphal"],
+    "Nagaland":         ["nagaland", "nl", "kohima", "dimapur"],
+    "Meghalaya":        ["meghalaya", "ml", "shillong"],
+    "Arunachal Pradesh":["arunachal pradesh", "ar", "itanagar"],
+    "Mizoram":          ["mizoram", "mz", "aizawl"],
+    "Sikkim":           ["sikkim", "sk", "gangtok"],
+    "Jammu & Kashmir":  ["jammu", "kashmir", "j&k", "jk", "srinagar", "jammu city"],
+    "Ladakh":           ["ladakh", "leh", "kargil"]
+  },
+
+  "offence_names": {
+    "_comment": "Human-readable display names for offence codes shown in fallback responses.",
+    "NO_HELMET":           "No Helmet",
+    "DRUNK_DRIVING":       "Drunk Driving",
+    "SPEED_EXCESS":        "Over Speeding",
+    "NO_LICENSE":          "Driving Without License",
+    "MOBILE_PHONE":        "Using Mobile Phone While Driving",
+    "NO_INSURANCE":        "No Insurance",
+    "RED_LIGHT_JUMPING":   "Jumping Red Light",
+    "SECTION_179":         "Wrong Way Driving (Sec 179)",
+    "SECTION_184":         "Dangerous/Rash Driving (Sec 184)",
+    "NO_SEATBELT":         "No Seatbelt (Sec 194B)",
+    "SECTION_194D":        "No Helmet (Sec 194D)",
+    "NO_PUC":              "No PUC / Pollution Certificate (Sec 190)",
+    "TRIPLE_RIDING":       "Triple Riding on Two-Wheeler (Sec 194C)",
+    "NO_NUMBER_PLATE":     "No / Missing Number Plate (Sec 192)",
+    "JUVENILE_DRIVING":    "Juvenile / Underage Driving (Sec 199A)",
+    "TINTED_GLASS":        "Illegal Tinted Windows (Sec 177)",
+    "VEHICLE_MODIFICATION":"Illegal Vehicle Modification (Sec 52)",
+    "HIGH_BEAM":           "Misuse of High-Beam Headlights",
+    "HORN_HONKING":        "Unnecessary Honking / Horn in Silent Zone"
+  }
+}

@@ -93,7 +93,7 @@ class HybridSearch:
         self.translator_pipeline = None
         try:
             from transformers import pipeline
-            self.translator_pipeline = pipeline("translation", model="Helsinki-NLP/opus-mt-mul-en")
+            self.translator_pipeline = pipeline("text2text-generation", model="Helsinki-NLP/opus-mt-mul-en")
             logger.info("Translation pipeline loaded (opus-mt-mul-en).")
         except Exception as e:
             logger.warning("Translation pipeline unavailable (%s). Using dictionary-only fallback.", e)
@@ -228,6 +228,18 @@ class HybridSearch:
         if not chunks:
             logger.warning("No documents available for indexing.")
             return
+
+        # Deduplicate across corpora (rules.json and KB may share MV_NNN IDs).
+        # Keep the first occurrence (rules.json takes priority over KB).
+        seen: set = set()
+        deduped: List[Dict] = []
+        for c in chunks:
+            if c["id"] not in seen:
+                seen.add(c["id"])
+                deduped.append(c)
+        if len(deduped) < len(chunks):
+            logger.info("Deduped %d cross-corpus duplicate IDs.", len(chunks) - len(deduped))
+        chunks = deduped
 
         self.documents = chunks
 

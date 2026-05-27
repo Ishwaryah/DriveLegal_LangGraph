@@ -158,49 +158,82 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# NLP → DB code mapping (mirrors lookup.py)
+# NLP → DB code mapping
+# Maps NLP agent offence codes to the actual offence_code values stored in
+# fines.db (case-insensitive UPPER() matching is used in FineLookup.query,
+# so exact case doesn't matter — but the *name* must match what the DB has).
 # ─────────────────────────────────────────────────────────────────────────────
 
 _OFFENCE_TO_DB = {
-    "NO_HELMET":               "no_helmet",
-    "DRUNK_DRIVING":           "drunk_driving",
-    "SPEED_EXCESS":            "overspeeding",
-    "RED_LIGHT_JUMPING":       "signal_jumping",
-    "NO_LICENSE":              "no_license",
-    "NO_INSURANCE":            "no_insurance",
-    "MOBILE_PHONE":            "using_phone",
-    "NO_SEATBELT":             "no_seatbelt",
-    "SECTION_194D":            "no_seatbelt",
-    "SECTION_177":             "signal_jumping",
-    "SECTION_179":             "wrong_way",
-    "SECTION_184":             "dangerous_driving",
-    "WRONG_WAY":               "wrong_way",
-    "DANGEROUS_DRIVING":       "dangerous_driving",
-    "OVERLOADING":             "overloading",
-    "NO_RC":                   "no_rc",
-    "WRONG_SIDE":              "wrong_side",
-    "JUVENILE_DRIVING":        "juvenile_driving",
-    "PUC_VIOLATION":           "puc_violation",
-    "STUNT_DRIVING":           "stunt_driving",
-    "EMERGENCY_OBSTRUCTION":   "not_giving_way_to_emergency",
-    "DISOBEY_POLICE":          "disobeying_police",
-    "TINTED_GLASS":            "tinted_glass",
-    "TRIPLE_RIDING":           "triple_riding",
-    "VEHICLE_MODIFICATION":    "vehicle_modification",
-    "PARKING_VIOLATION":       "parking_violation",
-    "WRONG_OVERTAKING":        "wrong_overtaking",
-    "ROAD_RAGE":               "road_rage",
-    "SUSPENDED_LICENCE":       "suspended_licence",
+    # Direct matches (DB stores same code as NLP)
+    "NO_HELMET":             "NO_HELMET",
+    "DRUNK_DRIVING":         "DRUNK_DRIVING",
+    "SPEED_EXCESS":          "SPEED_EXCESS",          # DB: SPEED_EXCESS (not 'overspeeding')
+    "RED_LIGHT_JUMPING":     "RED_LIGHT_JUMPING",     # DB: RED_LIGHT_JUMPING (not 'signal_jumping')
+    "NO_LICENSE":            "NO_LICENSE",
+    "NO_INSURANCE":          "NO_INSURANCE",
+    "MOBILE_PHONE":          "MOBILE_PHONE",           # DB: MOBILE_PHONE (not 'using_phone')
+    "NO_SEATBELT":           "NO_SEATBELT",
+    "WRONG_WAY":             "WRONG_WAY",
+    "WRONG_SIDE":            "WRONG_WAY",              # DB uses WRONG_WAY for wrong-side driving
+    # Newly added offence codes
+    "NO_PUC":                "NO_PUC",                 # Direct DB code
+    "TRIPLE_RIDING":         "SECTION_194C",           # DB: SECTION_194C
+    "NO_NUMBER_PLATE":       "SECTION_192",            # Sec 192: no registration/plate
+    "JUVENILE_DRIVING":      "JUVENILE_DRIVING",       # Direct DB code (added by patch)
+    "TINTED_GLASS":          "TINTED_GLASS",           # Direct DB code
+    "VEHICLE_MODIFICATION":  "VEHICLE_MODIFICATION",   # Direct DB code
+    "HIGH_BEAM":             "SECTION_177",            # General rule violation under Sec 177
+    "HORN_HONKING":          "SECTION_177",            # Noise/horn rule violation
+    # Section-based codes that exist in DB
+    "DANGEROUS_DRIVING":     "SECTION_184",
+    "STUNT_DRIVING":         "SECTION_189",
+    "EMERGENCY_OBSTRUCTION": "SECTION_194E",
+    "DISOBEY_POLICE":        "SECTION_179",
+    "OVERLOADING":           "SECTION_194",
+    "PUC_VIOLATION":         "NO_PUC",                 # Alias → NO_PUC
+    "PARKING_VIOLATION":     "NO_PARKING",             # DB: NO_PARKING
+    "WRONG_OVERTAKING":      "SECTION_184",
+    "ROAD_RAGE":             "SECTION_184",
+    # Section code passthrough aliases
+    "SECTION_177":           "SECTION_177",
+    "SECTION_177A":          "SECTION_177A",
+    "SECTION_178":           "SECTION_178",
+    "SECTION_179":           "SECTION_179",
+    "SECTION_180":           "SECTION_180",
+    "SECTION_181":           "SECTION_181",
+    "SECTION_182":           "SECTION_182",
+    "SECTION_182A":          "SECTION_182A",
+    "SECTION_183":           "SECTION_183",
+    "SECTION_184":           "SECTION_184",
+    "SECTION_185":           "SECTION_185",
+    "SECTION_186":           "SECTION_186",
+    "SECTION_189":           "SECTION_189",
+    "SECTION_192":           "SECTION_192",
+    "SECTION_192A":          "SECTION_192A",
+    "SECTION_194":           "SECTION_194",
+    "SECTION_194A":          "SECTION_194A",
+    "SECTION_194B":          "SECTION_194B",
+    "SECTION_194C":          "SECTION_194C",
+    "SECTION_194D":          "SECTION_194D",
+    "SECTION_194E":          "SECTION_194E",
+    "SECTION_194F":          "SECTION_194F",
+    "SECTION_196":           "SECTION_196",
+    "SECTION_199":           "SECTION_199",
+    "SECTION_206":           "SECTION_206",
 }
 
 _VEHICLE_TO_DB = {
-    "TWO_WHEELER": "two_wheeler",
-    "2W":          "two_wheeler",
-    "LMV":         "lmv",
-    "HGV":         "hmv",
-    "HMV":         "hmv",
-    "3W":          "three_wheeler",
-    "GENERAL":     "all",
+    # The DB stores: 'ALL', 'LMV', '2W', 'TWO_WHEELER', 'HGV', 'HGV/MGV', '3W', 'COMMERCIAL'
+    # FineLookup.query handles multi-variant matching via _VEHICLE_ALIASES, so
+    # just pass a recognised form and let lookup.py expand it.
+    "TWO_WHEELER": "TWO_WHEELER",
+    "2W":          "2W",
+    "LMV":         "LMV",
+    "HGV":         "HGV",
+    "HMV":         "HGV",
+    "3W":          "3W",
+    "GENERAL":     "ALL",
 }
 
 
@@ -244,100 +277,99 @@ class ToolExecutor:
 
     # ── lookup_fine ───────────────────────────────────────────────────────────
 
-    def _lookup_fine(self, params: Dict, gps: Optional[Dict]) -> Dict:
+    # City/shorthand → canonical state name used in the DB
+    _STATE_ALIASES: Dict[str, str] = {
+        "tn": "Tamil Nadu",        "tamilnadu": "Tamil Nadu",   "chennai": "Tamil Nadu",
+        "coimbatore": "Tamil Nadu", "madurai": "Tamil Nadu",
+        "dl": "Delhi",             "delhi": "Delhi",            "new delhi": "Delhi",
+        "mh": "Maharashtra",       "maharashtra": "Maharashtra","mumbai": "Maharashtra",
+        "pune": "Maharashtra",     "nagpur": "Maharashtra",
+        "ka": "Karnataka",         "karnataka": "Karnataka",    "bangalore": "Karnataka",
+        "bengaluru": "Karnataka",  "mysuru": "Karnataka",
+        "kl": "Kerala",            "kerala": "Kerala",          "kochi": "Kerala",
+        "thiruvananthapuram": "Kerala",
+        "up": "Uttar Pradesh",     "lucknow": "Uttar Pradesh",  "noida": "Uttar Pradesh",
+        "agra": "Uttar Pradesh",
+        "gj": "Gujarat",           "gujarat": "Gujarat",        "ahmedabad": "Gujarat",
+        "surat": "Gujarat",
+        "rj": "Rajasthan",         "rajasthan": "Rajasthan",    "jaipur": "Rajasthan",
+        "wb": "West Bengal",       "kolkata": "West Bengal",    "west bengal": "West Bengal",
+        "tg": "Telangana",         "ts": "Telangana",           "telangana": "Telangana",
+        "hyderabad": "Telangana",
+        "ap": "Andhra Pradesh",    "andhra pradesh": "Andhra Pradesh",
+        "br": "Bihar",             "bihar": "Bihar",            "patna": "Bihar",
+        "hr": "Haryana",           "haryana": "Haryana",        "gurugram": "Haryana",
+        "mp": "Madhya Pradesh",    "madhya pradesh": "Madhya Pradesh",
+        "or": "Odisha",            "od": "Odisha",              "odisha": "Odisha",
+        "pb": "Punjab",            "punjab": "Punjab",          "chandigarh": "Punjab",
+        "as": "Assam",             "assam": "Assam",            "guwahati": "Assam",
+        "cg": "Chhattisgarh",      "chhattisgarh": "Chhattisgarh",
+        "jh": "Jharkhand",         "jharkhand": "Jharkhand",
+        "uk": "Uttarakhand",       "uttarakhand": "Uttarakhand",
+        "hp": "Himachal Pradesh",  "himachal pradesh": "Himachal Pradesh",
+        "goa": "Goa",              "ga": "Goa",
+    }
+
+    def _lookup_fine(self, params: Dict, _gps: Optional[Dict]) -> Dict:
         if not self.fine_lookup:
             return {"found": False, "error": "Fine database not available."}
 
-        offence_raw = params.get("offence_type", "")
-        vehicle_raw = params.get("vehicle_class", "GENERAL")
-        state       = params.get("state", "ALL")
-        is_repeat   = params.get("is_repeat", False)
+        offence_raw = (params.get("offence_type") or "").strip()
+        vehicle_raw = (params.get("vehicle_class") or "GENERAL").strip()
+        state_raw   = (params.get("state") or "ALL").strip()
+        is_repeat   = bool(params.get("is_repeat", False))
 
-        # Hallucination Check: Enum validation
+        if not offence_raw:
+            return {"found": False, "error": "offence_type is required"}
+
+        # Map offence to DB code (identity if already a DB code; use raw value as
+        # fallback so novel but valid codes are still attempted against the DB).
+        offence_db = _OFFENCE_TO_DB.get(offence_raw.upper(), offence_raw.upper())
         if offence_raw.upper() not in _OFFENCE_TO_DB:
-            logger.error("[ToolExecutor] Hallucination Alert: Invalid offence_type enum passed by agent: %s", offence_raw)
-            return {"found": False, "error": f"Invalid offence_type enum: {offence_raw}"}
+            logger.warning("[ToolExecutor] Unrecognised offence_type '%s' — trying DB lookup anyway.", offence_raw)
 
-        # Normalize state
-        state_mapping = {
-            "tn": "Tamil Nadu",
-            "tamilnadu": "Tamil Nadu",
-            "delhi": "Delhi",
-            "dl": "Delhi",
-            "new delhi": "Delhi",
-            "mh": "Maharashtra",
-            "mumbai": "Maharashtra",
-            "ka": "Karnataka",
-            "bangalore": "Karnataka",
-            "bengaluru": "Karnataka",
-            "kl": "Kerala",
-            "up": "Uttar Pradesh",
-            "gj": "Gujarat",
-            "rj": "Rajasthan",
-            "wb": "West Bengal",
-            "tg": "Telangana",
-            "ts": "Telangana",
-            "ap": "Andhra Pradesh",
-            "as": "Assam",
-            "br": "Bihar",
-            "cg": "Chhattisgarh",
-            "hr": "Haryana",
-            "jh": "Jharkhand",
-            "mp": "Madhya Pradesh",
-            "od": "Odisha",
-            "pb": "Punjab",
-            "uk": "Uttarakhand",
-        }
-        
-        state_clean = state.strip().lower()
-        if state_clean in state_mapping:
-            state = state_mapping[state_clean]
-        elif state not in ("ALL", "ANY", ""):
-            state = state.title()
+        # Map vehicle class
+        vehicle_db = _VEHICLE_TO_DB.get(vehicle_raw.upper(), vehicle_raw.upper())
 
-        offence_db = _OFFENCE_TO_DB.get(offence_raw.upper(), offence_raw.lower().replace(" ", "_"))
-        vehicle_db = _VEHICLE_TO_DB.get(vehicle_raw.upper(), "all")
+        # Normalise state: city/shorthand → full state name
+        state_clean = state_raw.strip().lower()
+        if state_clean in self._STATE_ALIASES:
+            state_norm = self._STATE_ALIASES[state_clean]
+        elif state_raw.upper() in ("ALL", "ANY", "NATIONAL", ""):
+            state_norm = "ALL"
+        else:
+            # Title-case for full names like "Tamil Nadu" that Groq sends correctly
+            state_norm = state_raw.strip().title()
 
-        state_arg = None if state in ("ALL", "ANY", "") else state
+        state_for_lookup = "" if state_norm in ("ALL", "ANY", "NATIONAL") else state_norm
+
+        # Accept country + intl_state directly from params (set by _keyword_fallback country detection)
+        country_param   = (params.get("country") or "IN").strip().upper()
+        intl_state_raw  = (params.get("intl_state") or "").strip()
+
+        # For international queries, intl_state overrides the normal state resolution
+        if country_param != "IN" and intl_state_raw:
+            state_for_lookup = intl_state_raw if intl_state_raw not in ("ALL", "") else ""
 
         result = self.fine_lookup.query(
-            offence_code=offence_db,
-            vehicle_class=vehicle_db,
-            state=state_arg,
+            offence_code  = offence_db,
+            vehicle_class = vehicle_db,
+            state         = state_for_lookup,
+            country       = country_param,
+            repeat        = is_repeat,
         )
 
         if result:
-            amount = result.get("repeat_amount_inr") if is_repeat else result.get("amount_inr")
             return {
                 "found":             True,
-                "amount_inr":        amount or result.get("amount_inr"),
+                "amount_inr":        result["amount_inr"],
                 "repeat_amount_inr": result.get("repeat_amount_inr"),
                 "section_ref":       result.get("section_ref"),
                 "currency":          result.get("currency", "INR"),
                 "notes":             result.get("notes"),
-                "state":             state_arg or "National",
+                "state":             state_norm if state_for_lookup else "National",
                 "vehicle_class":     vehicle_raw,
             }
-
-        # Soft fallback: try national (no state)
-        if state_arg:
-            result_national = self.fine_lookup.query(
-                offence_code=offence_db,
-                vehicle_class=vehicle_db,
-                state=None,
-            )
-            if result_national:
-                amount = result_national.get("repeat_amount_inr") if is_repeat else result_national.get("amount_inr")
-                return {
-                    "found":             True,
-                    "amount_inr":        amount or result_national.get("amount_inr"),
-                    "repeat_amount_inr": result_national.get("repeat_amount_inr"),
-                    "section_ref":       result_national.get("section_ref"),
-                    "currency":          result_national.get("currency", "INR"),
-                    "notes":             result_national.get("notes"),
-                    "state":             "National (no state-specific data found)",
-                    "vehicle_class":     vehicle_raw,
-                }
 
         return {
             "found":   False,

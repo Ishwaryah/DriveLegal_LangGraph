@@ -250,12 +250,12 @@ class ResponseBuilder:
                         )
                         if rows:
                             row = rows[0]
-                            amount = row.get("max_fine_local") if is_repeat else row.get("min_fine_local")
+                            amount = row.get("repeat_amount_inr") if is_repeat else row.get("amount_inr")
                             if amount is not None:
                                 fine_data = {
                                     "amount_inr":        amount,
-                                    "repeat_amount_inr": row.get("max_fine_local"),
-                                    "section_ref":       row.get("mv_act_section") or section_ref,
+                                    "repeat_amount_inr": row.get("repeat_amount_inr"),
+                                    "section_ref":       row.get("section_ref") or section_ref,
                                     "source_url":        "",
                                     "fetched_at":        None,
                                     "currency":          row.get("currency"),

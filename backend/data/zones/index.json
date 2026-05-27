@@ -8,33 +8,6 @@
         "TN/chennai_no_horn.geojson",
         "TN/nh_corridors.geojson"
       ]
-    },
-    {
-      "code": "DL",
-      "name": "Delhi",
-      "files": [
-        "DL/delhi_odd_even_zones.geojson",
-        "DL/delhi_school_zones.geojson",
-        "DL/delhi_no_horn_zones.geojson"
-      ]
-    },
-    {
-      "code": "MH",
-      "name": "Maharashtra",
-      "files": [
-        "MH/mumbai_no_horn.geojson",
-        "MH/mumbai_school_zones.geojson",
-        "MH/pune_nh_corridors.geojson"
-      ]
-    },
-    {
-      "code": "ALL",
-      "name": "National",
-      "files": [
-        "ALL/india_toll_plazas.geojson",
-        "ALL/india_high_risk_corridors.geojson",
-        "ALL/india_trauma_centers.geojson"
-      ]
     }
   ],
   "boundaries": "india_states.geojson"
