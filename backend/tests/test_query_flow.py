@@ -97,6 +97,12 @@ def test_data_setup():
     main.hybrid_search = MockHybridSearch()
     main.builder = ResponseBuilder(main.fine_lookup, main.rules_loader, main.geofencing)
 
+    from backend.modules.agent.engine import AgentEngine
+    main.agent_engine = AgentEngine(main.fine_lookup, main.rules_loader, main.geofencing)
+    main.agent_engine.gemini_available = False
+    main.agent_engine.hybrid_search = main.hybrid_search
+    main.agent_engine.tool_executor.hybrid_search = main.hybrid_search
+
     yield test_dir
     
     # Cleanup (optional, but good practice)

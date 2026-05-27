@@ -135,6 +135,25 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
             "required": ["keywords"],
         },
     },
+    {
+        "name": "suggest_offence_categories",
+        "description": (
+            "Suggest the closest standard traffic offence categories/codes based on a natural language "
+            "description of a violation. Use this when the user describes a violation in terms that do not "
+            "directly match standard codes (e.g., 'driving too fast', 'forgot my papers', 'riding three people on a bike'). "
+            "Returns a list of recommended standardised offence codes to be used with lookup_fine."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "description": "Natural language description of the traffic violation or scenario.",
+                },
+            },
+            "required": ["description"],
+        },
+    },
 ]
 
 
@@ -143,21 +162,35 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
 # ─────────────────────────────────────────────────────────────────────────────
 
 _OFFENCE_TO_DB = {
-    "NO_HELMET":          "no_helmet",
-    "DRUNK_DRIVING":      "drunk_driving",
-    "SPEED_EXCESS":       "overspeeding",
-    "RED_LIGHT_JUMPING":  "signal_jumping",
-    "NO_LICENSE":         "driving_without_license",
-    "NO_INSURANCE":       "no_insurance",
-    "MOBILE_PHONE":       "mobile_phone_use",
-    "NO_SEATBELT":        "no_seatbelt",
-    "SECTION_194D":       "no_seatbelt",
-    "SECTION_177":        "signal_jumping",
-    "SECTION_179":        "wrong_way",
-    "SECTION_184":        "dangerous_driving",
-    "WRONG_WAY":          "wrong_way",
-    "DANGEROUS_DRIVING":  "dangerous_driving",
-    "OVERLOADING":        "overloading",
+    "NO_HELMET":               "no_helmet",
+    "DRUNK_DRIVING":           "drunk_driving",
+    "SPEED_EXCESS":            "overspeeding",
+    "RED_LIGHT_JUMPING":       "signal_jumping",
+    "NO_LICENSE":              "no_license",
+    "NO_INSURANCE":            "no_insurance",
+    "MOBILE_PHONE":            "using_phone",
+    "NO_SEATBELT":             "no_seatbelt",
+    "SECTION_194D":            "no_seatbelt",
+    "SECTION_177":             "signal_jumping",
+    "SECTION_179":             "wrong_way",
+    "SECTION_184":             "dangerous_driving",
+    "WRONG_WAY":               "wrong_way",
+    "DANGEROUS_DRIVING":       "dangerous_driving",
+    "OVERLOADING":             "overloading",
+    "NO_RC":                   "no_rc",
+    "WRONG_SIDE":              "wrong_side",
+    "JUVENILE_DRIVING":        "juvenile_driving",
+    "PUC_VIOLATION":           "puc_violation",
+    "STUNT_DRIVING":           "stunt_driving",
+    "EMERGENCY_OBSTRUCTION":   "not_giving_way_to_emergency",
+    "DISOBEY_POLICE":          "disobeying_police",
+    "TINTED_GLASS":            "tinted_glass",
+    "TRIPLE_RIDING":           "triple_riding",
+    "VEHICLE_MODIFICATION":    "vehicle_modification",
+    "PARKING_VIOLATION":       "parking_violation",
+    "WRONG_OVERTAKING":        "wrong_overtaking",
+    "ROAD_RAGE":               "road_rage",
+    "SUSPENDED_LICENCE":       "suspended_licence",
 }
 
 _VEHICLE_TO_DB = {
@@ -181,10 +214,11 @@ class ToolExecutor:
     All handlers return plain dicts (JSON-serialisable).
     """
 
-    def __init__(self, fine_lookup, rules_loader, geofencing_engine):
+    def __init__(self, fine_lookup, rules_loader, geofencing_engine, hybrid_search=None):
         self.fine_lookup = fine_lookup
         self.rules_loader = rules_loader
         self.geofencing = geofencing_engine
+        self.hybrid_search = hybrid_search
 
     def execute(
         self,
@@ -197,6 +231,7 @@ class ToolExecutor:
             "lookup_rule":   self._lookup_rule,
             "check_zone":    self._check_zone,
             "search_rules":  self._search_rules,
+            "suggest_offence_categories": self._suggest_offence_categories,
         }
         handler = handlers.get(tool_name)
         if not handler:
@@ -217,6 +252,48 @@ class ToolExecutor:
         vehicle_raw = params.get("vehicle_class", "GENERAL")
         state       = params.get("state", "ALL")
         is_repeat   = params.get("is_repeat", False)
+
+        # Hallucination Check: Enum validation
+        if offence_raw.upper() not in _OFFENCE_TO_DB:
+            logger.error("[ToolExecutor] Hallucination Alert: Invalid offence_type enum passed by agent: %s", offence_raw)
+            return {"found": False, "error": f"Invalid offence_type enum: {offence_raw}"}
+
+        # Normalize state
+        state_mapping = {
+            "tn": "Tamil Nadu",
+            "tamilnadu": "Tamil Nadu",
+            "delhi": "Delhi",
+            "dl": "Delhi",
+            "new delhi": "Delhi",
+            "mh": "Maharashtra",
+            "mumbai": "Maharashtra",
+            "ka": "Karnataka",
+            "bangalore": "Karnataka",
+            "bengaluru": "Karnataka",
+            "kl": "Kerala",
+            "up": "Uttar Pradesh",
+            "gj": "Gujarat",
+            "rj": "Rajasthan",
+            "wb": "West Bengal",
+            "tg": "Telangana",
+            "ts": "Telangana",
+            "ap": "Andhra Pradesh",
+            "as": "Assam",
+            "br": "Bihar",
+            "cg": "Chhattisgarh",
+            "hr": "Haryana",
+            "jh": "Jharkhand",
+            "mp": "Madhya Pradesh",
+            "od": "Odisha",
+            "pb": "Punjab",
+            "uk": "Uttarakhand",
+        }
+        
+        state_clean = state.strip().lower()
+        if state_clean in state_mapping:
+            state = state_mapping[state_clean]
+        elif state not in ("ALL", "ANY", ""):
+            state = state.title()
 
         offence_db = _OFFENCE_TO_DB.get(offence_raw.upper(), offence_raw.lower().replace(" ", "_"))
         vehicle_db = _VEHICLE_TO_DB.get(vehicle_raw.upper(), "all")
@@ -370,4 +447,118 @@ class ToolExecutor:
                 }
                 for r in matches
             ],
+        }
+
+    # ── suggest_offence_categories ────────────────────────────────────────────
+
+    def _suggest_offence_categories(self, params: Dict, gps: Optional[Dict]) -> Dict:
+        description = params.get("description", "").strip()
+        if not description:
+            return {"found": False, "message": "No description provided."}
+
+        suggestions = []
+        seen_codes = set()
+
+        # 1. Direct keyword checking for quick high-confidence matching
+        keyword_mappings = {
+            "helmet": ("NO_HELMET", "Riding without a helmet"),
+            "pillion": ("NO_HELMET", "Riding without a helmet"),
+            "drunk": ("DRUNK_DRIVING", "Drunk driving / driving under the influence"),
+            "drink": ("DRUNK_DRIVING", "Drunk driving / driving under the influence"),
+            "alcohol": ("DRUNK_DRIVING", "Drunk driving / driving under the influence"),
+            "speed": ("SPEED_EXCESS", "Overspeeding / exceeding speed limits"),
+            "fast": ("SPEED_EXCESS", "Overspeeding / exceeding speed limits"),
+            "license": ("NO_LICENSE", "Driving without a valid license"),
+            "licence": ("NO_LICENSE", "Driving without a valid license"),
+            "insurance": ("NO_INSURANCE", "Driving a vehicle without insurance"),
+            "seatbelt": ("NO_SEATBELT", "Driving or riding without a seatbelt"),
+            "seat belt": ("NO_SEATBELT", "Driving or riding without a seatbelt"),
+            "phone": ("MOBILE_PHONE", "Using a mobile phone while driving"),
+            "mobile": ("MOBILE_PHONE", "Using a mobile phone while driving"),
+            "call": ("MOBILE_PHONE", "Using a mobile phone while driving"),
+            "red light": ("RED_LIGHT_JUMPING", "Jumping a red light / traffic signal"),
+            "signal": ("RED_LIGHT_JUMPING", "Jumping a red light / traffic signal"),
+            "wrong way": ("WRONG_WAY", "Driving against the designated flow of traffic (wrong way)"),
+            "wrong side": ("WRONG_SIDE", "Driving on the wrong side of the road"),
+            "triple": ("TRIPLE_RIDING", "Triple riding on a two-wheeler"),
+            "three people": ("TRIPLE_RIDING", "Triple riding on a two-wheeler"),
+            "3 people": ("TRIPLE_RIDING", "Triple riding on a two-wheeler"),
+            "glass": ("TINTED_GLASS", "Using tinted glass / dark film on windows"),
+            "tinted": ("TINTED_GLASS", "Using tinted glass / dark film on windows"),
+            "modification": ("VEHICLE_MODIFICATION", "Illegal vehicle modification"),
+            "modified": ("VEHICLE_MODIFICATION", "Illegal vehicle modification"),
+            "park": ("PARKING_VIOLATION", "Parking in a no-parking zone / illegal parking"),
+            "puc": ("PUC_VIOLATION", "Driving without a valid PUC (Pollution Under Control) certificate"),
+            "pollution": ("PUC_VIOLATION", "Driving without a valid PUC certificate"),
+            "rc": ("NO_RC", "Driving without a valid Registration Certificate (RC)"),
+            "registration": ("NO_RC", "Driving without a valid Registration Certificate (RC)"),
+            "juvenile": ("JUVENILE_DRIVING", "Driving by a minor / juvenile driving"),
+            "minor": ("JUVENILE_DRIVING", "Driving by a minor / juvenile driving"),
+            "underage": ("JUVENILE_DRIVING", "Driving by a minor / juvenile driving"),
+            "stunt": ("STUNT_DRIVING", "Dangerous stunt driving or racing"),
+            "racing": ("STUNT_DRIVING", "Dangerous stunt driving or racing"),
+            "ambulance": ("EMERGENCY_OBSTRUCTION", "Obstruction of emergency vehicles (ambulance, fire engine)"),
+            "emergency": ("EMERGENCY_OBSTRUCTION", "Obstruction of emergency vehicles"),
+            "police": ("DISOBEY_POLICE", "Disobeying lawful directions of a police officer"),
+            "disobey": ("DISOBEY_POLICE", "Disobeying lawful directions of a police officer"),
+            "overload": ("OVERLOADING", "Overloading of passenger or goods vehicle"),
+            "excess weight": ("OVERLOADING", "Overloading of passenger or goods vehicle"),
+            "rash": ("DANGEROUS_DRIVING", "Dangerous / rash driving"),
+            "reckless": ("DANGEROUS_DRIVING", "Dangerous / rash driving"),
+            "rage": ("ROAD_RAGE", "Road rage or violent behaviour on roads"),
+            "suspended": ("SUSPENDED_LICENCE", "Driving with a suspended or cancelled license"),
+        }
+
+        desc_lower = description.lower()
+        for kw, (code, title) in keyword_mappings.items():
+            if kw in desc_lower:
+                if code not in seen_codes:
+                    suggestions.append({
+                        "offence_code": code,
+                        "title": title,
+                        "confidence": "HIGH"
+                    })
+                    seen_codes.add(code)
+
+        # 2. Use HybridSearch to retrieve semantic/lexical matches
+        if hasattr(self, "hybrid_search") and self.hybrid_search:
+            try:
+                search_results = self.hybrid_search.search(description, top_k=5)
+                for r in search_results:
+                    rule_id = r.get("rule_id", "")
+                    if rule_id and self.rules_loader:
+                        rule = self.rules_loader.get_by_rule_id(rule_id)
+                        if rule:
+                            related_codes = rule.get("related_offence_codes", [])
+                            for c in related_codes:
+                                if c and c.upper() not in seen_codes:
+                                    title = rule.get("title", f"Related to {c}")
+                                    suggestions.append({
+                                        "offence_code": c.upper(),
+                                        "title": title,
+                                        "confidence": "MEDIUM"
+                                    })
+                                    seen_codes.add(c.upper())
+            except Exception as e:
+                logger.error("Hybrid search in suggest_offence_categories failed: %s", e)
+
+        # 3. Fallback popular ones
+        if not suggestions:
+            popular = [
+                ("NO_HELMET", "Riding without a helmet"),
+                ("SPEED_EXCESS", "Overspeeding"),
+                ("DRUNK_DRIVING", "Drunk driving"),
+                ("NO_LICENSE", "Driving without license"),
+                ("RED_LIGHT_JUMPING", "Jumping red light"),
+            ]
+            for code, title in popular:
+                suggestions.append({
+                    "offence_code": code,
+                    "title": title,
+                    "confidence": "LOW"
+                })
+
+        return {
+            "found": True,
+            "suggestions": suggestions[:5]
         }

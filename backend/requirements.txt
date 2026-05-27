@@ -16,3 +16,8 @@ easyocr
 mediapipe
 opencv-python
 pytesseract
+slowapi
+redis
+fastapi-cache2[redis]
+python-json-logger
+pybreaker

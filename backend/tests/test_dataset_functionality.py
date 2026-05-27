@@ -16,8 +16,9 @@ VECTOR_DB = os.path.join(DATA_DIR, "vector_db")
 
 @pytest.fixture(scope="module")
 def real_client():
-    # Ensure paths in main are correct (they should be by default)
-    return TestClient(app)
+    import backend.main as main
+    main.agent_engine.gemini_available = False
+    return TestClient(main.app)
 
 def test_dataset_files_exist():
     """Verify that the core dataset files are present."""
@@ -106,5 +107,5 @@ def test_invalid_query_handling(real_client):
     data = response.json()
     
     # Should not find a fine, might return unknown or a polite error
-    assert data["status"] in ["insufficient_info", "not_found", "error", "ok"]
+    assert data["status"] in ["insufficient_info", "not_found", "error", "ok", "needs_clarification"]
     assert data.get("fine") is None

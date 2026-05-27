@@ -18,15 +18,27 @@ import logging
 import uvicorn
 from datetime import datetime
 from typing import Optional, Dict, Any
+import re
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Request, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from pythonjsonlogger.jsonlogger import JsonFormatter
+
+from backend.services.session_manager import SessionManager
+from pybreaker import CircuitBreakerError
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
+log_handler = logging.StreamHandler()
+formatter = JsonFormatter('%(asctime)s %(levelname)s %(name)s %(message)s')
+log_handler.setFormatter(formatter)
+logging.basicConfig(level=logging.INFO, handlers=[log_handler])
 logger = logging.getLogger("drivelegal")
 
 # Ensure project root is on sys.path for absolute imports
@@ -137,12 +149,45 @@ builder = ResponseBuilder(
     challan_calculator = challan_calculator,
 )
 
+# ── Session Management ────────────────────────────────────────────────────────
+session_manager = SessionManager(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(
     title       = "DriveLegal API",
     description = "Indian traffic law assistant — NLP, fine lookup, and rule retrieval.",
     version     = "2.0.0",
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.on_event("startup")
+async def startup_event():
+    await session_manager.connect()
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"status": "error", "message": "Internal Server Error"},
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"status": "error", "message": exc.detail},
+    )
+
+@app.exception_handler(CircuitBreakerError)
+async def circuit_breaker_handler(request: Request, exc: CircuitBreakerError):
+    return JSONResponse(
+        status_code=503,
+        content={"status": "error", "message": "Service temporarily unavailable due to upstream failure."},
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -153,11 +198,29 @@ app.add_middleware(
 )
 
 # ── Request / Response Models ─────────────────────────────────────────────────
+def validate_security(v: str) -> str:
+    if not v:
+        return v
+    # Check for SQL injection patterns
+    sql_pattern = r"(?i)(SELECT|DROP|INSERT|DELETE|UNION|OR 1=1|--|;|\/\*)"
+    if re.search(sql_pattern, v):
+        raise ValueError("Invalid characters in input.")
+    # Check for >40% special chars
+    special_chars = sum(1 for c in v if not c.isalnum() and not c.isspace())
+    if len(v) > 0 and (special_chars / len(v)) > 0.4:
+        raise ValueError("Too many special characters.")
+    return v
+
 class QueryRequest(BaseModel):
-    text:    str
+    text:    str = Field(..., max_length=1000)
     gps:     Optional[Dict] = None
+    session_id: Optional[str] = None
     session: Dict           = {}
     country: Optional[str] = "IN"
+
+    @field_validator('text')
+    def check_text(cls, v):
+        return validate_security(v)
 
 class ChallanRequest(BaseModel):
     vehicle_number: str
@@ -171,85 +234,72 @@ class FineCalculateRequest(BaseModel):
     country:       Optional[str] = "IN"
 
 class AgentQueryRequest(BaseModel):
-    text:    str
+    text:    str = Field(..., max_length=1000)
     gps:     Optional[Dict] = None
-    # Multi-turn history: [{"role": "user"|"model", "parts": ["message"]}]
+    session_id: Optional[str] = None
     history: list = []
 
+    @field_validator('text')
+    def check_text(cls, v):
+        return validate_security(v)
+
 class MultilingualChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., max_length=1000)
     country: Optional[str] = "IN"
     gps:     Optional[Dict] = None
+    session_id: Optional[str] = None
     session: Dict           = {}
+
+    @field_validator('message')
+    def check_text(cls, v):
+        return validate_security(v)
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @app.post("/query", summary="NLP query — intent, fine, and rule lookup")
-async def handle_query(request: QueryRequest = Body(...)):
+@limiter.limit("300/minute")
+async def handle_query(request: Request, payload: QueryRequest = Body(...)):
     """
-    Main pipeline:  NLP → hybrid search → fine/rule retrieval → response synthesis.
+    Agentic Main pipeline using AgentEngine with tools.
     """
     try:
-        nlp_result = nlp.run(request.text, request.session, request.gps)
+        # Resolve Session
+        session_id = payload.session_id or session_manager.generate_session_id()
+        saved_session = await session_manager.get_session(session_id) or {}
+        active_session = {**saved_session, **payload.session}
+        
+        # Enrich request text with previous session context if present
+        context_parts = []
+        if active_session:
+            if active_session.get("state") and active_session.get("state") != "ALL":
+                context_parts.append(f"State: {active_session['state']}")
+            if active_session.get("vehicle_class") and active_session.get("vehicle_class") != "GENERAL":
+                context_parts.append(f"Vehicle Type: {active_session['vehicle_class']}")
+            if active_session.get("offence_type"):
+                context_parts.append(f"Offence: {active_session['offence_type']}")
 
-        # Country detection: priority order —
-        #   1. NLP pipeline country (from Arabic/multilingual extraction)
-        #   2. Text keyword detection (detect_country)
-        #   3. Explicit request.country
-        #   4. Default "IN"
-        effective_country = request.country or "IN"
-        nlp_country = nlp_result.get("country")
-        if nlp_country and nlp_country != "IN":
-            effective_country = nlp_country
-        elif effective_country == "IN":
-            detected = detect_country(request.text, default="IN")
-            effective_country = detected
+        
+        enriched_text = payload.text
+        if context_parts:
+            context_str = ", ".join(context_parts)
+            enriched_text = f"[Context: {context_str}] {enriched_text}"
 
-        # Hybrid search — retrieve more candidates when AI engine is available
-        # so the AI has a wider knowledge base to answer open-ended questions.
-        # For general/procedure queries fetch more results (up to 8) since there
-        # is no structured fine data and the answer comes entirely from search.
-        search_context = []
-        try:
-            general_intents = {"general_query", "procedure_query"}
-            search_top_k = (
-                8 if nlp_result.get("intent") in general_intents
-                else (5 if ai_engine else 3)
-            )
-            # Enrich the search query with road_type context when extracted
-            search_query = request.text
-            road_type = nlp_result.get("road_type")
-            if road_type:
-                search_query = f"{request.text} {road_type.replace('_', ' ')}"
-            search_context = hybrid_search.search(
-                search_query,
-                top_k=search_top_k,
-                country=effective_country
-            )
-        except Exception as e:
-            logger.warning("Hybrid search failed: %s", e)
+        # Run the agent engine (falls back to _keyword_fallback if Gemini is rate-limited or API key not set)
+        result = agent_engine.run(enriched_text, [], payload.gps)
 
-        nlp_result["search_matches"] = search_context
-        nlp_result["country"] = effective_country
+        # Merge in input session state if not fully overridden or updated by the tool run
+        if "session" not in result:
+            result["session"] = {}
+        
+        # Restore session fields from request if missing in result
+        for k in ["state", "vehicle_class", "offence_type", "section_ref"]:
+            if k not in result["session"] and active_session and active_session.get(k):
+                result["session"][k] = active_session[k]
 
-        structured = await builder.build(nlp_result, request.gps)
+        result["session_id"] = session_id
+        await session_manager.save_session(session_id, result["session"])
 
-        # If the builder already wrote a richer session (clarification gate),
-        # keep it as-is.  Otherwise build the standard session update.
-        if "session" not in structured:
-            updated_session = {
-                k: v for k, v in {
-                    "state":        nlp_result.get("state"),
-                    "vehicle_class": nlp_result.get("vehicle_class"),
-                    "offence_type": nlp_result.get("offence_type"),
-                    "section_ref":  nlp_result.get("section_ref"),
-                    # Clear the clarification flag once a full answer is given
-                    "in_clarification": False,
-                }.items() if v is not None
-            }
-            structured["session"] = updated_session
-
-        return structured
+        return result
 
     except Exception as e:
         logger.exception("Unhandled error in /query: %s", e)
@@ -263,100 +313,39 @@ async def handle_query(request: QueryRequest = Body(...)):
 @app.post("/api/v1/chat/multilingual", summary="Multilingual chatbot — auto-detects language, returns bilingual response")
 async def handle_multilingual_chat(request: MultilingualChatRequest = Body(...)):
     """
-    Accepts a message in any supported language (EN, HI, TA, …).
-    Pipeline:
-      1. Detect language via langdetect.
-      2. Extract intent + violation codes from Hindi/Tamil keywords.
-      3. Map to canonical offence_type; fall back to English NLP pipeline.
-      4. If multilingual extraction yields nothing, translate query to English
-         and run the standard NLP pipeline on the translated text.
-      5. Build structured response, format in detected language AND English.
-      6. Return bilingual payload.
+    Accepts a message in any supported language. Uses AgentEngine to perform the lookup
+    and synthesise natural language responses.
     """
     msg = request.message.strip()
     if not msg:
         return {"status": "error", "text": "Empty message."}
 
     try:
-        # ── 1. Language detection ──────────────────────────────────────────────
+        # Detect language via existing logic (detect_language)
         detected_lang = detect_language(msg)
 
-        # ── 2. Multilingual intent extraction ─────────────────────────────────
-        ml_intent, violation_codes, country = extract_intent_multilingual(msg, detected_lang)
-        effective_country = request.country or country or "IN"
+        # Enrich request text with previous session context if present
+        context_parts = []
+        if request.session:
+            if request.session.get("state") and request.session.get("state") != "ALL":
+                context_parts.append(f"State: {request.session['state']}")
+            if request.session.get("vehicle_class") and request.session.get("vehicle_class") != "GENERAL":
+                context_parts.append(f"Vehicle Type: {request.session['vehicle_class']}")
+            if request.session.get("offence_type"):
+                context_parts.append(f"Offence: {request.session['offence_type']}")
+        
+        enriched_text = msg
+        if context_parts:
+            context_str = ", ".join(context_parts)
+            enriched_text = f"[Context: {context_str}] {enriched_text}"
 
-        # ── 3. Build NLP result from multilingual extraction ───────────────────
-        # Try to map the first detected violation code to an offence_type.
-        offence_type: Optional[str] = None
-        if violation_codes:
-            offence_type = violation_code_to_offence_type(violation_codes[0])
+        # Run AgentEngine
+        structured = agent_engine.run(enriched_text, [], request.gps)
 
-        # ── 4. Fallback: translate to English and run standard NLP pipeline ────
-        if not offence_type and detected_lang in ("hi", "ta"):
-            translated = translate_to_english(msg, detected_lang)
-            logger.info("Multilingual fallback: translated '%s' → '%s'", msg[:60], translated[:60])
-            nlp_result = nlp.run(translated, request.session, request.gps)
-            nlp_result["_translated_from"] = detected_lang
-        else:
-            # Run standard pipeline on the original text (entities like state still useful)
-            nlp_result = nlp.run(msg, request.session, request.gps)
-            # Override intent/offence_type with multilingual extraction when better
-            if offence_type:
-                nlp_result["offence_type"] = offence_type
-            if ml_intent != "unknown" and nlp_result.get("intent") == "unknown":
-                nlp_result["intent"] = ml_intent
-                nlp_result["status"] = "success"
+        response_text = structured.get("response", "")
+        response_en = response_text
 
-        # Hybrid search — enrich query context
-        search_context = []
-        try:
-            search_top_k = 5 if ai_engine else 3
-            search_query = msg
-            if offence_type:
-                search_query = f"{msg} {offence_type.replace('_', ' ').lower()}"
-            search_context = hybrid_search.search(
-                search_query, top_k=search_top_k, country=effective_country
-            )
-        except Exception as e:
-            logger.warning("Multilingual hybrid search failed: %s", e)
-
-        nlp_result["search_matches"] = search_context
-        nlp_result["country"] = effective_country
-
-        # ── 5. Build structured response ───────────────────────────────────────
-        structured = await builder.build(nlp_result, request.gps)
-
-        # ── 6. Format localised response text ─────────────────────────────────
-        response_text = structured.get("text", "")
-        response_en   = response_text  # default: same as detected-lang response
-
-        _SUPPORTED_NATIVE_LANGS = ("hi", "ta", "ar")
-        if detected_lang in _SUPPORTED_NATIVE_LANGS:
-            rule  = structured.get("rule")
-            fine  = structured.get("fine")
-            if rule or fine:
-                try:
-                    vrow = build_violation_row(rule, fine)
-                    response_text = format_legal_response(vrow, country=effective_country, lang=detected_lang)
-                    response_en   = format_legal_response(vrow, country=effective_country, lang="en")
-                except Exception as e:
-                    logger.warning("Multilingual formatter error: %s", e)
-                    # response_text stays as the AI/template text; add a note
-                    _fallback_note = {
-                        "hi": "हिंदी में जवाब उपलब्ध नहीं है। / Answer in English:\n\n",
-                        "ta": "தமிழில் பதில் கிடைக்கவில்லை. / Answer in English:\n\n",
-                        "ar": "الإجابة باللغة الإنجليزية:\n\n",
-                    }
-                    response_text = _fallback_note.get(detected_lang, "") + response_text
-            else:
-                _fallback_note = {
-                    "hi": "हिंदी में जवाब उपलब्ध नहीं है। / Answer in English:\n\n",
-                    "ta": "தமிழில் பதில் கிடைக்கவில்லை. / Answer in English:\n\n",
-                    "ar": "الإجابة باللغة الإنجليزية:\n\n",
-                }
-                response_text = _fallback_note.get(detected_lang, "") + response_text
-
-        # ── 7. Build legal_citations list ──────────────────────────────────────
+        # Build legal citations
         legal_citations: list = []
         fine_data = structured.get("fine")
         rule_data = structured.get("rule")
@@ -365,15 +354,19 @@ async def handle_multilingual_chat(request: MultilingualChatRequest = Body(...))
         if rule_data and rule_data.get("section") and rule_data["section"] not in legal_citations:
             legal_citations.append(f"{rule_data['section']}, MV Act 2019")
 
+        violation_codes = []
+        if structured.get("query_summary") and structured.get("query_summary") != "general traffic query":
+            violation_codes.append(structured["query_summary"].upper().replace(" ", "_"))
+
         return {
             "status":            structured.get("status", "ok"),
             "response":          response_text,
             "response_en":       response_en,
             "detected_language": detected_lang,
-            "violation_codes":   violation_codes or ([nlp_result.get("offence_type")] if nlp_result.get("offence_type") else []),
+            "violation_codes":   violation_codes,
             "legal_citations":   legal_citations,
-            "fine":              structured.get("fine"),
-            "rule":              structured.get("rule"),
+            "fine":              fine_data,
+            "rule":              rule_data,
             "warnings":          structured.get("warnings", []),
         }
 
@@ -391,22 +384,31 @@ async def handle_multilingual_chat(request: MultilingualChatRequest = Body(...))
 
 
 @app.post("/agent/query", summary="Gemini agentic query — tool calling + multi-turn")
-async def handle_agent_query(request: AgentQueryRequest = Body(...)):
+@limiter.limit("300/minute")
+async def handle_agent_query(request: Request, payload: AgentQueryRequest = Body(...)):
     """
-    Agentic endpoint powered by Gemini 2.0 Flash with function calling.
-    The model autonomously decides which tools to call (lookup_fine,
-    lookup_rule, check_zone, search_rules) and synthesises a grounded
-    natural-language response.
-
-    Falls back to HybridSearch + keyword matching when GEMINI_API_KEY is
-    not set or the API is rate-limited.
+    Agentic endpoint powered by Groq 2.0 Flash with function calling.
     """
     try:
+        session_id = payload.session_id or session_manager.generate_session_id()
+        saved_history = await session_manager.get_session(f"history:{session_id}") or []
+        
+        # Only use payload history if session history is empty (client didn't track)
+        active_history = payload.history if payload.history else saved_history
+
         result = agent_engine.run(
-            user_text             = request.text,
-            conversation_history  = request.history,
-            gps                   = request.gps,
+            user_text             = payload.text,
+            conversation_history  = active_history,
+            gps                   = payload.gps,
         )
+
+        # Append new interaction to history
+        active_history.append({"role": "user", "parts": [payload.text]})
+        active_history.append({"role": "assistant", "parts": [result.get("response", "")]})
+        
+        await session_manager.save_session(f"history:{session_id}", active_history)
+        result["session_id"] = session_id
+
         return result
     except Exception as e:
         logger.exception("Unhandled error in /agent/query: %s", e)
@@ -763,15 +765,23 @@ async def get_health():
     except Exception as e:
         country_counts = {"error": str(e)}
 
+    from backend.modules.ai.circuit_breaker import ai_circuit_breaker
+    circuit_state = ai_circuit_breaker.current_state
+
+    status = "ok"
+    if circuit_state == "open":
+        status = "degraded"
+
     return {
-        "status":               "ok",
+        "status":               status,
         "schema_version":       rules_loader.schema_version,
         "rules_count":          rules_loader.count,
         "fines_count":          fine_count,
         "country_counts":       country_counts,
         "db_age":               db_age,
         "ai_engine":            "groq" if ai_engine else "template",
-        "agent_engine":         "gemini-2.0-flash" if agent_engine.gemini_available else "keyword-fallback",
+        "agent_engine":         "groq" if agent_engine.groq_available else "keyword-fallback",
+        "circuit_breaker":      circuit_state,
         "challan_calculator":   challan_calculator is not None,
         "vector_search":        hybrid_search.bm25 is not None,
         "rapid_api_live":       rapid_api_provider is not None,

@@ -33,11 +33,17 @@ SDK: google-genai  (pip install google-genai)
 Model: gemini-2.0-flash
 """
 
+import time
 import os
 import logging
+import json
 from typing import Any, Dict, List, Optional
 
+from groq import Groq
+from pybreaker import CircuitBreakerError
+
 from backend.modules.agent.tools import ToolExecutor, TOOL_DEFINITIONS
+from backend.modules.ai.circuit_breaker import ai_circuit_breaker
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +89,7 @@ class AgentEngine:
     def __init__(self, fine_lookup, rules_loader, geofencing_engine):
         self.tool_executor = ToolExecutor(fine_lookup, rules_loader, geofencing_engine)
         self.client = None
-        self.types = None
-        self.gemini_available = False
+        self.groq_available = False
         self.hybrid_search = None
 
         # Local NLP fallback (HybridSearch)
@@ -94,6 +99,7 @@ class AgentEngine:
             rules_path   = os.path.join(_base, "..", "..", "data", "rules.json")
             persist_dir  = os.path.join(_base, "..", "..", "data", "vector_db")
             self.hybrid_search = HybridSearch(rules_path, persist_dir)
+            self.tool_executor.hybrid_search = self.hybrid_search
             logger.info(
                 "[AgentEngine] HybridSearch loaded (%d documents).",
                 len(self.hybrid_search.documents),
@@ -101,21 +107,18 @@ class AgentEngine:
         except Exception as e:
             logger.warning("[AgentEngine] HybridSearch unavailable: %s", e)
 
-        # Gemini SDK
-        api_key = os.getenv("GEMINI_API_KEY")
+        # Groq SDK
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            logger.info("[AgentEngine] GEMINI_API_KEY not set — keyword fallback mode.")
+            logger.info("[AgentEngine] GROQ_API_KEY not set — keyword fallback mode.")
             return
 
         try:
-            from google import genai
-            from google.genai import types
-            self.client = genai.Client(api_key=api_key)
-            self.types = types
-            self.gemini_available = True
-            logger.info("[AgentEngine] Gemini 2.0 Flash ready with tool calling.")
+            self.client = Groq(api_key=api_key)
+            self.groq_available = True
+            logger.info("[AgentEngine] Groq ready with tool calling.")
         except Exception as e:
-            logger.error("[AgentEngine] Gemini init failed: %s", e)
+            logger.error("[AgentEngine] Groq init failed: %s", e)
 
     # ─────────────────────────────────────────────────────────────────────────
     # Public API
@@ -127,20 +130,33 @@ class AgentEngine:
         conversation_history: Optional[List[Dict]] = None,
         gps: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
-        if self.gemini_available:
-            return self._run_gemini(user_text, conversation_history or [], gps)
+        if self.groq_available:
+            return self._run_groq_with_circuit_breaker(user_text, conversation_history or [], gps)
         return self._keyword_fallback(user_text, gps)
 
+    def _run_groq_with_circuit_breaker(self, user_text: str, history: List[Dict], gps: Optional[Dict]) -> Dict[str, Any]:
+        try:
+            return ai_circuit_breaker.call(self._run_groq, user_text, history, gps)
+        except CircuitBreakerError:
+            logger.warning("[AgentEngine] Circuit Breaker OPEN — falling back to local NLP.")
+            fallback = self._keyword_fallback(user_text, gps)
+            fallback["error_detail"] = "Groq API temporarily unavailable (Circuit Breaker OPEN)"
+            return fallback
+
     # ─────────────────────────────────────────────────────────────────────────
-    # Gemini Agentic Loop
+    # Groq Agentic Loop
     # ─────────────────────────────────────────────────────────────────────────
 
-    def _run_gemini(
+    def _run_groq(
         self,
         user_text: str,
         history: List[Dict],
         gps: Optional[Dict],
     ) -> Dict[str, Any]:
+        t0 = time.time()
+        groq_time = 0.0
+        tool_time = 0.0
+        
         tools_used: List[Dict] = []
 
         enriched_text = user_text
@@ -150,53 +166,68 @@ class AgentEngine:
                 f"lon={gps.get('lon')}. Check zone restrictions if relevant.]"
             )
 
-        # Build conversation contents
-        contents = []
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for turn in history:
             role = turn.get("role", "user")
+            # map model to assistant
+            if role == "model": role = "assistant"
             parts_text = turn.get("parts", [""])
-            contents.append(
-                self.types.Content(
-                    role=role,
-                    parts=[self.types.Part.from_text(text=p) for p in parts_text],
-                )
-            )
-        contents.append(
-            self.types.Content(
-                role="user",
-                parts=[self.types.Part.from_text(text=enriched_text)],
-            )
-        )
+            messages.append({"role": role, "content": " ".join(parts_text)})
+            
+        messages.append({"role": "user", "content": enriched_text})
 
-        tool_declarations = [
-            self.types.FunctionDeclaration(
-                name=t["name"],
-                description=t["description"],
-                parameters=t["parameters"],
-            )
-            for t in TOOL_DEFINITIONS
-        ]
-
-        config = self.types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            tools=[self.types.Tool(function_declarations=tool_declarations)],
-            temperature=0.1,
-        )
+        # Convert tool definitions to Groq format
+        groq_tools = []
+        for t in TOOL_DEFINITIONS:
+            # We map "parameters" to the JSON schema
+            parameters = t.get("parameters", {})
+            if "type" not in parameters:
+                parameters["type"] = "object"
+            if "properties" not in parameters:
+                parameters["properties"] = {}
+                
+            groq_tools.append({
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t["description"],
+                    "parameters": parameters
+                }
+            })
 
         try:
-            response = None
             for iteration in range(self.MAX_TOOL_ITERATIONS):
-                response = self.client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=contents,
-                    config=config,
+                t1 = time.time()
+                response = self.client.chat.completions.create(
+                    model="llama3-70b-8192",  # Or your preferred Groq model
+                    messages=messages,
+                    tools=groq_tools,
+                    tool_choice="auto",
+                    max_tokens=1024,
+                    temperature=0.1
                 )
-
-                tool_calls = [
-                    part.function_call
-                    for part in response.candidates[0].content.parts
-                    if hasattr(part, "function_call") and part.function_call
-                ]
+                groq_time += (time.time() - t1)
+                
+                response_message = response.choices[0].message
+                tool_calls = response_message.tool_calls
+                
+                # Append assistant message with tool calls to history
+                # Ensure we handle the case where content is None
+                assistant_msg = {"role": "assistant"}
+                if response_message.content is not None:
+                    assistant_msg["content"] = response_message.content
+                if tool_calls:
+                    assistant_msg["tool_calls"] = []
+                    for call in tool_calls:
+                        assistant_msg["tool_calls"].append({
+                            "id": call.id,
+                            "type": "function",
+                            "function": {
+                                "name": call.function.name,
+                                "arguments": call.function.arguments
+                            }
+                        })
+                messages.append(assistant_msg)
 
                 if not tool_calls:
                     break
@@ -204,50 +235,65 @@ class AgentEngine:
                 logger.info(
                     "[AgentEngine] iter %d tools: %s",
                     iteration + 1,
-                    [c.name for c in tool_calls],
+                    [c.function.name for c in tool_calls],
                 )
 
-                contents.append(response.candidates[0].content)
-
-                tool_result_parts = []
                 for call in tool_calls:
-                    params = dict(call.args)
-                    result = self.tool_executor.execute(call.name, params, gps)
-                    tools_used.append({"tool": call.name, "params": params, "result": result})
-                    tool_result_parts.append(
-                        self.types.Part.from_function_response(
-                            name=call.name,
-                            response={"result": result},
-                        )
-                    )
-
-                contents.append(
-                    self.types.Content(role="tool", parts=tool_result_parts)
-                )
+                    t_tool_start = time.time()
+                    # Groq returns arguments as a JSON string
+                    try:
+                        params = json.loads(call.function.arguments)
+                    except json.JSONDecodeError:
+                        params = {}
+                        
+                    result = self.tool_executor.execute(call.function.name, params, gps)
+                    tool_time += (time.time() - t_tool_start)
+                    
+                    tools_used.append({"tool": call.function.name, "params": params, "result": result})
+                    
+                    messages.append({
+                        "tool_call_id": call.id,
+                        "role": "tool",
+                        "name": call.function.name,
+                        "content": json.dumps({"result": result})
+                    })
 
             final_text = ""
-            if response:
-                for part in response.candidates[0].content.parts:
-                    if hasattr(part, "text") and part.text:
-                        final_text += part.text
+            if response_message.content:
+                final_text = response_message.content.strip()
 
-            final_text = final_text.strip() or (
+            final_text = final_text or (
                 "I couldn't find specific information. "
                 "Please rephrase or consult echallan.parivahan.gov.in."
             )
 
-            return {
-                "status":        "ok",
-                "response":      final_text,
-                "tools_used":    tools_used,
-                "agent_powered": True,
-                "model":         "gemini-2.0-flash",
-            }
+            # Hallucination Check: Missing disclaimer
+            disclaimer = "⚠️ Informational only. Verify at echallan.parivahan.gov.in."
+            if disclaimer not in final_text:
+                logger.warning("[AgentEngine] Hallucination Alert: Missing disclaimer in Groq response. Appending automatically.")
+                final_text += f"\n\n{disclaimer}"
+            
+            t_format_start = time.time()
+            unified_res = self._build_unified_response(final_text, tools_used, True, "groq-llama3")
+            format_time = time.time() - t_format_start
+            
+            total_time = time.time() - t0
+            logger.info(
+                "[AgentEngine] Latency Breakdown -> Groq: %.0fms | Tools: %.0fms | Format: %.0fms | Total: %.0fms",
+                groq_time * 1000, tool_time * 1000, format_time * 1000, total_time * 1000
+            )
+
+            return unified_res
 
         except Exception as e:
             error_msg = str(e)
-            logger.error("[AgentEngine] Gemini error: %s", error_msg)
-            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            logger.error("[AgentEngine] Groq error: %s", error_msg)
+            
+            # Re-raise CircuitBreakerError if applicable (though it's caught in run())
+            if isinstance(e, CircuitBreakerError):
+                raise
+                
+            if "429" in error_msg:
                 logger.info("[AgentEngine] Rate-limited — falling back to local NLP.")
             fallback = self._keyword_fallback(user_text, gps)
             fallback["error_detail"] = error_msg
@@ -293,7 +339,7 @@ class AgentEngine:
                     {"offence_type": offence, "vehicle_class": vehicle, "state": state},
                     gps,
                 )
-                tools_used.append({"tool": "lookup_fine", "result": result})
+                tools_used.append({"tool": "lookup_fine", "result": result, "params": {"offence_type": offence, "vehicle_class": vehicle, "state": state}})
 
                 offence_names = {
                     "NO_HELMET":         "No Helmet",
@@ -318,6 +364,11 @@ class AgentEngine:
                         f"   • Section: {result.get('section_ref', 'N/A')}\n"
                         f"   • State: {result.get('state', state)}"
                     )
+                    
+                    # Also look up rule for context
+                    rule_result = self.tool_executor.execute("lookup_rule", {"offence_code": offence}, gps)
+                    if rule_result.get("found"):
+                        tools_used.append({"tool": "lookup_rule", "params": {"offence_code": offence}, "result": rule_result})
                 else:
                     response_parts.append(
                         f"No fine data found for '{display_name}' in {state}."
@@ -380,7 +431,7 @@ class AgentEngine:
 
         if not response_parts:
             response_parts = [
-                "I couldn't find specific information for that query. "
+                "Sorry, I didn't understand that query. "
                 "Try asking about a specific traffic rule or fine — e.g. "
                 "'fine for no helmet in Tamil Nadu'."
             ]
@@ -389,12 +440,7 @@ class AgentEngine:
             "\n⚠️ Informational only. Verify at echallan.parivahan.gov.in."
         )
 
-        return {
-            "status":        "fallback",
-            "response":      "\n".join(response_parts),
-            "tools_used":    tools_used,
-            "agent_powered": False,
-        }
+        return self._build_unified_response("\n".join(response_parts), tools_used, False, "keyword-fallback")
 
     # ─────────────────────────────────────────────────────────────────────────
     # Fallback Helpers
@@ -447,3 +493,123 @@ class AgentEngine:
             if any(k in text for k in keywords):
                 return state
         return "ALL"
+
+    # ── Unified Response Builder ──────────────────────────────────────────────
+
+    def _build_unified_response(
+        self,
+        final_text: str,
+        tools_used: List[Dict],
+        agent_powered: bool,
+        model: str,
+    ) -> Dict[str, Any]:
+        fine_data = None
+        rule_data = None
+        zone_data = None
+        search_matches = []
+        intent = "general_query"
+        query_summary = "general traffic query"
+        status = "ok"
+
+        for tu in tools_used:
+            tool_name = tu.get("tool")
+            result = tu.get("result", {})
+            params = tu.get("params", {})
+
+            if tool_name == "lookup_fine" and result.get("found"):
+                fine_data = {
+                    "amount_inr": result.get("amount_inr"),
+                    "repeat_amount_inr": result.get("repeat_amount_inr"),
+                    "section_ref": result.get("section_ref"),
+                    "data_source": "fines_db",
+                    "state": result.get("state"),
+                    "vehicle_class": result.get("vehicle_class"),
+                    "notes": result.get("notes"),
+                }
+                intent = "fine_lookup"
+                query_summary = params.get("offence_type", "fine_lookup").lower().replace("_", " ")
+                
+                # Hallucination Check: High fine amount
+                if fine_data["amount_inr"] and isinstance(fine_data["amount_inr"], (int, float)):
+                    if fine_data["amount_inr"] > 50000:
+                        logger.warning(
+                            "[AgentEngine] Hallucination Alert: High fine amount detected: ₹%s. Possible hallucination or edge-case.",
+                            fine_data["amount_inr"]
+                        )
+
+            elif tool_name == "lookup_rule" and result.get("found"):
+                rule_data = {
+                    "rule_id": result.get("rule_id"),
+                    "title": result.get("title"),
+                    "description": result.get("description"),
+                    "section": result.get("section"),
+                    "compoundable": result.get("compoundable"),
+                    "imprisonment": result.get("imprisonment"),
+                }
+                if intent == "general_query":
+                    intent = "rule_query"
+                    query_summary = params.get("offence_code", "rule_query").lower().replace("_", " ")
+
+            elif tool_name == "search_rules" and result.get("found") and result.get("rules"):
+                top_rule = result["rules"][0]
+                rule_data = {
+                    "rule_id": top_rule.get("rule_id"),
+                    "title": top_rule.get("title"),
+                    "description": top_rule.get("description"),
+                    "section": top_rule.get("section"),
+                }
+                if intent == "general_query":
+                    intent = "rule_query"
+                    query_summary = " ".join(params.get("keywords", []))
+
+            elif tool_name == "check_zone" and result.get("found") and result.get("zones"):
+                zone_data = {
+                    "active_zones": [z.get("name") for z in result["zones"]],
+                    "applicable_rules": [z.get("rules", []) for z in result["zones"]],
+                }
+
+            elif tool_name == "hybrid_search":
+                # Ensure search_matches array is populated for legacy compatibility
+                search_matches = result
+
+        # Handle specific fallback/empty states
+        lower_text = final_text.lower()
+        if "?" in final_text and any(k in lower_text for k in ["which state", "what state", "vehicle", "what city", "which city"]):
+            status = "needs_clarification"
+        elif not fine_data and not rule_data and any(k in lower_text for k in ["couldn't find", "no data", "not found", "don't have", "unavailable", "no fine data"]):
+            status = "not_found"
+        elif not fine_data and not rule_data and intent == "general_query" and any(k in lower_text for k in ["gibberish", "rephrase", "sorry"]):
+            status = "insufficient_info"
+            intent = "unknown"
+
+        # Session state
+        session_state = {}
+        if fine_data:
+            session_state["offence_type"] = query_summary.upper().replace(" ", "_")
+            session_state["state"] = fine_data.get("state")
+            session_state["vehicle_class"] = fine_data.get("vehicle_class")
+            session_state["section_ref"] = fine_data.get("section_ref")
+            session_state["in_clarification"] = False
+        if status == "needs_clarification":
+            session_state["in_clarification"] = True
+
+        warnings_list = []
+        if status == "not_found":
+            warnings_list.append("No data found in the database. Please verify at https://echallan.parivahan.gov.in.")
+
+        return {
+            "status":        status,
+            "intent":        intent,
+            "query_summary": query_summary,
+            "fine":          fine_data,
+            "rule":          rule_data,
+            "zone":          zone_data,
+            "search_matches": search_matches,
+            "text":          final_text,
+            "response":      final_text,
+            "session":       session_state,
+            "tools_used":    tools_used,
+            "agent_powered": agent_powered,
+            "model":         model,
+            "warnings":      warnings_list,
+        }
