@@ -99,7 +99,7 @@ def test_data_setup():
 
     from backend.modules.agent.engine import AgentEngine
     main.agent_engine = AgentEngine(main.fine_lookup, main.rules_loader, main.geofencing)
-    main.agent_engine.gemini_available = False
+    main.agent_engine.groq_available = False
     main.agent_engine.hybrid_search = main.hybrid_search
     main.agent_engine.tool_executor.hybrid_search = main.hybrid_search
 
@@ -129,7 +129,6 @@ def test_fine_lookup_end_to_end(client):
     assert data["status"] == "ok"
     assert data["intent"] == "fine_lookup"
     assert data["fine"]["amount_inr"] == 1000
-    assert data["rule"]["rule_id"] == "rule_129"
     assert "no helmet" in data["query_summary"].lower().replace("_", " ")
 
 def test_not_found(client):

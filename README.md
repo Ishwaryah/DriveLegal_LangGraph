@@ -1,217 +1,27 @@
-# DriveLegal
+# DriveLegal 🚦
 
-[![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Offline-First](https://img.shields.io/badge/Offline--First-brightgreen?style=for-the-badge)](https://github.com/)
-[![4 Countries](https://img.shields.io/badge/Countries-IN%20%7C%20AE%20%7C%20SG%20%7C%20GB-blue?style=for-the-badge)](https://github.com/)
 
-**DriveLegal** is an offline-first, AI-powered mobile legal companion for drivers. It puts the complete traffic fine schedule for India, UAE, Singapore, and the UK in your pocket — with an AI chatbot that cites exact Motor Vehicles Act sections, a multi-violation challan calculator, and real-time geofencing alerts. Everything works without internet.
-
-> Built for the **IIT Madras Road Safety Hackathon 2026**.
-
-## 📊 Data Infrastructure Summary
-
-```text
-DriveLegal Data Infrastructure
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total Files:         3,527
-Total Data Volume:   ~1.16 GB
-RAG Documents:       12,050 (InLegalBERT indexed)
-Fine Records:        216 (IN/AE/SG/GB)
-Geofencing Zones:    102 (TN, DL, MH + national)
-States Covered:      18 (India) + 3 international
-Languages Supported: 6 (EN, HI, TA, TE, KN, MR)
-Kaggle Datasets:     5 integrated
-Court Judgements:    50+ cases
-Legal Sections:      MV Act 1988 + 5 State Acts
-```
-
-## CV Module — Dataset Registry & Scaffolding
-
-The following Kaggle datasets are registered in `dataset_catalog.json` 
-with MD5 checksums, schema definitions, and ingestion pipelines ready. 
-Raw image data is excluded from the repository (total ~4.2 GB) per 
-standard ML project practice.
-
-| Dataset | Records | Status |
-|---|---|---|
-| Indian Traffic Signs | ~5,000 images | Pipeline ready, model pending training |
-| License Plate OCR | ~3,000 images | Pipeline ready, inference stub active |
-| Pothole Detection | ~2,800 images | Pipeline ready, model pending training |
-| Driver Drowsiness | ~6,400 images | Pipeline ready, model pending training |
-| Traffic CCTV Logs | ~1,200 clips | Pipeline ready, model pending training |
-
-**Reproduction:** Run `python setup_kaggle_datasets.py --download` 
-with a valid Kaggle API key to pull raw data and trigger training.
-This is standard practice — PyTorch, HuggingFace, everyone excludes large binary datasets from repos. Judges understand this.
+> **Indian Traffic Law Assistant** — NLP-powered fine lookup, rule retrieval, geofencing alerts, and multilingual chat for drivers and legal professionals.
 
 ---
 
-## Key Features
+## Overview
 
-- **Multi-Country Coverage** — Full fine schedules for India (MV Act 2019), UAE (Federal Traffic Law), Singapore (Road Traffic Act), and UK (Road Traffic Act 1988). 520 violation entries across 4 currencies.
-- **AI Legal Chatbot** — NLP pipeline with intent classification, entity extraction, and BM25 + vector hybrid search. Cites exact section numbers (e.g. Section 185, Section 199A). Powered by Groq LLaMA 3 when a key is available; falls back to template responses offline.
-- **Challan Calculator** — Select country, state, vehicle type, and one or more violations. Instantly shows minimum/maximum fines, compounding eligibility, and imprisonment risk. Works fully offline from SQLite.
-- **Offline-First Architecture** — The complete fine database syncs to a local SQLite DB on first load. The app detects connectivity via `netinfo` and falls back seamlessly. An "🔴 Offline – Cached" badge is shown when offline.
-- **Location-Aware Dashboard** — GPS-based state detection using offline GeoJSON boundaries. The home screen shows the most common violations for your current state without any manual configuration.
-- **Geofencing Alerts** — Zone-specific regulations for speed camera zones, school zones, and no-phone zones, built on Shapely polygon intersection.
-- **Accessibility** — High-contrast mode (#000 background, #FFF text, gold accent), `accessibilityLabel`/`accessibilityHint` on all interactive elements, scalable typography.
+DriveLegal helps Indian citizens understand traffic violations, challan amounts, and driving laws in real time.
 
----
-
-## Architecture
-
-```
-Mobile App (Expo / React Native)
-  ├── Offline path: Local SQLite DB (fines, rules, zones)
-  └── Online path: FastAPI Backend (port 8001)
-        ├── GET  /health                        — system status
-        ├── GET  /api/v1/fines/countries        — supported countries + currencies
-        ├── GET  /api/v1/fines/country/:code    — fine schedule for a country
-        ├── GET  /api/v1/fines/search           — keyword search
-        ├── POST /api/v1/challan/calculate      — multi-violation fine calculation
-        ├── POST /query                         — NLP chatbot pipeline
-        └── GET  /sync/*                        — delta sync for mobile SQLite
-```
-
-```mermaid
-graph TD
-    A[Mobile App] -->|Offline Read| B[(Local SQLite)]
-    A -->|Online Sync| C[FastAPI :8001]
-    C -->|Query| D[(fines.db — 520 rows)]
-    C -->|Search| E[(ChromaDB + BM25)]
-    C -->|AI generation| F[Groq LLaMA 3]
-```
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Mobile | Expo 50 / React Native 0.73, TypeScript, Expo Router v3 |
-| State & Data | TanStack Query v5, Expo SQLite, AsyncStorage |
-| Maps | MapLibre React Native |
-| Backend | FastAPI 0.11, Uvicorn, Pydantic v2 |
-| NLP | Custom pipeline: spaCy, rank-bm25, ChromaDB, sentence-transformers |
-| AI | Groq LLaMA 3 (optional), template fallback |
-| Database | SQLite (mobile + server), identical schema |
-
----
-
-## Getting Started
-
-### Prerequisites
-- Python 3.10+ with the project virtualenv activated (`backend/venv`)
-- Node.js 18+
-
-### Backend
-
-```bash
-# Seed the database (first time or after schema changes)
-python backend/scripts/migrate_db.py
-
-# Start the API server (port 8001)
-backend/venv/Scripts/python backend/main.py   # Windows
-# OR
-backend/venv/bin/python backend/main.py       # macOS / Linux
-```
-
-The first startup takes ~90 seconds to load NLP models and the vector index.
-
-### Mobile App
-
-```bash
-cd mobile
-npm install
-npx expo start          # for device via Expo Go
-npx expo start --web    # for browser at http://localhost:8081
-```
-
-### Optional — Enable Groq AI
-
-```bash
-# backend/.env
-GROQ_API_KEY=your_groq_api_key_here
-```
-
----
-
-## Database Schema
-
-The `fines` table is shared between the server and the mobile SQLite DB:
-
-```sql
-CREATE TABLE fines (
-  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-  country             TEXT NOT NULL DEFAULT 'IN',   -- IN, AE, SG, GB
-  state_province      TEXT,                          -- TN, MH, DL, etc.
-  violation_code      TEXT NOT NULL,
-  violation_name      TEXT NOT NULL,
-  vehicle_type        TEXT NOT NULL DEFAULT 'all',   -- two_wheeler, lmv, hmv, ...
-  min_fine_local      INTEGER,
-  max_fine_local      INTEGER,
-  currency            TEXT NOT NULL DEFAULT 'INR',   -- INR, AED, SGD, GBP
-  mv_act_section      TEXT,                          -- Sec 129, Federal Traffic Law, etc.
-  compounding_eligible BOOLEAN DEFAULT 0,
-  compounding_fee     INTEGER,
-  imprisonment_days   INTEGER DEFAULT 0,
-  notes               TEXT
-);
-```
-
-**Row counts (post-migration):**
-
-| Country | Rows | Coverage |
-|---------|------|----------|
-| IN (India) | 490 | 14 violations × 7 states × 5 vehicle types |
-| AE (UAE) | 10 | 10 violation types, Federal Traffic Law |
-| SG (Singapore) | 10 | 10 violation types, Road Traffic Act |
-| GB (United Kingdom) | 10 | 10 violation types, Road Traffic Act 1988 |
-
----
-
-## Hackathon Evaluation Checklist
-
-1. **Offline Mode** — Disable network in browser DevTools. Navigate to Challan Calculator — observe "🔴 Offline – Cached" badge. Perform a calculation — it still works from SQLite.
-2. **Section Citations** — Ask the chatbot "what is the fine for drunk driving in India" — response cites Section 185, MV Act 2019.
-3. **Multi-Country** — Switch to UAE in the Challan Calculator — all fines switch to AED.
-4. **Accessibility** — Go to Settings → toggle High Contrast Mode → UI switches to WCAG AA palette instantly.
-5. **State-Specific Data** — Calculator defaults to Tamil Nadu state; switching to Maharashtra shows different compounding amounts.
-
----
-
-## API Quick Reference
-
-```bash
-# Health check
-GET http://localhost:8001/health
-
-# Supported countries
-GET http://localhost:8001/api/v1/fines/countries
-
-# Calculate a challan — India, TN, two-wheeler, no helmet + no insurance
-POST http://localhost:8001/api/v1/challan/calculate
-{
-  "country": "IN",
-  "state_province": "TN",
-  "vehicle_type": "two_wheeler",
-  "violation_codes": ["no_helmet", "no_insurance"]
-}
-
-# Calculate a challan — UAE, overspeeding >60 km/h
-POST http://localhost:8001/api/v1/challan/calculate
-{
-  "country": "AE",
-  "vehicle_type": "all",
-  "violation_codes": ["overspeeding_60"]
-}
-
-# Search violations
-GET http://localhost:8001/api/v1/fines/search?q=helmet&country=IN
-```
+| Layer | Stack |
+|---|---|
+| Backend API | FastAPI · Python 3.10 |
+| AI Agent | Groq (Llama 3.3 70B) · Function Calling |
+| NLP | spaCy · InLegalBERT · BM25 Hybrid Search |
+| Database | SQLite (fines) · ChromaDB (vector search) |
+| Geofencing | Shapely · GeoJSON |
+| Mobile | React Native · Expo (TypeScript) |
+| Sessions | Redis |
+| OCR | Tesseract · EasyOCR |
 
 ---
 
@@ -219,36 +29,264 @@ GET http://localhost:8001/api/v1/fines/search?q=helmet&country=IN
 
 ```
 DriveLegal/
-├── backend/
-│   ├── main.py                    # FastAPI entry point (port 8001)
-│   ├── data/
-│   │   ├── fines.db               # SQLite database (520 rows, 4 countries)
-│   │   ├── rules.json             # 328 legal rules with section references
-│   │   └── vector_db/             # ChromaDB vector index
-│   ├── modules/
-│   │   ├── fines/router_v1.py     # /api/v1/* endpoints
-│   │   ├── nlp/pipeline.py        # Intent → entity → hybrid search
-│   │   ├── response/builder.py    # Response orchestration
-│   │   └── geofencing/engine.py   # GPS zone detection
-│   └── scripts/migrate_db.py      # Database seed script
-├── mobile/
-│   ├── app/(tabs)/
-│   │   ├── index.tsx              # Home dashboard
-│   │   ├── fines.tsx              # Challan Calculator
-│   │   ├── ask.tsx                # AI Chatbot
-│   │   └── settings/index.tsx     # Settings + accessibility
-│   ├── hooks/
-│   │   ├── useGeoFineAlert.ts     # GPS + offline state
-│   │   ├── useLocalDB.ts          # SQLite reads
-│   │   └── useQuery.ts            # Backend API calls
-│   ├── config/api.ts              # API base URL (port 8001)
-│   └── assets/seed/rules.json     # Offline rules bundle
-├── DEMO_SCRIPT.md                 # 5-minute demo flow for judges
+├── backend/                        # FastAPI Python backend
+│   ├── main.py                     # Application entry point & all route definitions
+│   ├── requirements.txt            # Python dependencies
+│   ├── .env                        # Environment variables (not committed — see below)
+│   │
+│   ├── modules/                    # Core business logic
+│   │   ├── agent/                  # Groq agentic loop (engine.py + tools.py)
+│   │   ├── ai/                     # AI provider abstraction (Groq, circuit breaker)
+│   │   ├── fines/                  # Fine lookup, seeding, RapidAPI challan, v1 router
+│   │   ├── geofencing/             # Zone-based restriction engine
+│   │   ├── nlp/                    # NLP pipeline, hybrid search, entity extraction
+│   │   ├── response/               # Structured response builder
+│   │   ├── rules/                  # rules.json loader with state overrides
+│   │   ├── sync/                   # Mobile offline-sync router
+│   │   ├── legal_formatter.py      # Legal citation formatter
+│   │   └── multilingual_intent.py  # Language detection & multilingual NLP
+│   │
+│   ├── routers/                    # FastAPI router modules
+│   │   ├── analytics.py            # Usage analytics endpoints
+│   │   ├── cv.py                   # Computer vision / plate OCR
+│   │   ├── emergency.py            # Emergency contacts & SOS
+│   │   └── vehicle_lookup.py       # RC / DL document lookup
+│   │
+│   ├── services/                   # External service clients
+│   │   ├── analytics_service.py
+│   │   ├── document_validator.py
+│   │   ├── drowsiness_service.py
+│   │   ├── emergency_service.py
+│   │   ├── geofencing_engine.py
+│   │   ├── parivahan_service.py    # Vahan / Sarathi offline snapshots
+│   │   ├── plate_ocr_service.py
+│   │   └── session_manager.py      # Redis session manager
+│   │
+│   ├── data/                       # Runtime data
+│   │   ├── fines.db                # SQLite fine amounts (seeded from seed_fines.csv)
+│   │   ├── rules.json              # Traffic rules with state overrides (schema v2)
+│   │   ├── metadata.json           # NLP entity maps: vehicle classes, states, offences
+│   │   ├── seed_fines.csv          # Fine seeding table for fines.db
+│   │   ├── dataset_catalog.json    # Dataset registry
+│   │   ├── zones/                  # GeoJSON geofencing zones (DL, MH, TN, ALL)
+│   │   └── drivelegal_dataset/     # Reference JSON/CSV datasets
+│   │       ├── json/               # Fine rules, emergency contacts, FAQ, EV regs, etc.
+│   │       ├── csv/                # State-wise fine lookup tables & RTO questions
+│   │       ├── multilingual/       # Multilingual string maps
+│   │       └── data_loader.py      # ChallanCalculator (offline fine computation)
+│   │
+│   ├── tests/                      # Full test suite
+│   │   ├── unit/                   # Unit tests (isolated, no external DB required)
+│   │   │   ├── test_fine_lookup.py
+│   │   │   ├── test_geofencing_engine.py
+│   │   │   ├── test_nlp_pipeline.py
+│   │   │   └── test_rules_loader.py
+│   │   ├── test_analytics.py
+│   │   ├── test_challan.py
+│   │   ├── test_conversation_loop.py
+│   │   ├── test_dataset_functionality.py
+│   │   ├── test_document_validator.py
+│   │   ├── test_geofencing.py      # Integration: live zone data
+│   │   ├── test_integration.py
+│   │   └── test_query_flow.py
+│   │
+│   ├── scripts/                    # Admin / one-off scripts
+│   │   ├── ingest.py               # Ingest Kaggle e-challan CSV → fines.db
+│   │   ├── ingest_data.py          # Extended ingestion pipeline
+│   │   ├── merge_dataset.py        # Merge drivelegal_dataset → rules.json + seed_fines.csv
+│   │   ├── merge_local_dataset.py  # Merge from local dataset copy
+│   │   ├── add_state_rules.py      # Append state-specific rule overrides
+│   │   ├── bulk_insert.py          # Bulk fine records insert
+│   │   ├── generate_catalog.py     # Regenerate dataset_catalog.json
+│   │   ├── setup_kaggle_datasets.py # Download & scaffold Kaggle datasets
+│   │   ├── migrate_db.py           # Run schema migrations
+│   │   ├── load_test.py            # API load / latency test
+│   │   └── train.py                # Re-index vector DB / fine-tune embeddings
+│   │
+│   └── migrations/
+│       └── add_vehicle_cache.py    # Schema migration: vehicle cache table
+│
+├── mobile/                         # React Native (Expo) mobile app
+│   ├── app/                        # Expo Router screens
+│   │   ├── _layout.tsx             # Root layout & navigation
+│   │   ├── index.tsx               # Entry / redirect
+│   │   ├── vehicle.tsx             # RC & DL document lookup
+│   │   ├── location.tsx            # GPS / geofencing alerts
+│   │   ├── sos.tsx                 # Emergency SOS
+│   │   └── (tabs)/                 # Tab-based navigation group
+│   │       ├── _layout.tsx         # Tab bar definition
+│   │       ├── index.tsx           # Home tab
+│   │       ├── ask.tsx             # NLP query tab
+│   │       ├── fines.tsx           # Fine lookup tab
+│   │       ├── settings/           # Settings screens
+│   │       │   ├── _layout.tsx
+│   │       │   ├── index.tsx       # Settings home
+│   │       │   └── documents.tsx   # RC/DL document store
+│   │       └── zones/              # Zone map screens
+│   │           ├── _layout.tsx
+│   │           ├── index.tsx       # Zone map overview
+│   │           ├── live.tsx        # Live GPS zone detection
+│   │           └── speed-limits.tsx
+│   ├── components/                 # Reusable UI components
+│   │   ├── ChallanCalculator.tsx
+│   │   ├── FineCard.tsx
+│   │   ├── Hamburger.tsx
+│   │   ├── OfflineBadge.tsx
+│   │   ├── RuleCard.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── SidebarRail.tsx
+│   ├── hooks/                      # Custom React hooks
+│   │   ├── useDocuments.ts         # RC/DL document fetching
+│   │   ├── useGeoFineAlert.ts      # GPS-based zone alerts
+│   │   ├── useHistory.tsx          # Query history
+│   │   ├── useLocalDB.ts           # Device SQLite
+│   │   ├── useQuery.ts             # Backend query hook
+│   │   ├── useSettings.tsx         # App settings
+│   │   ├── useSync.ts              # Offline sync
+│   │   └── useUI.tsx               # UI state (modals, sidebar)
+│   ├── assets/
+│   │   ├── seed/                   # Bundled offline data seed
+│   │   │   ├── fines.db            # Offline fine database
+│   │   │   └── rules.json          # Offline rules
+│   │   └── tiles/                  # Map tile assets
+│   ├── context/
+│   │   └── LanguageContext.tsx     # Language preference
+│   ├── i18n/
+│   │   └── strings.ts              # Localisation strings
+│   ├── local_db/
+│   │   └── schema.sql              # Device-side SQLite schema
+│   ├── types/
+│   │   └── challan.ts              # TypeScript types
+│   ├── config/
+│   │   └── api.ts                  # Backend base URL config
+│   ├── stubs/                      # Expo Go compatibility shims
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── .gitignore
 └── README.md
 ```
 
 ---
 
-## Disclaimer
+## Key API Endpoints
 
-*DriveLegal is an educational tool and does not constitute official legal advice. Always verify fine amounts with official government portals (India: echallan.parivahan.gov.in). Laws and penalties change — consult a legal professional for authoritative guidance.*
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/query` | Main NLP + agentic query (fine + rule + zone) |
+| `POST` | `/agent/query` | Groq multi-turn agentic loop |
+| `POST` | `/api/v1/chat/multilingual` | Auto-detect language, bilingual response |
+| `POST` | `/fine/calculate` | Offline fine calculator (MV Act dataset) |
+| `POST` | `/challan/calculate` | Live challan lookup by vehicle number |
+| `GET`  | `/api/v1/vehicle/info/{reg_no}` | RC details (RapidAPI or offline fallback) |
+| `GET`  | `/api/v1/vehicle/challans/{reg_no}` | Pending challans for a vehicle |
+| `GET`  | `/api/v1/dl/info/{dl_no}` | DL validation (Sarathi or offline fallback) |
+| `GET`  | `/health` | System health + DB metadata |
+| `GET`  | `/api/v1/health/datasets` | Dataset readiness score |
+
+Full interactive docs: `http://localhost:8001/docs`
+
+---
+
+## Quick Start
+
+### Backend
+
+```bash
+# 1. Create & activate virtual environment
+python -m venv backend/venv
+# Linux/macOS:
+source backend/venv/bin/activate
+# Windows:
+backend\venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r backend/requirements.txt
+
+# 3. Configure environment
+# Create backend/.env with the variables shown in "Environment Variables" below
+
+# 4. Seed the fine database
+python -m backend.modules.fines.seed
+
+# 5. Start the API server
+uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+### Mobile
+
+```bash
+cd mobile
+npm install
+npx expo start
+```
+
+---
+
+## Environment Variables
+
+Create `backend/.env` (gitignored):
+
+```env
+# Required — Groq LLM API key for the agentic query engine
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
+
+# Optional — live challan & vehicle lookup via RapidAPI
+RAPIDAPI_KEY=your_rapidapi_key
+
+# Optional — Redis session persistence (defaults to localhost)
+REDIS_URL=redis://localhost:6379/0
+```
+
+Without `GROQ_API_KEY` the engine falls back to keyword matching + BM25 hybrid search.  
+Without `RAPIDAPI_KEY` vehicle / challan lookups use the bundled offline snapshots.
+
+---
+
+## Running Tests
+
+```bash
+# From project root
+
+# Unit tests only (fast, no external services)
+pytest backend/tests/unit/ -v
+
+# Full test suite
+pytest backend/tests/ -v
+
+# With coverage report
+pytest backend/tests/ --cov=backend --cov-report=term-missing
+```
+
+---
+
+## Data Architecture
+
+```
+User query (text + optional GPS)
+        │
+        ▼
+  NLP Pipeline ──► Intent classification + Entity extraction
+        │                    (metadata.json maps)
+        ▼
+  AgentEngine ──► Groq Llama 3.3 70B with function calling
+        │         └── lookup_fine()   → fines.db  (SQLite)
+        │         └── lookup_rule()   → rules.json
+        │         └── search_rules()  → BM25 + ChromaDB hybrid
+        │         └── check_zone()    → GeoJSON zones (Shapely)
+        ▼
+  ResponseBuilder ──► Structured JSON with legal citations
+        │
+        ▼
+  Mobile app / REST clients
+```
+
+---
+
+## Legal Disclaimer
+
+All fine amounts are based on the **Motor Vehicles (Amendment) Act, 2019** and published state-level notifications. Always verify current challan amounts at [echallan.parivahan.gov.in](https://echallan.parivahan.gov.in).
+
+---
+
+*DriveLegal — making Indian traffic law accessible to every citizen.*

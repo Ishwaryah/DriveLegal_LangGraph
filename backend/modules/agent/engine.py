@@ -199,7 +199,7 @@ class AgentEngine:
             for iteration in range(self.MAX_TOOL_ITERATIONS):
                 t1 = time.time()
                 response = self.client.chat.completions.create(
-                    model="llama3-70b-8192",  # Or your preferred Groq model
+                    model="llama-3.3-70b-versatile",  # Or your preferred Groq model
                     messages=messages,
                     tools=groq_tools,
                     tool_choice="auto",

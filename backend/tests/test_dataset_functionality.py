@@ -17,7 +17,7 @@ VECTOR_DB = os.path.join(DATA_DIR, "vector_db")
 @pytest.fixture(scope="module")
 def real_client():
     import backend.main as main
-    main.agent_engine.gemini_available = False
+    main.agent_engine.groq_available = False
     return TestClient(main.app)
 
 def test_dataset_files_exist():

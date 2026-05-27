@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from backend.modules.agent.engine import AgentEngine
 from backend.modules.agent.tools import ToolExecutor
@@ -65,39 +66,55 @@ class MockResponse:
 
 class MockClient:
     def __init__(self):
-        self.models = self.MockModels()
+        self.chat = self.MockChat()
         self.call_history = []
 
-    class MockModels:
+    class MockChat:
         def __init__(self):
-            self.parent = None
-            
-        def generate_content(self, model, contents, config):
-            last_message = contents[-1].parts[0].text or ""
-            last_message = str(last_message).lower()
-            
-            if "amount_inr" in last_message:
-                return MockResponse(text="The fine is ₹1000 in Delhi.")
+            self.completions = self.MockCompletions()
+
+        class MockCompletions:
+            def create(self, model, messages, tools=None, tool_choice=None, max_tokens=None, temperature=None):
+                last_message = messages[-1]["content"].lower()
                 
-            if "speeding" in last_message:
-                is_delhi = False
-                for c in contents:
-                    if c.role == "user" and c.parts[0].text and "delhi" in str(c.parts[0].text).lower():
-                        is_delhi = True
-                        break
-                if is_delhi:
-                    return MockResponse(
-                        text="",
-                        tool_calls=[{"name": "lookup_fine", "args": {"offence_type": "SPEED_EXCESS", "state": "Delhi"}}]
-                    )
-                else:
-                    return MockResponse(text="Which state?", tool_calls=None)
-            
-            return MockResponse(text="Hello, how can I help you?")
+                class Choice:
+                    def __init__(self, message):
+                        self.message = message
+                        
+                class Message:
+                    def __init__(self, content, tool_calls=None):
+                        self.content = content
+                        self.tool_calls = tool_calls
+                        
+                class ToolCall:
+                    def __init__(self, name, arguments):
+                        self.id = "call_123"
+                        self.function = self.Function(name, arguments)
+                        
+                    class Function:
+                        def __init__(self, name, arguments):
+                            self.name = name
+                            self.arguments = json.dumps(arguments)
+
+                if "amount_inr" in last_message or "1000" in last_message:
+                    return type("Response", (), {"choices": [Choice(Message("The fine is ₹1000 in Delhi.", None))]})
+                    
+                if "speeding" in last_message:
+                    is_delhi = False
+                    for m in messages:
+                        if m["role"] == "user" and "delhi" in m["content"].lower():
+                            is_delhi = True
+                            break
+                    if is_delhi:
+                        return type("Response", (), {"choices": [Choice(Message(None, [ToolCall("lookup_fine", {"offence_type": "SPEED_EXCESS", "state": "Delhi"})]))]})
+                    else:
+                        return type("Response", (), {"choices": [Choice(Message("Which state?", None))]})
+                
+                return type("Response", (), {"choices": [Choice(Message("Hello, how can I help you?", None))]})
 
 def test_conversation_history_loop():
     engine = AgentEngine(None, None, None)
-    engine.gemini_available = True
+    engine.groq_available = True
     engine.types = types
     
     mock_client = MockClient()

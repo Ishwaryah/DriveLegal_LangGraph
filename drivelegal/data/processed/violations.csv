@@ -1,8 +1,0 @@
-violation_code,section_id,description,vehicle_type,severity,state_code,fine,points
-NO_HELMET,129/194D,No helmet,2W,MEDIUM,TN,1000,2
-NO_SEATBELT,194B,No seatbelt,LMV,MEDIUM,TN,1000,2
-OVERSPEED,183,Overspeeding,LMV,HIGH,TN,2000,3
-DRUNK_DRIVING,185,Drunk driving,ALL,HIGH,TN,10000,5
-MOBILE_USAGE,184,Mobile usage while driving,ALL,HIGH,TN,5000,3
-SIGNAL_JUMP,177,Jump red signal,ALL,MEDIUM,TN,1000,2
-WRONG_PARKING,177,Wrong parking,ALL,LOW,TN,500,1

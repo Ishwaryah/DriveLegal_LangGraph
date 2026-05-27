@@ -1,49 +1,80 @@
-# Dependencies
+# ── Node / Expo ───────────────────────────────────────────────────────────────
 node_modules/
-backend/node_modules/
 mobile/node_modules/
-scraper/node_modules/
-
-# Expo
-.expo/
 mobile/.expo/
+.expo/
 
-# Build outputs
+# ── Build / Dist ──────────────────────────────────────────────────────────────
 dist/
 build/
 backend/dist/
 mobile/dist/
+*.egg-info/
+*.egg
 
-# Environment variables
+# ── Environment variables ─────────────────────────────────────────────────────
+.env
 .env.local
 .env.*.local
 backend/.env
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Python
-backend/venv/
+# ── Python cache ──────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
-scraper/__pycache__/
-scraper/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
 
-# System files
-.DS_Store
-Thumbs.db
+# ── Virtual environments ──────────────────────────────────────────────────────
+backend/venv/
+venv/
+.venv/
+env/
 
-# Misc
-.sixth/
-.claude/
+# ── Logs & temp files ─────────────────────────────────────────────────────────
+*.log
+*.txt.bak
+pip_out.txt
+pip_test.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Generated / runtime data ──────────────────────────────────────────────────
+# Vector DB indexes are rebuilt at startup — no need to commit
 backend/data/vector_db/
 backend/data/vector_db_test/
+backend/data/vector_db_debug/
+data/vector_db_debug/
+
+# Claude Code AI scratch / brain directories
+backend/brain/
+
+# ── Raw & processed Kaggle datasets (large, not required at runtime) ─────────
+datasets/
 backend/data/raw/
 backend/data/processed/
 backend/data/drivelegal_dataset/*.pdf
-datasets/
+
+# ── SQLite write-ahead log (transient) ───────────────────────────────────────
+*.db-wal
+*.db-shm
+
+# ── System files ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.docx
+*.pptx
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+
+# ── Claude Code internal ──────────────────────────────────────────────────────
+.claude/
+.sixth/
