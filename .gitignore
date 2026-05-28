@@ -45,6 +45,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # ── Debug / analysis scripts (root-level one-shots) ──────────────────────────
+_check_*.py
 test_results_raw.json
 TEST_REPORT.md
 analyse_results_*.py
