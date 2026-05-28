@@ -862,46 +862,7 @@ class AgentEngine:
                 "Check zone restrictions if relevant.]"
             )
 
-        # 1. Build LangChain Tools dynamically from TOOL_DEFINITIONS
-        lc_tools = []
         tools_used_record = [] # To keep track for _build_unified_response
-        
-        for t_def in TOOL_DEFINITIONS:
-            name = t_def["name"]
-            desc = t_def["description"]
-            # Create a closure to capture the tool name
-            def tool_func(name=name, **kwargs) -> str:
-                result = self.tool_executor.execute(name, kwargs, gps)
-                tools_used_record.append({"tool": name, "params": kwargs, "result": result})
-                return json.dumps(result)
-            
-            # Use type() to dynamically create a Pydantic model for args if needed, 
-            # or just use StructuredTool.from_function (which requires type hints usually).
-            # For simplicity, we'll let LangChain infer from a generic wrapper or we build it manually.
-            
-            lc_tools.append(
-                StructuredTool.from_function(
-                    func=tool_func,
-                    name=name,
-                    description=desc,
-                    # We pass the raw JSON schema for args
-                    args_schema=None, # LangChain can accept raw schema in other ways, but for StructuredTool it's best to use pydantic.
-                )
-            )
-            
-        # Refine tool creation to properly use the schema from TOOL_DEFINITIONS
-        # Actually, ChatGroq.bind_tools can accept raw OpenAI-style dicts!
-        groq_tools = []
-        for t in TOOL_DEFINITIONS:
-            parameters = dict(t.get("parameters", {}))
-            if "type" not in parameters:
-                parameters["type"] = "object"
-            if "properties" not in parameters:
-                parameters["properties"] = {}
-            groq_tools.append({
-                "type": "function",
-                "function": {"name": t["name"], "description": t["description"], "parameters": parameters},
-            })
 
         # Initialize the LLM
         llm = ChatGroq(

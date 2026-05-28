@@ -15,7 +15,7 @@ DriveLegal helps Indian citizens understand traffic violations, challan amounts,
 | Layer | Stack |
 |---|---|
 | Backend API | FastAPI · Python 3.10 |
-| AI Agent | Groq (Llama 3.3 70B) · Function Calling |
+| AI Agent | LangGraph · Groq (Llama 3.3) |
 | NLP | spaCy · InLegalBERT · BM25 Hybrid Search |
 | Database | SQLite (fines) · ChromaDB (vector search) |
 | Geofencing | Shapely · GeoJSON |
@@ -269,7 +269,7 @@ User query (text + optional GPS)
   NLP Pipeline ──► Intent classification + Entity extraction
         │                    (metadata.json maps)
         ▼
-  AgentEngine ──► Groq Llama 3.3 70B with function calling
+  AgentEngine ──► LangGraph Orchestration (Llama 3.3 70B)
         │         └── lookup_fine()   → fines.db  (SQLite)
         │         └── lookup_rule()   → rules.json
         │         └── search_rules()  → BM25 + ChromaDB hybrid
