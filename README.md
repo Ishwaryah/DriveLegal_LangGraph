@@ -1,6 +1,7 @@
 # DriveLegal 🚦
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
 [![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
@@ -15,7 +16,7 @@ DriveLegal helps Indian citizens understand traffic violations, challan amounts,
 | Layer | Stack |
 |---|---|
 | Backend API | FastAPI · Python 3.10 |
-| AI Agent | LangGraph · Groq (Llama 3.3) |
+| AI Agent | LangGraph · Ollama (local) → Gemini 2.0 Flash → Groq Llama 3.3 70B (priority order) |
 | NLP | spaCy · InLegalBERT · BM25 Hybrid Search |
 | Database | SQLite (fines) · ChromaDB (vector search) |
 | Geofencing | Shapely · GeoJSON |
@@ -35,7 +36,7 @@ DriveLegal/
 │   ├── .env                        # Environment variables (not committed — see below)
 │   │
 │   ├── modules/                    # Core business logic
-│   │   ├── agent/                  # Groq agentic loop (engine.py + tools.py)
+│   │   ├── agent/                  # LangGraph agentic loop (engine.py + tools.py)
 │   │   ├── ai/                     # AI provider abstraction (Groq, circuit breaker)
 │   │   ├── fines/                  # Fine lookup, seeding, RapidAPI challan, v1 router
 │   │   ├── geofencing/             # Zone-based restriction engine
@@ -228,7 +229,16 @@ npx expo start
 Create `backend/.env` (gitignored):
 
 ```env
-# Required — Groq LLM API key for the agentic query engine
+# LLM providers — engine tries each in priority order: Ollama → Gemini → Groq → keyword fallback
+
+# Option A: Local Ollama (highest priority — no API key needed)
+OLLAMA_BASE_URL=http://localhost:11434/v1   # default
+OLLAMA_MODEL=qwen2.5-coder:7b              # default
+
+# Option B: Google Gemini (cloud, tried if Ollama is unavailable)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Option C: Groq (cloud, tried if Gemini is also unavailable)
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
 
 # Optional — live challan & vehicle lookup via RapidAPI
@@ -238,7 +248,7 @@ RAPIDAPI_KEY=your_rapidapi_key
 REDIS_URL=redis://localhost:6379/0
 ```
 
-Without `GROQ_API_KEY` the engine falls back to keyword matching + BM25 hybrid search.  
+If no LLM provider is available the engine falls back to keyword matching + BM25 hybrid search.  
 Without `RAPIDAPI_KEY` vehicle / challan lookups use the bundled offline snapshots.
 
 ---
@@ -266,16 +276,24 @@ pytest backend/tests/ --cov=backend --cov-report=term-missing
 User query (text + optional GPS)
         │
         ▼
-  NLP Pipeline ──► Intent classification + Entity extraction
-        │                    (metadata.json maps)
+  AgentEngine (LangGraph)
+  ┌─────────────────────────────────────────────┐
+  │  intent_gate ──► greeting/meta ──► END      │
+  │       │                                     │
+  │       ▼  (traffic query)                    │
+  │  call_llm  ◄──────────────────┐             │
+  │  [Ollama → Gemini → Groq]     │             │
+  │       │  tool_calls?          │             │
+  │       ├── yes ──► execute_tools             │
+  │       │           └── lookup_fine()   → fines.db (SQLite)
+  │       │           └── lookup_rule()   → rules.json
+  │       │           └── search_rules()  → BM25 + ChromaDB
+  │       │           └── check_zone()    → GeoJSON (Shapely)
+  │       └── no  ──► END                       │
+  └─────────────────────────────────────────────┘
+        │
         ▼
-  AgentEngine ──► LangGraph Orchestration (Llama 3.3 70B)
-        │         └── lookup_fine()   → fines.db  (SQLite)
-        │         └── lookup_rule()   → rules.json
-        │         └── search_rules()  → BM25 + ChromaDB hybrid
-        │         └── check_zone()    → GeoJSON zones (Shapely)
-        ▼
-  ResponseBuilder ──► Structured JSON with legal citations
+  Structured JSON with legal citations
         │
         ▼
   Mobile app / REST clients

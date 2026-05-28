@@ -2,9 +2,9 @@
   "_comment": "Runtime configuration for AgentEngine. Edit any value here — no Python code change required. Restart the server after editing.",
 
   "groq": {
-    "_comment": "Groq LLM parameters. model_label appears in API responses.",
-    "model": "llama-3.3-70b-versatile",
-    "model_label": "groq-llama3",
+    "_comment": "Configuration for Groq LLM",
+    "model": "llama-3.1-8b-instant",
+    "model_label": "groq-llama3-8b",
     "max_tokens": 1024,
     "temperature": 0.1,
     "max_tool_iterations": 5

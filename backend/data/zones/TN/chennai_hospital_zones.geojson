@@ -58,6 +58,35 @@
           ]
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "TN_CHN_HOSP_003",
+        "zone_type": "hospital_silent_zone",
+        "state": "TN",
+        "city": "Chennai",
+        "name": "Adyar Hospital Silent Zone",
+        "rule_set_id": "RULE_HOSPITAL_SILENT",
+        "speed_limit_kmh": 30,
+        "active_hours": "ALL",
+        "fine_multiplier": 2.0,
+        "offences": ["HORN_HONKING", "SPEED_EXCESS"],
+        "description": "Hospital silent zone — no honking, 30 km/h speed limit.",
+        "source": "https://chennaicitytrafficpolice.gov.in/"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.2200, 13.0000],
+            [80.2400, 13.0000],
+            [80.2400, 13.0200],
+            [80.2200, 13.0200],
+            [80.2200, 13.0000]
+          ]
+        ]
+      }
     }
   ]
 }

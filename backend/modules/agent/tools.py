@@ -1,9 +1,9 @@
 """
 DriveLegal Agent Tools
 ======================
-Defines Gemini-compatible tool declarations and the ToolExecutor that bridges
-function calls from the Gemini model to the backend modules (FineLookup,
-RulesLoader, GeofencingEngine).
+Defines tool declarations (compatible with Ollama, Gemini, and Groq function-calling)
+and the ToolExecutor that bridges LLM tool calls to backend modules
+(FineLookup, RulesLoader, GeofencingEngine).
 """
 
 import logging
@@ -52,9 +52,17 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
                         "Use 'ALL' when the user has not mentioned a state."
                     ),
                 },
+                "country": {
+                    "type": "string",
+                    "description": (
+                        "Country code (e.g. 'IN' for India, 'AE' for UAE/Dubai, "
+                        "'GB' for UK, 'US' for USA, 'SG' for Singapore, 'SA' for Saudi Arabia). "
+                        "Default is 'IN'."
+                    ),
+                },
                 "is_repeat": {
-                    "type": "boolean",
-                    "description": "True if this is a repeat/subsequent offence.",
+                    "type": "string",
+                    "description": "Whether this is a repeat/subsequent offence (use string 'true' or 'false').",
                 },
             },
             "required": ["offence_type"],
@@ -361,7 +369,11 @@ class ToolExecutor:
         offence_raw = (params.get("offence_type") or "").strip()
         vehicle_raw = (params.get("vehicle_class") or "GENERAL").strip()
         state_raw   = (params.get("state") or "ALL").strip()
-        is_repeat   = bool(params.get("is_repeat", False))
+        is_repeat_raw = params.get("is_repeat", False)
+        if isinstance(is_repeat_raw, str):
+            is_repeat = is_repeat_raw.lower() == "true"
+        else:
+            is_repeat = bool(is_repeat_raw)
 
         if not offence_raw:
             return {"found": False, "error": "offence_type is required"}

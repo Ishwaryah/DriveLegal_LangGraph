@@ -47,11 +47,9 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 # ── Module Imports ────────────────────────────────────────────────────────────
-from backend.modules.nlp.pipeline import NLPPipeline
 from backend.modules.fines.lookup import FineLookup
 from backend.modules.rules.loader import RulesLoader
 from backend.modules.geofencing.engine import GeofencingEngine
-from backend.modules.response.builder import ResponseBuilder
 from backend.modules.sync.router import router as sync_router
 from backend.modules.nlp.hybrid_search import HybridSearch
 from backend.modules.ai import GroqProvider
@@ -70,8 +68,6 @@ ZONES_DIR = os.path.join(DATA_DIR, "zones")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # ── Component Initialization ──────────────────────────────────────────────────
-nlp = NLPPipeline()
-
 fine_lookup: Optional[FineLookup] = None
 if os.path.exists(FINES_DB):
     try:
@@ -126,15 +122,6 @@ agent_engine = AgentEngine(
     fine_lookup        = fine_lookup,
     rules_loader       = rules_loader,
     geofencing_engine  = geofencing,
-)
-
-# ── Response Builder ──────────────────────────────────────────────────────────
-builder = ResponseBuilder(
-    fine_lookup        = fine_lookup,
-    rules_loader       = rules_loader,
-    geofencing_engine  = geofencing,
-    ai_engine          = ai_engine,
-    challan_calculator = challan_calculator,
 )
 
 # ── Session Management ────────────────────────────────────────────────────────
@@ -269,6 +256,8 @@ async def handle_query(request: Request, payload: QueryRequest = Body(...)):
                 context_parts.append(f"Vehicle Type: {active_session['vehicle_class']}")
             if active_session.get("offence_type"):
                 context_parts.append(f"Offence: {active_session['offence_type']}")
+            if active_session.get("country") and active_session.get("country") != "IN":
+                context_parts.append(f"Country: {active_session['country']}")
 
         
         enriched_text = payload.text
@@ -380,11 +369,11 @@ async def handle_multilingual_chat(request: MultilingualChatRequest = Body(...))
         }
 
 
-@app.post("/agent/query", summary="Gemini agentic query — tool calling + multi-turn")
+@app.post("/agent/query", summary="LangGraph agentic query — tool calling + multi-turn (Ollama → Gemini → Groq)")
 @limiter.limit("300/minute")
 async def handle_agent_query(request: Request, payload: AgentQueryRequest = Body(...)):
     """
-    Agentic endpoint powered by Groq 2.0 Flash with function calling.
+    Agentic endpoint powered by LangGraph. Provider priority: Ollama → Gemini → Groq → keyword fallback.
     """
     try:
         session_id = payload.session_id or session_manager.generate_session_id()
