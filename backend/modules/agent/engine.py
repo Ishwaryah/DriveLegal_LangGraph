@@ -1,57 +1,109 @@
 """
-DriveLegal Agent Engine
-=======================
-Agentic loop powered by Groq (llama-3.3-70b-versatile) with function calling.
+engine.py — DriveLegal Agent Engine
 
-Architecture:
-─────────────────────────────────────────────────────────────────────
+Architecture (Agentic Loop):
+───────────────────────────────────────────────────────────────
 User message
     │
     ▼
-Groq LLM (system prompt + tool declarations)
+LLM (Ollama local / Gemini cloud / Groq cloud) with tools + system prompt
     │
-    ├── Calls: lookup_fine("no_helmet", "TWO_WHEELER", "Tamil Nadu")
-    │       └── ToolExecutor._lookup_fine() → SQLite query
-    │               └── { amount_inr: 1000, section: "Section 194D" }
+    ├── Decides to call: lookup_fine("no helmet", "2W", "Tamil Nadu")
+    │       └── ToolExecutor._lookup_fine() → queries SQLite
+    │               └── returns { amount_inr: 1000, section: "129" }
     │
-    ├── Calls: lookup_rule("NO_HELMET", "Tamil Nadu")
-    │       └── ToolExecutor._lookup_rule() → rules.json
-    │               └── { title: "Helmet Rule", description: "..." }
+    ├── Decides to call: lookup_rule("NO_HELMET", "Tamil Nadu")
+    │       └── ToolExecutor._lookup_rule() → queries rules.json
+    │               └── returns { title:..., description:... }
     │
-    └── Synthesises tool results → natural language response
-            └── "The fine for riding without a helmet in Tamil Nadu is ₹1,000
+    └── Synthesizes tool results → writes natural language response
+            └── "The fine for not wearing a helmet in Tamil Nadu is ₹1,000
                  under Section 194D of the Motor Vehicles Act 1988..."
     │
     ▼
-Structured response returned to caller
-─────────────────────────────────────────────────────────────────────
+Final structured response returned to mobile app
+───────────────────────────────────────────────────────────────
 
-Falls back to HybridSearch + keyword matching if GROQ_API_KEY is absent
-or if Groq rate-limits (HTTP 429).
+Priority: Ollama (local) → Gemini (cloud) → Groq (cloud) → Keyword fallback
 
-Configuration files (all in the same directory as this module):
-  agent_config.json     — model params, keyword lists, thresholds, state/vehicle maps
-  offence_keywords.json — per-offence keyword expansion for fallback detector
-  system_prompt.txt     — LLM system prompt (edit without touching Python)
+SDKs:
+  - Ollama: openai Python SDK pointed at http://localhost:11434/v1
+  - Gemini: google-genai SDK
+  - Groq:   groq SDK with pybreaker circuit breaker
+
+Configuration files (in the same directory):
+  agent_config.json     — model params, keyword lists, thresholds
+  offence_keywords.json — per-offence keyword expansion for fallback
+  system_prompt.txt     — optional LLM system prompt override
 """
 
+import os
 import re
 import time
-import os
-import logging
 import json
+import logging
 from typing import Any, Dict, List, Optional
 
-from groq import Groq
-from pybreaker import CircuitBreakerError
-
 from backend.modules.agent.tools import ToolExecutor, TOOL_DEFINITIONS
-from backend.modules.ai.circuit_breaker import ai_circuit_breaker
 
 logger = logging.getLogger(__name__)
 
-# Resolve config directory once at import time
 _HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Default System Prompt (overridable via system_prompt.txt)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_DEFAULT_SYSTEM_PROMPT = """<identity>
+You are DriveLegal, a world-class AI traffic law assistant — think of yourself as a brilliant, friendly lawyer who specializes in traffic regulations across multiple countries. You help people understand traffic fines, penalties, legal sections, and what to do if they get caught.
+
+You have access to a comprehensive database covering traffic laws in:
+- **India** (all major states — Tamil Nadu, Delhi, Maharashtra, Karnataka, Kerala, UP, Gujarat, Rajasthan, West Bengal, Telangana, AP, Punjab, Haryana, Bihar, MP, Odisha)
+- **UAE/Dubai** (Dubai, Abu Dhabi — Federal Traffic Law + black point system)
+- **United Kingdom** (Fixed Penalty Notices, Road Traffic Act 1988)
+- **United States** (Federal + California, New York, Texas)
+- **Singapore** (Road Traffic Act, demerit point system)
+- **Saudi Arabia** (Moroor traffic fine schedule)
+</identity>
+
+<communication_style>
+- **Detailed & Comprehensive:** Write thorough, informative answers — typically 3-5 paragraphs. Explain the legal basis, practical implications, and what happens in practice.
+- **Conversational Expert Tone:** Write like a knowledgeable friend who happens to be a traffic lawyer. Be warm, helpful, and reassuring — not robotic or terse.
+- **Well-Structured Markdown:** Use bold headers (##), bullet points, and blockquotes to organize information beautifully. Make answers scannable and professional.
+- **Practical Advice:** Beyond just stating the fine amount, explain:
+  * What happens when you get caught (procedure)
+  * First offence vs repeat offence penalties
+  * Additional consequences (license suspension, black points, vehicle impound, jail)
+  * How to pay the fine / appeal process
+  * Tips to avoid the violation
+- **Currency Awareness:** Always display fines in the correct local currency with the right symbol (INR for India, AED for UAE, GBP for UK, USD for USA, SGD for Singapore, SAR for Saudi Arabia).
+- **Comparisons:** When the user asks to compare fines between countries, present a clear comparison table.
+</communication_style>
+
+<core_instructions>
+1. **Tool Usage (CRITICAL):** You MUST use your available tools (`lookup_fine`, `lookup_rule`, `check_zone`, `search_rules`) to fetch data before answering. NEVER hallucinate fine amounts, sections, or legal details.
+2. **Country Detection:** When the user mentions a country or city (Dubai, UK, USA, Singapore, Saudi, etc.), use the correct country code in the `lookup_fine` tool call. Default to India ('IN') when no country is specified.
+3. **Handle Missing Data:** If a tool returns `"found": false`, honestly say the specific data isn't in the database yet, but share what you do know from your general knowledge with a clear disclaimer.
+4. **Location Context:** Only call `check_zone` when the user explicitly asks about their physical location or GPS-based restrictions.
+5. **Context Awareness:** Remember previous conversation context — if the user said they're in Dubai, keep that context for follow-up questions.
+6. **Citations:** Always cite the specific law section provided by the tool (MV Act for India, Federal Traffic Law for UAE, Road Traffic Act for UK, etc.).
+7. **Disclaimer:** End every legal analysis with:
+> [!NOTE]
+> This is informational only. Consult official sources or a legal professional for official advice.
+8. **Conversational Messages:** If the user sends casual messages (greetings, "ok", "thanks", "mmm", "lol"), respond naturally and warmly. Do NOT call any tools. Do NOT assume they're asking about traffic rules.
+9. **Never Assume:** If the message is ambiguous, ask a friendly clarifying question.
+10. **Be Honest About Scope:** If asked something completely outside traffic law (weather, recipes, coding), politely redirect — but do it conversationally, not rigidly.
+</core_instructions>
+
+<output_rules>
+- NEVER output raw JSON, function call syntax, or tool results directly. Always synthesize into natural language.
+- NEVER include <thought>, <think>, or reasoning tags in your output.
+- NEVER repeat the user's question back to them verbatim.
+- NEVER expose internal function signatures like {"name": "...", "parameters": {...}}.
+- When you receive tool results, synthesize them into a detailed, well-structured answer.
+- If you have already called a tool and received results, DO NOT call the same tool again.
+- When displaying fine amounts, ALWAYS use the correct currency symbol for the country.
+</output_rules>"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -60,128 +112,177 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 
 class AgentEngine:
     """
-    AI agent using Groq with function calling.
-    Falls back to HybridSearch + keyword matching when GROQ_API_KEY is unset
-    or when Groq is rate-limited.
+    Main AI agent. Priority: Ollama (local) → Gemini (cloud) → Groq (cloud) → Keyword fallback.
 
-    All tuneable values live in agent_config.json and offence_keywords.json
-    alongside this file — no Python edit required to adjust them.
+    - Ollama: OpenAI-compatible API at http://localhost:11434/v1 (default model: qwen2.5-coder:7b)
+    - Gemini: google-genai SDK (gemini-2.0-flash)
+    - Groq:   groq SDK with pybreaker circuit breaker (llama-3.3-70b-versatile)
+    - Keyword: HybridSearch + rule-based matching (always available offline)
     """
+
+    MAX_TOOL_ITERATIONS = 5
 
     def __init__(self, fine_lookup, rules_loader, geofencing_engine):
         self.tool_executor = ToolExecutor(fine_lookup, rules_loader, geofencing_engine)
-        self.client = None
-        self.groq_available = False
         self.hybrid_search = None
 
-        # ── Load configuration ────────────────────────────────────────────────
-        self._cfg = self._load_agent_config()
-        self._system_prompt = self._load_system_prompt()
+        # Provider flags
+        self.ollama_available = False
+        self.gemini_available = False
+        self.groq_available   = False
+
+        self.ollama_client  = None
+        self.ollama_model   = None
+        self.gemini_client  = None
+        self.gemini_types   = None
+        self.groq_client    = None
+
+        # Load external config / prompt files (graceful fallback to defaults)
+        self._cfg              = self._load_agent_config()
+        self._system_prompt    = self._load_system_prompt()
         self._offence_keywords = self._load_offence_keywords()
 
-        # Convenience shortcuts into config sections
-        self._groq_cfg    = self._cfg["groq"]
-        self._hs_cfg      = self._cfg["hybrid_search"]
-        self._guard_cfg   = self._cfg["hallucination_guard"]
-        self._fb_cfg      = self._cfg["fallback"]
-        self._veh_cfg     = self._cfg["vehicle_types"]
-        self._state_cfg   = self._cfg["states"]
-        self._oname_cfg   = self._cfg["offence_names"]
+        self._groq_cfg  = self._cfg["groq"]
+        self._hs_cfg    = self._cfg["hybrid_search"]
+        self._guard_cfg = self._cfg["hallucination_guard"]
+        self._fb_cfg    = self._cfg["fallback"]
+        self._veh_cfg   = self._cfg["vehicle_types"]
+        self._state_cfg = self._cfg["states"]
+        self._oname_cfg = self._cfg["offence_names"]
 
-        # ── Local NLP fallback (HybridSearch) ────────────────────────────────
+        # ── Local NLP (HybridSearch) for offline fallback ──────────────────────
         try:
             from backend.modules.nlp.hybrid_search import HybridSearch
             rules_path  = os.path.join(_HERE, "..", "..", "data", "rules.json")
             persist_dir = os.path.join(_HERE, "..", "..", "data", "vector_db")
             self.hybrid_search = HybridSearch(rules_path, persist_dir)
             self.tool_executor.hybrid_search = self.hybrid_search
-            logger.info(
-                "[AgentEngine] HybridSearch loaded (%d documents).",
-                len(self.hybrid_search.documents),
-            )
+            logger.info("[Agent] HybridSearch loaded (%d documents).", len(self.hybrid_search.documents))
         except Exception as e:
-            logger.warning("[AgentEngine] HybridSearch unavailable: %s", e)
+            logger.warning("[Agent] HybridSearch unavailable (%s). Keyword-only fallback.", e)
 
-        # ── Groq SDK ──────────────────────────────────────────────────────────
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            logger.info("[AgentEngine] GROQ_API_KEY not set — keyword fallback mode.")
-            return
+        # ── 1. Try Ollama (local, highest priority) ────────────────────────────
+        self._init_ollama()
 
-        try:
-            self.client = Groq(api_key=api_key)
-            self.groq_available = True
-            logger.info("[AgentEngine] Groq ready (model=%s).", self._groq_cfg["model"])
-        except Exception as e:
-            logger.error("[AgentEngine] Groq init failed: %s", e)
+        # ── 2. Try Gemini (cloud fallback) ─────────────────────────────────────
+        if not self.ollama_available:
+            self._init_gemini()
+
+        # ── 3. Try Groq (cloud fallback) ───────────────────────────────────────
+        if not self.ollama_available and not self.gemini_available:
+            self._init_groq()
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Config / data loaders  (all @staticmethod — usable before __init__ ends)
+    # Provider initialisation
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _init_ollama(self):
+        """Initialize Ollama via OpenAI-compatible API at localhost:11434."""
+        base_url    = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+        model       = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+        try:
+            from openai import OpenAI
+            client = OpenAI(base_url=base_url, api_key="ollama")
+            client.models.list()  # connectivity check
+            self.ollama_client    = client
+            self.ollama_model     = model
+            self.ollama_available = True
+            logger.info("[Agent] Ollama ready — model: %s at %s", model, base_url)
+        except Exception as e:
+            logger.warning("[Agent] Ollama not available (%s). Trying Gemini...", e)
+
+    def _init_gemini(self):
+        """Initialize Gemini 2.0 Flash via google-genai SDK."""
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key or api_key == "your_gemini_api_key_here":
+            logger.warning("[Agent] GEMINI_API_KEY not set. Trying Groq...")
+            return
+        try:
+            from google import genai
+            from google.genai import types
+            self.gemini_client    = genai.Client(api_key=api_key)
+            self.gemini_types     = types
+            self.gemini_available = True
+            logger.info("[Agent] Gemini 2.0 Flash ready (cloud).")
+        except Exception as e:
+            logger.error("[Agent] Gemini init failed: %s", e)
+
+    def _init_groq(self):
+        """Initialize Groq LLM with circuit breaker."""
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            logger.info("[Agent] GROQ_API_KEY not set — running keyword-fallback only.")
+            return
+        try:
+            from groq import Groq
+            self.groq_client    = Groq(api_key=api_key)
+            self.groq_available = True
+            logger.info("[Agent] Groq ready (model=%s).", self._groq_cfg["model"])
+        except Exception as e:
+            logger.error("[Agent] Groq init failed: %s", e)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Config / data loaders
     # ─────────────────────────────────────────────────────────────────────────
 
     @staticmethod
     def _load_agent_config() -> Dict[str, Any]:
-        """Load agent_config.json; fall back to a safe minimal dict on error."""
         path = os.path.join(_HERE, "agent_config.json")
         try:
             with open(path, encoding="utf-8") as fh:
                 data = json.load(fh)
-            # Strip _comment keys at top level
             return {k: v for k, v in data.items() if not k.startswith("_")}
         except Exception as exc:
-            logger.warning("[AgentEngine] Could not load agent_config.json (%s) — using defaults.", exc)
+            logger.warning("[Agent] Could not load agent_config.json (%s) — using defaults.", exc)
             disclaimer = "⚠️ Informational only. Verify at echallan.parivahan.gov.in."
             return {
                 "groq": {
-                    "model": "llama-3.3-70b-versatile",
-                    "model_label": "groq-llama3",
-                    "max_tokens": 1024,
-                    "temperature": 0.1,
+                    "model":               "llama-3.3-70b-versatile",
+                    "model_label":         "groq-llama3",
+                    "max_tokens":          1024,
+                    "temperature":         0.1,
                     "max_tool_iterations": 5,
                 },
                 "hybrid_search": {
-                    "top_k": 3,
-                    "score_threshold": 0.15,
-                    "content_max_chars": 400,
+                    "top_k":                3,
+                    "score_threshold":      0.15,
+                    "content_max_chars":    400,
                     "rule_query_word_limit": 5,
                 },
                 "hallucination_guard": {
                     "max_fine_amount_inr": 50000,
-                    "disclaimer": disclaimer,
-                    "verify_url": "https://echallan.parivahan.gov.in",
+                    "disclaimer":          disclaimer,
+                    "verify_url":          "https://echallan.parivahan.gov.in",
                 },
                 "fallback": {
-                    "greetings": ["hi", "hello", "hey", "namaste"],
-                    "fine_keywords": ["fine", "penalty", "challan", "amount", "how much", "cost"],
-                    "rule_keywords": ["rule", "law", "legal", "section", "act", "allowed", "permitted"],
-                    "zone_keywords": ["zone", "area", "here", "location", "nearby", "restriction"],
-                    "clarification_keywords": ["which state", "what state", "vehicle", "what city", "which city"],
-                    "not_found_keywords": ["couldn't find", "no data", "not found", "don't have", "unavailable"],
+                    "greetings":                  ["hi", "hello", "hey", "namaste"],
+                    "fine_keywords":              ["fine", "penalty", "challan", "amount", "how much", "cost"],
+                    "rule_keywords":              ["rule", "law", "legal", "section", "act", "allowed", "permitted"],
+                    "zone_keywords":              ["zone", "area", "here", "location", "nearby", "restriction"],
+                    "clarification_keywords":     ["which state", "what state", "vehicle", "what city", "which city"],
+                    "not_found_keywords":         ["couldn't find", "no data", "not found", "don't have", "unavailable"],
                     "insufficient_info_keywords": ["gibberish", "rephrase", "sorry"],
-                    "greeting_response": (
-                        "Hello! 👋 I'm DriveLegal AI — your Indian traffic law assistant.\n\n"
-                        "How can I help you today?"
-                    ),
-                    "unknown_query_response": (
-                        "Sorry, I didn't understand that query. "
-                        "Try asking about a specific traffic rule or fine."
-                    ),
-                    "no_info_response": (
-                        "I couldn't find specific information. "
-                        "Please rephrase or consult echallan.parivahan.gov.in."
-                    ),
+                    "greeting_response":          "Hello! 👋 I'm DriveLegal AI — your Indian traffic law assistant.\n\nHow can I help you today?",
+                    "unknown_query_response":     "Sorry, I didn't understand that query. Try asking about a specific traffic rule or fine.",
+                    "no_info_response":           "I couldn't find specific information. Please rephrase or consult echallan.parivahan.gov.in.",
                 },
                 "vehicle_types": {
-                    "TWO_WHEELER": ["bike", "scooter", "motorcycle", "two wheeler", "2w"],
+                    "TWO_WHEELER": ["bike", "scooter", "motorcycle", "two wheeler", "2w", "helmet"],
                     "HGV":         ["truck", "bus", "heavy", "lorry", "hgv"],
                     "3W":          ["auto", "rickshaw", "three wheeler", "3w"],
                     "LMV":         ["car", "jeep", "suv", "lmv"],
                 },
                 "states": {
-                    "Tamil Nadu":    ["tamil nadu", "tn", "chennai"],
+                    "Tamil Nadu":    ["tamil nadu", "tn", "chennai", "coimbatore"],
                     "Delhi":         ["delhi", "dl", "new delhi"],
-                    "Maharashtra":   ["maharashtra", "mumbai", "pune"],
+                    "Maharashtra":   ["maharashtra", "mumbai", "pune", "nagpur"],
                     "Karnataka":     ["karnataka", "bangalore", "bengaluru"],
+                    "Kerala":        ["kerala", "kochi", "thiruvananthapuram"],
+                    "Uttar Pradesh": ["uttar pradesh", "up", "lucknow", "noida"],
+                    "Gujarat":       ["gujarat", "ahmedabad", "surat"],
+                    "Rajasthan":     ["rajasthan", "jaipur"],
+                    "West Bengal":   ["west bengal", "kolkata"],
+                    "Telangana":     ["telangana", "hyderabad"],
                 },
                 "offence_names": {
                     "NO_HELMET":         "No Helmet",
@@ -191,16 +292,15 @@ class AgentEngine:
                     "MOBILE_PHONE":      "Using Mobile Phone While Driving",
                     "NO_INSURANCE":      "No Insurance",
                     "RED_LIGHT_JUMPING": "Jumping Red Light",
-                    "SECTION_179":       "Wrong Way Driving (Sec 179)",
-                    "SECTION_184":       "Dangerous/Rash Driving (Sec 184)",
-                    "NO_SEATBELT":       "No Seatbelt (Sec 194B)",
+                    "SECTION_179":       "Wrong Way Driving",
+                    "SECTION_184":       "Dangerous/Rash Driving",
+                    "NO_SEATBELT":       "No Seatbelt",
                     "SECTION_194D":      "No Helmet (Sec 194D)",
                 },
             }
 
     @staticmethod
     def _load_system_prompt() -> str:
-        """Read system_prompt.txt; fall back to a minimal embedded string."""
         path = os.path.join(_HERE, "system_prompt.txt")
         try:
             with open(path, encoding="utf-8") as fh:
@@ -208,34 +308,29 @@ class AgentEngine:
             if text:
                 return text
         except Exception as exc:
-            logger.warning("[AgentEngine] Could not load system_prompt.txt (%s) — using embedded fallback.", exc)
-        return (
-            "You are DriveLegal AI — an official Indian traffic law assistant. "
-            "Always use provided tools. Cite MV Act sections. Use ₹ for amounts. "
-            "End with: ⚠️ Informational only. Verify at echallan.parivahan.gov.in."
-        )
+            logger.warning("[Agent] Could not load system_prompt.txt (%s) — using built-in prompt.", exc)
+        return _DEFAULT_SYSTEM_PROMPT
 
     @staticmethod
     def _load_offence_keywords() -> Dict[str, List[str]]:
-        """Load keyword map from offence_keywords.json; fall back to minimal dict."""
         path = os.path.join(_HERE, "offence_keywords.json")
         try:
             with open(path, encoding="utf-8") as fh:
                 data = json.load(fh)
             return {k: v for k, v in data.items() if not k.startswith("_")}
         except Exception as exc:
-            logger.warning("[AgentEngine] Could not load offence_keywords.json (%s) — using minimal fallback.", exc)
+            logger.warning("[Agent] Could not load offence_keywords.json (%s) — using minimal fallback.", exc)
             return {
-                "NO_HELMET":         ["helmet", "194d", "section 194d"],
-                "DRUNK_DRIVING":     ["drunk", "alcohol", "daaru", "dui", "drink and drive", "section 185"],
-                "SPEED_EXCESS":      ["speed", "overspeeding", "speeding", "fast", "section 183"],
-                "RED_LIGHT_JUMPING": ["red light", "signal jump", "jumping red", "lal batti"],
-                "NO_LICENSE":        ["no license", "without license", "licence", "section 3"],
-                "NO_SEATBELT":       ["seatbelt", "seat belt", "194b", "section 194b"],
+                "NO_HELMET":         ["helmet", "194d"],
+                "DRUNK_DRIVING":     ["drunk", "alcohol", "daaru", "dui"],
+                "SPEED_EXCESS":      ["speed", "overspeeding", "speeding"],
+                "RED_LIGHT_JUMPING": ["red light", "signal jump", "jumping red"],
+                "NO_LICENSE":        ["no license", "without license", "licence"],
+                "NO_SEATBELT":       ["seatbelt", "seat belt", "194b"],
                 "MOBILE_PHONE":      ["mobile", "phone", "call while driving"],
-                "SECTION_179":       ["wrong way", "one way", "wrong side", "section 179"],
-                "SECTION_184":       ["dangerous", "rash driving", "section 184"],
-                "NO_INSURANCE":      ["insurance", "section 196"],
+                "SECTION_179":       ["wrong way", "one way", "wrong side"],
+                "SECTION_184":       ["dangerous", "rash driving"],
+                "NO_INSURANCE":      ["insurance"],
             }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -247,25 +342,498 @@ class AgentEngine:
         user_text: str,
         conversation_history: Optional[List[Dict]] = None,
         gps: Optional[Dict[str, float]] = None,
+        image_base64: Optional[str] = None,
+        image_mime: str = "image/jpeg",
     ) -> Dict[str, Any]:
+        clean_text = self._clean_user_text(user_text)
+
+        # Fast-path for greetings / meta questions (skip tools unless image attached)
+        if not image_base64:
+            conversational = (
+                self._try_conversational_response(clean_text)
+                or self._try_conversational_response(user_text)
+            )
+            if conversational:
+                return conversational
+
+        history = conversation_history or []
+
+        if self.ollama_available:
+            return self._run_ollama(user_text, history, gps, image_base64, image_mime)
+        if self.gemini_available:
+            return self._run_gemini(user_text, history, gps)
         if self.groq_available:
-            return self._run_groq_with_circuit_breaker(user_text, conversation_history or [], gps)
+            return self._run_groq_with_circuit_breaker(user_text, history, gps)
         return self._keyword_fallback(user_text, gps)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Shared helpers
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _active_model_label(self) -> str:
+        if self.ollama_available:
+            return f"ollama/{self.ollama_model}"
+        if self.gemini_available:
+            return "gemini-2.0-flash"
+        if self.groq_available:
+            return self._groq_cfg.get("model_label", "groq-llama3")
+        return "keyword-fallback"
+
+    def _clean_user_text(self, text: str) -> str:
+        t = (text or "").strip().lower()
+        t = re.sub(r"[!?.。,;:]+$", "", t)
+        t = re.sub(r"\s+", " ", t)
+        return t
+
+    def _strip_thinking_tags(self, text: str) -> str:
+        """Remove <thought>/<think>/<reasoning> blocks (Qwen3, deepseek-r1, etc.)."""
+        text = re.sub(r'<(?:thought|think|reasoning)>.*?</(?:thought|think|reasoning)>', '', text, flags=re.DOTALL)
+        text = re.sub(r'<(?:thought|think|reasoning)>.*', '', text, flags=re.DOTALL)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        return text.strip()
+
+    def _message_needs_location(self, text: str) -> bool:
+        keywords = (
+            "zone", "here", "location", "nearby", "near me", "this area",
+            "my area", "where i am", "school zone", "no-horn", "no horn",
+            "speed limit", "gps", "coordinates",
+        )
+        return any(k in self._clean_user_text(text) for k in keywords)
+
+    def _history_transcript(self, history: List[Dict], max_turns: int = 6) -> str:
+        lines = []
+        for turn in history[-max_turns:]:
+            role    = "User" if turn.get("role") == "user" else "Assistant"
+            parts   = turn.get("parts", [""])
+            content = (parts[0] if parts else "").strip()
+            if content:
+                lines.append(f"{role}: {content[:600]}")
+        return "\n".join(lines)
+
+    def _history_has_traffic_context(self, history: List[Dict]) -> bool:
+        blob  = self._history_transcript(history, max_turns=10).lower()
+        hints = ("fine", "penalty", "challan", "helmet", "speed", "offence", "offense",
+                 "violation", "₹", "rupee", "section", "motor vehicle", "mv act", "license")
+        return any(h in blob for h in hints)
+
+    def _is_follow_up_question(self, text: str, history: List[Dict]) -> bool:
+        if len(history) < 2:
+            return False
+        clean = self._clean_user_text(text)
+        if len(clean.split()) <= 2 and not any(k in clean for k in ("fine", "penalty", "rule", "helmet", "licence", "license")):
+            return False
+        follow_up_keywords = (
+            "5th", "5 time", "fifth", "fourth", "4th", "third", "3rd",
+            "second", "2nd", "repeat", "again", "same offence", "same offense",
+            "what about", "how about", "and if", "what if", "the fine", "my fine",
+            "that offence", "that offense", "previous", "earlier",
+        )
+        if any(k in clean for k in follow_up_keywords):
+            return True
+        traffic_hints = ("fine", "penalty", "section", "rule", "offence", "offense", "repeat", "vehicle", "helmet", "license", "licence")
+        return any(h in clean for h in traffic_hints) and self._history_has_traffic_context(history)
+
+    def _is_traffic_query(self, text: str, history: Optional[List[Dict]] = None) -> bool:
+        history = history or []
+        clean   = self._clean_user_text(text)
+        if self._try_conversational_response(clean):
+            return False
+        if history and self._is_follow_up_question(text, history):
+            return True
+        traffic_keywords = (
+            "fine", "penalty", "challan", "amount", "how much", "rupee", "₹",
+            "helmet", "speed", "license", "licence", "insurance", "drunk",
+            "rule", "law", "act", "section", "offence", "offense", "violation",
+            "vehicle", "bike", "car", "truck", "red light", "seatbelt",
+            "parking", "horn", "permit", "document", "mv act", "motor vehicle",
+        )
+        if any(k in clean for k in traffic_keywords):
+            return True
+        return self._message_needs_location(text)
+
+    def _expand_follow_up_user_text(self, user_text: str, history: List[Dict]) -> str:
+        if not self._is_follow_up_question(user_text, history):
+            return user_text
+        return (
+            f"{user_text}\n\n"
+            "[System Note: The user's message is a short follow-up. "
+            "Use the conversation history to understand the context. "
+            "Reuse the same offence, vehicle type, and state if they are asking about the same topic. "
+            "For repeat offences (2nd, 5th time, etc.) call lookup_fine with is_repeat=true.]"
+        )
+
+    def _try_conversational_response(self, user_text: str) -> Optional[Dict[str, Any]]:
+        """Fast path for greetings and filler messages — no tools needed."""
+        text_lower   = self._clean_user_text(user_text)
+        model_label  = self._active_model_label()
+
+        greetings = ("hi", "hello", "hey", "hii", "hola", "good morning", "good evening", "good afternoon", "namaste")
+        if (
+            text_lower in greetings
+            or text_lower.startswith(("hi ", "hello ", "hey "))
+            or re.match(r"^(hi|hello|hey|hii|namaste)[\s!.]*$", text_lower)
+        ):
+            return {
+                "status":        "ok",
+                "intent":        "greeting",
+                "response":      (
+                    "Hello! 👋 I'm DriveLegal AI — your traffic law assistant.\n\n"
+                    "Ask me about fines, MV Act rules, challans, or zone restrictions. "
+                    "For example: \"What's the fine for no helmet in Tamil Nadu?\"\n\n"
+                    f"(Running on **{model_label}**.)"
+                ),
+                "text":          "",
+                "tools_used":    [],
+                "agent_powered": self.ollama_available or self.gemini_available or self.groq_available,
+                "model":         model_label,
+                "fine": None, "rule": None, "zone": None,
+                "session": {}, "warnings": [],
+            }
+
+        meta_keywords = ("which model", "what model", "running on", "what ai", "who are you",
+                         "which llm", "what llm", "are you gemini", "are you ollama", "your model",
+                         "are you groq")
+        if any(k in text_lower for k in meta_keywords):
+            if self.ollama_available:
+                backend = f"local Ollama ({self.ollama_model}) on your machine"
+            elif self.gemini_available:
+                backend = "Google Gemini 2.0 Flash (cloud)"
+            elif self.groq_available:
+                backend = f"Groq ({self._groq_cfg.get('model', 'llama-3.3-70b')}) (cloud)"
+            else:
+                backend = "keyword search (no LLM active)"
+            return {
+                "status":        "ok",
+                "intent":        "meta",
+                "response":      f"I'm **DriveLegal AI**, powered by **{model_label}** ({backend}).\n\nAsk me any traffic-law question!",
+                "text":          "",
+                "tools_used":    [],
+                "agent_powered": self.ollama_available or self.gemini_available or self.groq_available,
+                "model":         model_label,
+                "fine": None, "rule": None, "zone": None,
+                "session": {}, "warnings": [],
+            }
+
+        filler_patterns = (
+            "ok", "okay", "mmm", "hmm", "hmmm", "mhm", "ah", "oh",
+            "lol", "haha", "thanks", "thank you", "thank", "bye", "cool",
+            "what", "why", "how", "no", "yes", "yeah", "yep", "nope",
+            "nice", "great", "good", "sure", "got it",
+        )
+        if text_lower in filler_patterns:
+            return None
+
+        return None
+
+    def _enrich_with_gps(self, user_text: str, gps: Optional[Dict]) -> str:
+        if not gps or not self._message_needs_location(user_text):
+            return user_text
+        return (
+            f"{user_text}\n\n"
+            f"[System context: User GPS lat={gps.get('lat')}, lon={gps.get('lon')}. "
+            "Use check_zone only if this question is about location-based restrictions.]"
+        )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Ollama Agentic Loop (OpenAI-compatible API)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _ollama_supports_native_tools(self) -> bool:
+        model = (self.ollama_model or "").lower()
+        return not any(m in model for m in ("vision", "llava"))
+
+    def _run_ollama(
+        self,
+        user_text: str,
+        history: List[Dict],
+        gps: Optional[Dict],
+        image_base64: Optional[str] = None,
+        image_mime: str = "image/jpeg",
+    ) -> Dict[str, Any]:
+        tools_used: List[Dict] = []
+
+        expanded_text = self._expand_follow_up_user_text(user_text, history)
+        enriched_text = self._enrich_with_gps(expanded_text, gps)
+
+        if image_base64:
+            enriched_text += (
+                "\n\n[Image task: inspect the attached image. If it looks like a challan, notice, "
+                "traffic sign, licence, RC, insurance, or PUC document, extract visible text, "
+                "vehicle number, date, violation, location, amount, and section if present. "
+                "Then use traffic-law tools when possible to verify fine/rule details. "
+                "Clearly separate 'Extracted from image' from 'Verified from database'.]"
+            )
+
+        use_tools    = bool(image_base64) or self._is_traffic_query(user_text, history)
+        native_tools = use_tools and self._ollama_supports_native_tools()
+        openai_tools = self._build_openai_tools() if native_tools else None
+
+        system_prompt = self._system_prompt
+        # Qwen3 thinking mode workaround — disable <think> output
+        if "qwen3" in (self.ollama_model or "").lower():
+            system_prompt += "\n\n/no_think"
+
+        if use_tools and not native_tools:
+            tool_json     = json.dumps(TOOL_DEFINITIONS, indent=2)
+            system_prompt += f"\n\n### AVAILABLE TOOLS\n{tool_json}\n\n"
+            system_prompt += (
+                "### INSTRUCTIONS FOR TOOL CALLING\n"
+                "You do NOT have native tool calling enabled. To use a tool, output a raw JSON block and NOTHING ELSE:\n"
+                "```json\n{\"name\": \"lookup_fine\", \"arguments\": {\"offence_type\": \"NO_HELMET\", \"vehicle_class\": \"2W\", \"state\": \"ALL\"}}\n```\n"
+                "Wait for the tool result before providing the final answer."
+            )
+
+        messages = [{"role": "system", "content": system_prompt}]
+        for turn in history:
+            role    = "assistant" if turn.get("role") == "model" else turn.get("role", "user")
+            parts   = turn.get("parts", [""])
+            content = parts[0] if parts else ""
+            messages.append({"role": role, "content": content})
+
+        if image_base64:
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": enriched_text},
+                    {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{image_base64}"}},
+                ],
+            })
+        else:
+            messages.append({"role": "user", "content": enriched_text})
+
+        try:
+            assistant_message = None
+            for iteration in range(self.MAX_TOOL_ITERATIONS):
+                create_kwargs: Dict[str, Any] = {
+                    "model":       self.ollama_model,
+                    "messages":    messages,
+                    "temperature": 0.1,
+                }
+                if openai_tools:
+                    create_kwargs["tools"] = openai_tools
+
+                response          = self.ollama_client.chat.completions.create(**create_kwargs)
+                assistant_message = response.choices[0].message
+                tool_calls_list   = assistant_message.tool_calls or []
+
+                text_parsed_calls = []
+                if use_tools and not tool_calls_list and assistant_message.content:
+                    text_parsed_calls = self._parse_tool_calls_from_text(assistant_message.content)
+
+                if not tool_calls_list and not text_parsed_calls:
+                    break
+
+                if tool_calls_list:
+                    logger.info("[Agent/Ollama] iter %d tools: %s", iteration + 1,
+                                [tc.function.name for tc in tool_calls_list])
+                    messages.append(assistant_message.model_dump())
+                    for tc in tool_calls_list:
+                        func_name = tc.function.name
+                        try:
+                            params = json.loads(tc.function.arguments)
+                        except json.JSONDecodeError:
+                            params = {}
+                        result = self.tool_executor.execute(func_name, params, gps)
+                        tools_used.append({"tool": func_name, "params": params, "result": result})
+                        messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(result)})
+
+                elif text_parsed_calls:
+                    logger.info("[Agent/Ollama] iter %d parsed tools: %s", iteration + 1,
+                                [tc["name"] for tc in text_parsed_calls])
+                    messages.append({"role": "assistant", "content": assistant_message.content})
+                    tool_results_text = []
+                    for tc in text_parsed_calls:
+                        result = self.tool_executor.execute(tc["name"], tc["arguments"], gps)
+                        tools_used.append({"tool": tc["name"], "params": tc["arguments"], "result": result})
+                        tool_results_text.append(f"Tool '{tc['name']}' returned: {json.dumps(result)}")
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "[TOOL RESULTS — now write your FINAL answer]\n"
+                            "Use the data below to give a clear, structured answer in markdown. "
+                            "Do NOT output JSON, do NOT call any more tools.\n\n"
+                            + "\n".join(tool_results_text)
+                        ),
+                    })
+
+            final_text = self._strip_thinking_tags((assistant_message.content or "").strip()) if assistant_message else ""
+
+            # If model still output a raw JSON tool call, do a final synthesis pass
+            if final_text and self._looks_like_json_tool_call(final_text) and tools_used:
+                messages.append({"role": "assistant", "content": final_text})
+                tool_summary = "\n".join(f"Tool '{t['tool']}' result: {json.dumps(t['result'])}" for t in tools_used)
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "[TOOL RESULTS — now write your FINAL answer]\n"
+                        "Use the data below to give a clear, structured, well-formatted answer. "
+                        "Do NOT output JSON. Do NOT call tools again.\n\n" + tool_summary
+                    ),
+                })
+                response   = self.ollama_client.chat.completions.create(
+                    model=self.ollama_model, messages=messages, temperature=0.1
+                )
+                final_text = self._strip_thinking_tags((response.choices[0].message.content or "").strip())
+
+            if not final_text:
+                final_text = "I couldn't find specific information. Please rephrase or consult official sources."
+
+            return self._build_unified_response(final_text, tools_used, True, f"ollama/{self.ollama_model}")
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error("[Agent/Ollama] Error: %s", error_msg)
+            if self.gemini_available:
+                logger.info("[Agent] Ollama failed — falling back to Gemini.")
+                return self._run_gemini(user_text, history, gps)
+            if self.groq_available:
+                logger.info("[Agent] Ollama failed — falling back to Groq.")
+                return self._run_groq_with_circuit_breaker(user_text, history, gps)
+            fallback = self._keyword_fallback(user_text, gps)
+            fallback["error_detail"] = error_msg
+            return fallback
+
+    def _build_openai_tools(self) -> list:
+        return [{"type": "function", "function": {"name": t["name"], "description": t["description"], "parameters": t["parameters"]}} for t in TOOL_DEFINITIONS]
+
+    def _parse_tool_calls_from_text(self, text: str) -> list:
+        valid = {t["name"] for t in TOOL_DEFINITIONS}
+        parsed = []
+        try:
+            data = json.loads(text.strip())
+            if isinstance(data, dict) and data.get("name") in valid:
+                parsed.append({"name": data["name"], "arguments": data.get("arguments", data.get("params", {}))})
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            pass
+        json_blocks = re.findall(r'```(?:json)?\s*({.*?})\s*```', text, re.DOTALL)
+        if not json_blocks:
+            json_blocks = re.findall(r'({\s*"name"\s*:.*?})', text, re.DOTALL)
+        for block in json_blocks:
+            try:
+                data = json.loads(block)
+                if isinstance(data, dict) and data.get("name") in valid:
+                    parsed.append({"name": data["name"], "arguments": data.get("arguments", data.get("params", {}))})
+            except (json.JSONDecodeError, TypeError):
+                continue
+        return parsed
+
+    def _looks_like_json_tool_call(self, text: str) -> bool:
+        stripped = text.strip()
+        if stripped.startswith('{') and stripped.endswith('}'):
+            try:
+                data = json.loads(stripped)
+                return "name" in data or "function" in data
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return False
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Gemini Agentic Loop (google-genai SDK)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _run_gemini(self, user_text: str, history: List[Dict], gps: Optional[Dict]) -> Dict[str, Any]:
+        tools_used: List[Dict] = []
+
+        expanded_text = self._expand_follow_up_user_text(user_text, history)
+        enriched_text = self._enrich_with_gps(expanded_text, gps)
+
+        contents = []
+        for turn in history:
+            role       = turn.get("role", "user")
+            parts_text = turn.get("parts", [""])
+            contents.append(self.gemini_types.Content(
+                role=role,
+                parts=[self.gemini_types.Part.from_text(text=p) for p in parts_text]
+            ))
+        contents.append(self.gemini_types.Content(
+            role="user",
+            parts=[self.gemini_types.Part.from_text(text=enriched_text)]
+        ))
+
+        tool_declarations = self._build_gemini_tool_declarations()
+        config = self.gemini_types.GenerateContentConfig(
+            system_instruction=self._system_prompt,
+            tools=[self.gemini_types.Tool(function_declarations=tool_declarations)],
+            temperature=0.1,
+        )
+
+        try:
+            response = None
+            for iteration in range(self.MAX_TOOL_ITERATIONS):
+                response   = self.gemini_client.models.generate_content(
+                    model="gemini-2.0-flash", contents=contents, config=config
+                )
+                tool_calls = [
+                    part.function_call
+                    for part in response.candidates[0].content.parts
+                    if hasattr(part, "function_call") and part.function_call
+                ]
+                if not tool_calls:
+                    break
+
+                logger.info("[Agent/Gemini] iter %d tools: %s", iteration + 1, [c.name for c in tool_calls])
+                contents.append(response.candidates[0].content)
+
+                tool_result_parts = []
+                for call in tool_calls:
+                    params = dict(call.args)
+                    result = self.tool_executor.execute(call.name, params, gps)
+                    tools_used.append({"tool": call.name, "params": params, "result": result})
+                    tool_result_parts.append(
+                        self.gemini_types.Part.from_function_response(name=call.name, response={"result": result})
+                    )
+                contents.append(self.gemini_types.Content(role="tool", parts=tool_result_parts))
+
+            final_text = ""
+            if response:
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, "text") and part.text:
+                        final_text += part.text
+            final_text = final_text.strip() or "I couldn't find specific information. Please rephrase or consult official sources."
+
+            return self._build_unified_response(final_text, tools_used, True, "gemini-2.0-flash")
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error("[Agent/Gemini] Error: %s", error_msg)
+            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                logger.info("[Agent] Gemini rate-limited — falling back to Groq or keyword.")
+            if self.groq_available:
+                return self._run_groq_with_circuit_breaker(user_text, history, gps)
+            fallback = self._keyword_fallback(user_text, gps)
+            fallback["error_detail"] = error_msg
+            return fallback
+
+    def _build_gemini_tool_declarations(self) -> list:
+        from google.genai import types
+        return [
+            types.FunctionDeclaration(
+                name=tool["name"],
+                description=tool["description"],
+                parameters=tool["parameters"],
+            )
+            for tool in TOOL_DEFINITIONS
+        ]
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Groq Agentic Loop (with circuit breaker)
+    # ─────────────────────────────────────────────────────────────────────────
 
     def _run_groq_with_circuit_breaker(
         self, user_text: str, history: List[Dict], gps: Optional[Dict]
     ) -> Dict[str, Any]:
         try:
+            from pybreaker import CircuitBreakerError
+            from backend.modules.ai.circuit_breaker import ai_circuit_breaker
             return ai_circuit_breaker.call(self._run_groq, user_text, history, gps)
-        except CircuitBreakerError:
-            logger.warning("[AgentEngine] Circuit Breaker OPEN — falling back to local NLP.")
+        except Exception as e:
+            error_msg = str(e)
+            # CircuitBreakerError or other — fall back to keyword
+            logger.warning("[Agent] Groq circuit breaker / error: %s — falling back to keyword.", error_msg)
             fallback = self._keyword_fallback(user_text, gps)
-            fallback["error_detail"] = "Groq API temporarily unavailable (Circuit Breaker OPEN)"
+            fallback["error_detail"] = error_msg
             return fallback
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Groq Agentic Loop
-    # ─────────────────────────────────────────────────────────────────────────
 
     def _run_groq(
         self,
@@ -273,7 +841,7 @@ class AgentEngine:
         history: List[Dict],
         gps: Optional[Dict],
     ) -> Dict[str, Any]:
-        t0 = time.time()
+        t0        = time.time()
         groq_time = 0.0
         tool_time = 0.0
         tools_used: List[Dict] = []
@@ -284,169 +852,135 @@ class AgentEngine:
         enriched_text = user_text
         if gps:
             enriched_text += (
-                f"\n\n[System context: User GPS lat={gps.get('lat')}, "
-                f"lon={gps.get('lon')}. Check zone restrictions if relevant.]"
+                f"\n\n[System context: User GPS lat={gps.get('lat')}, lon={gps.get('lon')}. "
+                "Check zone restrictions if relevant.]"
             )
 
         messages = [{"role": "system", "content": self._system_prompt}]
         for turn in history:
-            role = turn.get("role", "user")
-            if role == "model":
-                role = "assistant"
+            role      = "assistant" if turn.get("role") == "model" else turn.get("role", "user")
             parts_text = turn.get("parts", [""])
             messages.append({"role": role, "content": " ".join(parts_text)})
         messages.append({"role": "user", "content": enriched_text})
 
-        # Build Groq-format tool list
         groq_tools = []
         for t in TOOL_DEFINITIONS:
-            parameters = t.get("parameters", {})
+            parameters = dict(t.get("parameters", {}))
             if "type" not in parameters:
                 parameters["type"] = "object"
             if "properties" not in parameters:
                 parameters["properties"] = {}
             groq_tools.append({
                 "type": "function",
-                "function": {
-                    "name": t["name"],
-                    "description": t["description"],
-                    "parameters": parameters,
-                },
+                "function": {"name": t["name"], "description": t["description"], "parameters": parameters},
             })
 
         try:
+            from pybreaker import CircuitBreakerError
             response_message = None
             for iteration in range(groq_cfg["max_tool_iterations"]):
                 t1 = time.time()
-                response = self.client.chat.completions.create(
-                    model=groq_cfg["model"],
-                    messages=messages,
-                    tools=groq_tools,
-                    tool_choice="auto",
-                    max_tokens=groq_cfg["max_tokens"],
-                    temperature=groq_cfg["temperature"],
+                response = self.groq_client.chat.completions.create(
+                    model        = groq_cfg["model"],
+                    messages     = messages,
+                    tools        = groq_tools,
+                    tool_choice  = "auto",
+                    max_tokens   = groq_cfg["max_tokens"],
+                    temperature  = groq_cfg["temperature"],
                 )
-                groq_time += time.time() - t1
-
+                groq_time       += time.time() - t1
                 response_message = response.choices[0].message
-                tool_calls = response_message.tool_calls
+                tool_calls       = response_message.tool_calls
 
                 assistant_msg: Dict[str, Any] = {"role": "assistant"}
                 if response_message.content is not None:
                     assistant_msg["content"] = response_message.content
                 if tool_calls:
                     assistant_msg["tool_calls"] = [
-                        {
-                            "id": call.id,
-                            "type": "function",
-                            "function": {
-                                "name": call.function.name,
-                                "arguments": call.function.arguments,
-                            },
-                        }
-                        for call in tool_calls
+                        {"id": c.id, "type": "function",
+                         "function": {"name": c.function.name, "arguments": c.function.arguments}}
+                        for c in tool_calls
                     ]
                 messages.append(assistant_msg)
 
                 if not tool_calls:
                     break
 
-                logger.info(
-                    "[AgentEngine] iter %d tools: %s",
-                    iteration + 1,
-                    [c.function.name for c in tool_calls],
-                )
+                logger.info("[Agent/Groq] iter %d tools: %s", iteration + 1, [c.function.name for c in tool_calls])
 
                 for call in tool_calls:
-                    t_tool_start = time.time()
+                    t_tool = time.time()
                     try:
                         params = json.loads(call.function.arguments)
                     except json.JSONDecodeError:
                         params = {}
-                    result = self.tool_executor.execute(call.function.name, params, gps)
-                    tool_time += time.time() - t_tool_start
+                    result     = self.tool_executor.execute(call.function.name, params, gps)
+                    tool_time += time.time() - t_tool
                     tools_used.append({"tool": call.function.name, "params": params, "result": result})
                     messages.append({
-                        "tool_call_id": call.id,
-                        "role": "tool",
-                        "name": call.function.name,
-                        "content": json.dumps({"result": result}),
+                        "tool_call_id": call.id, "role": "tool",
+                        "name": call.function.name, "content": json.dumps({"result": result}),
                     })
 
             final_text = (response_message.content or "").strip() if response_message else ""
             if not final_text:
                 final_text = self._fb_cfg["no_info_response"]
 
-            # Hallucination guard: ensure disclaimer is always present
             disclaimer = guard_cfg["disclaimer"]
             if disclaimer not in final_text:
-                logger.warning("[AgentEngine] Hallucination Alert: Missing disclaimer — appending.")
                 final_text += f"\n\n{disclaimer}"
 
-            t_fmt = time.time()
-            unified_res = self._build_unified_response(
-                final_text, tools_used, True, groq_cfg["model_label"]
-            )
             total_time = time.time() - t0
             logger.info(
-                "[AgentEngine] Latency → Groq: %.0fms | Tools: %.0fms | Format: %.0fms | Total: %.0fms",
-                groq_time * 1000, tool_time * 1000, (time.time() - t_fmt) * 1000, total_time * 1000,
+                "[Agent/Groq] Groq: %.0fms | Tools: %.0fms | Total: %.0fms",
+                groq_time * 1000, tool_time * 1000, total_time * 1000,
             )
-            return unified_res
+            return self._build_unified_response(final_text, tools_used, True, groq_cfg["model_label"])
 
         except Exception as e:
             error_msg = str(e)
-            logger.error("[AgentEngine] Groq error: %s", error_msg)
-            if isinstance(e, CircuitBreakerError):
-                raise
-            if "429" in error_msg:
-                logger.info("[AgentEngine] Rate-limited — falling back to local NLP.")
+            logger.error("[Agent/Groq] Error: %s", error_msg)
+            try:
+                from pybreaker import CircuitBreakerError
+                if isinstance(e, CircuitBreakerError):
+                    raise
+            except ImportError:
+                pass
             fallback = self._keyword_fallback(user_text, gps)
             fallback["error_detail"] = error_msg
             return fallback
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Keyword Fallback (no API key / rate-limited)
+    # Keyword Fallback (no AI available / rate-limited)
     # ─────────────────────────────────────────────────────────────────────────
 
-    # Traffic domain terms — if NONE of these appear, query is off-topic
     _TRAFFIC_TERMS = [
         "fine", "penalty", "challan", "helmet", "seatbelt", "seat belt",
         "speed", "license", "licence", "insurance", "drunk", "alcohol",
         "mobile", "phone", "signal", "red light", "rule", "law", "section",
         "act", "traffic", "vehicle", "driving", "car", "bike", "truck",
         "road", "zone", "puc", "echallan", "parivahan", "motor vehicle",
-        "transport", "rto", "mvact", "mv act", "challan", "violation",
-        "overspe", "wrong way", "wrong side", "triple", "pillion",
-        "digilocker", "rc", "dl ", "blood alcohol", "bac", "tinted",
-        "exhaust", "headlight", "honk", "horn", "ambulance", "emergency",
-        "parking", "overload", "juvenile", "minor driving", "number plate",
-        "registration", "fitness", "registration certificate", "where am i", "locate", "location", "police", "hospital",
-        "what about", "what about in", "and in", "demerit", "points", "revoke", "impound",
+        "transport", "rto", "mvact", "mv act", "violation", "parking",
+        "overload", "number plate", "registration", "fitness",
     ]
-    _CLOSING_TERMS = [
-        "thanks", "thank you", "ok thanks", "bye", "goodbye",
-        "noted", "got it", "great", "awesome", "cool", "ok",
-    ]
-    # Currency symbol map
+    _CLOSING_TERMS = ["thanks", "thank you", "ok thanks", "bye", "goodbye", "noted", "got it", "great", "ok"]
     _CURRENCY_SYMBOL = {"IN": "₹", "AE": "AED ", "GB": "£", "SG": "SGD ", "US": "USD ", "SA": "SAR "}
 
     def _keyword_fallback(self, text: str, gps: Optional[Dict]) -> Dict[str, Any]:
         text_lower = text.lower()
         tools_used: List[Dict] = []
         response_parts: List[str] = []
-        fb        = self._fb_cfg
-        hs        = self._hs_cfg
-        guard     = self._guard_cfg
+        fb    = self._fb_cfg
+        hs    = self._hs_cfg
+        guard = self._guard_cfg
 
-        # ── Extract injected [Context: ...] prefix from multi-turn sessions ──
         context_offence: Optional[str] = None
         context_state:   Optional[str] = None
         clean_text = text_lower
         if text_lower.startswith("[context:"):
             bracket_end = text_lower.find("]")
             if bracket_end != -1:
-                ctx_str    = text_lower[9:bracket_end]   # after "[context:"
+                ctx_str    = text_lower[9:bracket_end]
                 clean_text = text_lower[bracket_end + 1:].strip()
                 for part in ctx_str.split(","):
                     part = part.strip()
@@ -455,42 +989,21 @@ class AgentEngine:
                     elif part.startswith("state:"):
                         context_state = part.split(":", 1)[1].strip()
 
-        # ── Fuzzy greeting detection ──────────────────────────────────────────
         greeting_set = set(g.lower() for g in fb["greetings"])
         stripped = clean_text.strip()
         if stripped in greeting_set or any(stripped.startswith(g) for g in greeting_set):
-            return {
-                "status":        "ok",
-                "intent":        "greeting",
-                "response":      fb["greeting_response"],
-                "text":          fb["greeting_response"],
-                "tools_used":    [],
-                "agent_powered": False,
-                "model":         "keyword-fallback",
-                "fine":          None, "rule": None, "zone": None,
-                "session":       {}, "warnings": [],
-            }
+            return self._build_unified_response(fb["greeting_response"], [], False, "keyword-fallback")
 
-        # ── Closing / thank-you messages ──────────────────────────────────────
-        is_closing = any(k in clean_text for k in self._CLOSING_TERMS)
+        is_closing  = any(k in clean_text for k in self._CLOSING_TERMS)
         has_traffic = any(k in clean_text for k in self._TRAFFIC_TERMS)
         if is_closing and not has_traffic:
-            closing_resp = "You're welcome! 😊 Drive safe and feel free to ask any other traffic law questions."
-            return {
-                "status":        "ok",
-                "intent":        "closing",
-                "response":      closing_resp,
-                "text":          closing_resp,
-                "tools_used":    [],
-                "agent_powered": False,
-                "model":         "keyword-fallback",
-                "fine":          None, "rule": None, "zone": None,
-                "session":       {}, "warnings": [],
-            }
+            return self._build_unified_response(
+                "You're welcome! 😊 Drive safe and feel free to ask any other traffic law questions.",
+                [], False, "keyword-fallback"
+            )
 
-        # ── Off-topic / out-of-scope guard ────────────────────────────────────
         if not has_traffic:
-            oos_resp = (
+            oos = (
                 "I'm DriveLegal AI — I can only help with traffic law queries. 🚦\n\n"
                 "Try asking things like:\n"
                 "• \"Fine for no helmet in Tamil Nadu\"\n"
@@ -498,194 +1011,84 @@ class AgentEngine:
                 "• \"What is Section 194D?\"\n"
                 "• \"Speed limit in a school zone\""
             )
-            return {
-                "status":        "out_of_scope",
-                "intent":        "unknown",
-                "response":      oos_resp,
-                "text":          oos_resp,
-                "tools_used":    [],
-                "agent_powered": False,
-                "model":         "keyword-fallback",
-                "fine":          None, "rule": None, "zone": None,
-                "session":       {}, "warnings": [],
-            }
+            return self._build_unified_response(oos, [], False, "keyword-fallback")
 
-        # ── Country / region detection ────────────────────────────────────────
         country, intl_state = self._detect_country(clean_text)
         currency_sym = self._CURRENCY_SYMBOL.get(country, "₹")
 
-        # ── Detect comparison query (X vs Y) ─────────────────────────────────
-        is_comparison = any(k in clean_text for k in [" vs ", " versus ", "compared to", "difference between"])
-
-        # ── Offence / vehicle / state detection ──────────────────────────────
-        offence = self._detect_offence(clean_text)
-        # Fall back to session context if no offence detected in current text
-        if not offence and context_offence:
-            offence = context_offence.upper()
+        offence = self._detect_offence(clean_text) or (context_offence.upper() if context_offence else None)
         vehicle = self._detect_vehicle(clean_text)
         state   = intl_state or (context_state.title() if context_state else self._detect_state(clean_text))
 
-        # ── Location / Emergency queries ──────────────────────────────────────
-        is_location_query = any(k in clean_text for k in ["where am i", "my location", "where i'm located", "locate me", "my address"])
-        is_emergency_query = any(k in clean_text for k in ["emergency", "hospital", "police", "trauma", "ambulance", "accident"])
-
-        if is_location_query and gps:
-            result = self.tool_executor.execute("get_location_info", {}, gps)
-            tools_used.append({"tool": "get_location_info", "result": result})
-            if result.get("found"):
-                response_parts.append(f"📍 Your current location is: **{result.get('address')}**")
-            else:
-                response_parts.append("📍 Sorry, I couldn't determine your location from the GPS coordinates.")
-                
-        if is_emergency_query and gps:
-            result = self.tool_executor.execute("get_emergency_info", {}, gps)
-            tools_used.append({"tool": "get_emergency_info", "result": result})
-            if result.get("found") and result.get("emergency_data"):
-                data = result["emergency_data"]
-                resp = "🚨 **Emergency Information** 🚨\n\n"
-                
-                if data.get("state_contacts"):
-                    helplines = data["state_contacts"].get("helplines", {})
-                    resp += f"**Helplines ({data.get('resolved_state', 'Local')}):**\n"
-                    if helplines.get("ambulance"): resp += f"• Ambulance: {helplines['ambulance']}\n"
-                    if helplines.get("police"): resp += f"• Police: {helplines['police']}\n"
-                    if helplines.get("highway_patrol"): resp += f"• Highway Patrol: {helplines['highway_patrol']}\n"
-                    if helplines.get("women_helpline"): resp += f"• Women Helpline: {helplines['women_helpline']}\n"
-                    resp += "\n"
-                
-                if data.get("nearest_trauma_centers"):
-                    resp += "**Nearest Hospitals/Trauma Centers:**\n"
-                    for t in data["nearest_trauma_centers"][:3]:
-                        resp += f"• {t.get('name')} ({t.get('distance_km', 0)} km)\n"
-                    resp += "\n"
-                
-                response_parts.append(resp)
-
-        # ── Fine lookup ───────────────────────────────────────────────────────
         fine_triggered = (
             any(k in clean_text for k in fb["fine_keywords"])
             or (context_offence and (intl_state or self._detect_state(clean_text) != "ALL"))
         )
         if fine_triggered and offence:
-            if is_comparison:
-                # Run two lookups: detected vehicle vs "other" type
-                lookup_pairs = [
-                    (offence, vehicle, state,   country),
-                    (offence, "LMV" if vehicle == "HGV" else "HGV", state, country),
-                ]
-                labels = [vehicle, "LMV" if vehicle == "HGV" else "HGV (truck)"]
+            params = {"offence_type": offence, "vehicle_class": vehicle, "state": state or "ALL", "country": country}
+            result = self.tool_executor.execute("lookup_fine", params, gps)
+            tools_used.append({"tool": "lookup_fine", "result": result, "params": params})
+            display_name = self._oname_cfg.get(offence, offence.replace("_", " ").title())
+
+            if result.get("found"):
+                amt     = result["amount_inr"]
+                rpt_amt = result.get("repeat_amount_inr", "N/A")
+                sec     = result.get("section_ref", "N/A")
+                st_lbl  = result.get("state", state or "National")
+                response_parts.append(
+                    f"**Fine for {display_name} ({vehicle}):**\n"
+                    f"   • Amount: {currency_sym}{amt}\n"
+                    f"   • Repeat Offence: {currency_sym}{rpt_amt}\n"
+                    f"   • Section: {sec}\n"
+                    f"   • Location: {st_lbl}"
+                )
             else:
-                lookup_pairs = [(offence, vehicle, state, country)]
-                labels = [vehicle]
+                response_parts.append(f"No fine data found for '{display_name}' in this location.")
 
-            for (off, veh, st, cty), label in zip(lookup_pairs, labels):
-                params = {
-                    "offence_type":  off,
-                    "vehicle_class": veh,
-                    "state":         st if st else "ALL",
-                    "country":       cty,
-                }
-                result = self.tool_executor.execute("lookup_fine", params, gps)
-                tools_used.append({"tool": "lookup_fine", "result": result, "params": params})
-                display_name = self._oname_cfg.get(off, off.replace("_", " ").title())
-
-                if result.get("found"):
-                    amt       = result["amount_inr"]
-                    rpt_amt   = result.get("repeat_amount_inr", "N/A")
-                    sec       = result.get("section_ref", "N/A")
-                    st_label  = result.get("state", st or "National")
-                    response_parts.append(
-                        f"**Fine for {display_name} ({label}):**\n"
-                        f"   • Amount: {currency_sym}{amt}\n"
-                        f"   • Repeat Offence: {currency_sym}{rpt_amt}\n"
-                        f"   • Section: {sec}\n"
-                        f"   • Location: {st_label}"
-                    )
-                else:
-                    response_parts.append(
-                        f"No fine data found for '{display_name}' ({label}) in this location."
-                    )
-
-            # Attach rule only for India queries (rules.json is MV-Act based)
             if offence and country == "IN":
-                rule_result = self.tool_executor.execute(
-                    "lookup_rule", {"offence_code": offence}, gps
-                )
+                rule_result = self.tool_executor.execute("lookup_rule", {"offence_code": offence}, gps)
                 if rule_result.get("found"):
-                    tools_used.append({
-                        "tool":   "lookup_rule",
-                        "params": {"offence_code": offence},
-                        "result": rule_result,
-                    })
+                    tools_used.append({"tool": "lookup_rule", "params": {"offence_code": offence}, "result": rule_result})
 
-        # ── Rule lookup ───────────────────────────────────────────────────────
         if not response_parts and any(k in clean_text for k in fb["rule_keywords"]):
-            # If an offence is detected, look it up directly before falling back to keyword search
             if offence:
-                rule_result = self.tool_executor.execute(
-                    "lookup_rule", {"offence_code": offence}, gps
-                )
+                rule_result = self.tool_executor.execute("lookup_rule", {"offence_code": offence}, gps)
                 tools_used.append({"tool": "lookup_rule", "result": rule_result, "params": {"offence_code": offence}})
                 if rule_result.get("found"):
                     r = rule_result
-                    response_parts.append(
-                        f"**{r['title']}** ({r.get('section', '')}):\n{r['description']}"
-                    )
+                    response_parts.append(f"**{r['title']}** ({r.get('section', '')}):\n{r['description']}")
             if not response_parts:
-                # Strip context prefix tokens for cleaner search
-                search_tokens = [w for w in clean_text.split() if len(w) > 2][:hs["rule_query_word_limit"]]
-                result = self.tool_executor.execute(
-                    "search_rules", {"keywords": search_tokens}, gps
-                )
+                tokens = [w for w in clean_text.split() if len(w) > 2][:hs["rule_query_word_limit"]]
+                result = self.tool_executor.execute("search_rules", {"keywords": tokens}, gps)
                 tools_used.append({"tool": "search_rules", "result": result})
                 if result.get("found") and result.get("rules"):
                     r = result["rules"][0]
-                    response_parts.append(
-                        f"**{r['title']}** ({r.get('section', '')}): {r['description']}"
-                    )
+                    response_parts.append(f"**{r['title']}** ({r.get('section', '')}): {r['description']}")
 
-        # ── Zone check ────────────────────────────────────────────────────────
         if gps and any(k in clean_text for k in fb["zone_keywords"]):
             zone_result = self.tool_executor.execute("check_zone", {}, gps)
             tools_used.append({"tool": "check_zone", "result": zone_result})
             if zone_result.get("found"):
                 for z in zone_result.get("zones", []):
-                    multiplier   = z.get("fine_multiplier", 1.0)
-                    mult_note    = f" (fine ×{multiplier})" if multiplier and multiplier > 1.0 else ""
-                    speed        = z.get("speed_limit_kmh")
-                    speed_note   = f" | Speed limit: {speed} km/h" if speed else ""
-                    rules_list   = z.get("rules", [])
-                    description  = z.get("description", "")
-                    zone_detail  = (", ".join(rules_list) if rules_list
-                                    else description if description
-                                    else z.get("zone_type", "").replace("_", " ").title())
+                    mult    = z.get("fine_multiplier", 1.0)
                     response_parts.append(
-                        f"📍 Active zone: **{z['name']}**{mult_note}{speed_note}\n   {zone_detail}"
+                        f"📍 Active zone: **{z['name']}**"
+                        + (f" (fine ×{mult})" if mult and mult > 1.0 else "")
+                        + f"\n   {', '.join(z.get('rules', [z.get('zone_type', '')]))}"
                     )
-            else:
-                # GPS was provided but no zone matched — give useful confirmation
-                lat = gps.get("lat", "?")
-                lon = gps.get("lon", "?")
-                response_parts.append(
-                    f"📍 No special traffic zones (school zone, silent zone, etc.) detected at your "
-                    f"location (lat={lat}, lon={lon}). Standard traffic rules apply."
-                )
 
-        # ── HybridSearch fallback ─────────────────────────────────────────────
         if not response_parts and self.hybrid_search:
             try:
                 nlp_results = self.hybrid_search.search(text, top_k=hs["top_k"])
-                relevant = [r for r in nlp_results if r.get("score", 0) > hs["score_threshold"]]
+                relevant    = [r for r in nlp_results if r.get("score", 0) > hs["score_threshold"]]
                 if relevant:
                     tools_used.append({"tool": "hybrid_search", "result": relevant})
                     response_parts.append("Here's what I found in the traffic law database:\n")
-                    max_chars = hs["content_max_chars"]
                     for i, r in enumerate(relevant, 1):
                         meta    = r.get("metadata", {})
                         title   = meta.get("title", "")
                         section = meta.get("section", "")
                         content = r.get("content", "")
-
                         if "###Assistant:" in content:
                             content = content.split("###Assistant:")[-1].strip()
                         if "###Human:" in content:
@@ -693,13 +1096,12 @@ class AgentEngine:
                         content = content.strip().rstrip("0123456789").strip()
                         if not content:
                             continue
-
                         header = f"**{title}**" if title else f"Result {i}"
                         if section and section != "QA Dataset":
                             header += f" (Section {section})"
-                        response_parts.append(f"{i}. {header}\n   {content[:max_chars]}")
+                        response_parts.append(f"{i}. {header}\n   {content[:hs['content_max_chars']]}")
             except Exception as e:
-                logger.warning("[AgentEngine] HybridSearch fallback error: %s", e)
+                logger.warning("[Agent] HybridSearch fallback error: %s", e)
 
         if not response_parts:
             response_parts = [fb["unknown_query_response"]]
@@ -710,27 +1112,18 @@ class AgentEngine:
         )
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Fallback Helpers
+    # Detection helpers (used by keyword fallback)
     # ─────────────────────────────────────────────────────────────────────────
 
     def _detect_offence(self, text: str) -> Optional[str]:
-        """Return the offence code whose keywords score highest in *text*.
-
-        Scoring: each keyword phrase found as a substring adds 1 point.
-        The offence with the most hits wins — ties keep insertion order.
-        Returns None when no keyword matches at all.
-        """
         scores: Dict[str, int] = {}
         for offence, keywords in self._offence_keywords.items():
             hits = sum(1 for kw in keywords if kw in text)
             if hits:
                 scores[offence] = hits
-        if not scores:
-            return None
-        return max(scores, key=lambda o: scores[o])
+        return max(scores, key=lambda o: scores[o]) if scores else None
 
     def _detect_vehicle(self, text: str) -> str:
-        """Detect vehicle class from text using config keyword map."""
         for vehicle_class, keywords in self._veh_cfg.items():
             if vehicle_class.startswith("_"):
                 continue
@@ -739,61 +1132,43 @@ class AgentEngine:
         return "GENERAL"
 
     def _detect_state(self, text: str) -> str:
-        """Detect Indian state from text using config keyword map.
-
-        Short keywords (≤3 chars, e.g. 'tn', 'dl', 'tr', 'ar') are matched as
-        whole words only — surrounded by non-alphanumeric or string boundary —
-        to avoid false positives like 'tr' in 'triple' or 'ar' in 'near'.
-        """
         for state, keywords in self._state_cfg.items():
             if state.startswith("_"):
                 continue
             for k in keywords:
                 if len(k) <= 3:
-                    # Word-boundary match for short codes
                     if re.search(r'(?<![a-z0-9])' + re.escape(k) + r'(?![a-z0-9])', text):
                         return state
-                else:
-                    # Full substring match is fine for longer terms
-                    if k in text:
-                        return state
+                elif k in text:
+                    return state
         return "ALL"
 
     def _detect_country(self, text: str) -> tuple:
-        """
-        Detect country and region/state from query text for international lookups.
-        Returns (country_code, region_state) where region_state is the DB state value
-        (e.g. "DUBAI", "ABU_DHABI", "CALIFORNIA", "ALL") or None for IN default.
-        """
-        # UAE — Dubai / Abu Dhabi / Sharjah
-        if any(k in text for k in ["dubai", "uae", "united arab emirates", "sharjah", "ajman", "fujairah", "ras al", "أبوظبي", "دبي"]):
+        if any(k in text for k in ["dubai", "uae", "united arab emirates", "sharjah", "ajman"]):
             region = "ABU_DHABI" if "abu dhabi" in text else "DUBAI"
             return "AE", region
-        # Abu Dhabi explicit (checked after UAE block)
         if "abu dhabi" in text:
             return "AE", "ABU_DHABI"
-        # United Kingdom — match " uk " / "uk." / "uk?" / " uk\n" (word-boundary style)
-        if any(k in text for k in ["united kingdom", "london", "britain", "england", "scotland", "wales", "british", "uk traffic", "uk law"]) or re.search(r'(?<![a-z0-9])uk(?![a-z0-9])', text):
+        if any(k in text for k in ["united kingdom", "london", "britain", "england", "scotland", "wales"]) \
+                or re.search(r'(?<![a-z0-9])uk(?![a-z0-9])', text):
             return "GB", "ALL"
-        # Singapore
         if any(k in text for k in ["singapore", "spore", " sg "]):
             return "SG", "ALL"
-        # Saudi Arabia
-        if any(k in text for k in ["saudi", "saudi arabia", "riyadh", "jeddah", "mecca", "medina", "ksa", "kingdom of saudi"]):
+        if any(k in text for k in ["saudi", "saudi arabia", "riyadh", "jeddah", "ksa"]):
             return "SA", "ALL"
-        # USA
-        if any(k in text for k in ["usa", "united states", "america", "u.s.", "california", "new york", "texas", "florida", "chicago", "los angeles", "san francisco", "nyc", "new jersey"]):
+        if any(k in text for k in ["usa", "united states", "america", "california", "new york", "texas"]):
             if "california" in text or "los angeles" in text or "san francisco" in text:
                 return "US", "CALIFORNIA"
-            if "new york" in text or "nyc" in text or "new jersey" in text:
+            if "new york" in text or "nyc" in text:
                 return "US", "NEW_YORK"
             if "texas" in text or "houston" in text or "dallas" in text:
                 return "US", "TEXAS"
             return "US", "ALL"
-        # Default: India
         return "IN", None
 
-    # ── Unified Response Builder ──────────────────────────────────────────────
+    # ─────────────────────────────────────────────────────────────────────────
+    # Unified response builder (provides structured fields for all API consumers)
+    # ─────────────────────────────────────────────────────────────────────────
 
     def _build_unified_response(
         self,
@@ -802,13 +1177,13 @@ class AgentEngine:
         agent_powered: bool,
         model: str,
     ) -> Dict[str, Any]:
-        fine_data = None
-        rule_data = None
-        zone_data = None
+        fine_data      = None
+        rule_data      = None
+        zone_data      = None
         search_matches = []
-        intent = "general_query"
-        query_summary = "general traffic query"
-        status = "ok"
+        intent         = "general_query"
+        query_summary  = "general traffic query"
+        status         = "ok"
 
         guard = self._guard_cfg
         fb    = self._fb_cfg
@@ -828,16 +1203,11 @@ class AgentEngine:
                     "vehicle_class":     result.get("vehicle_class"),
                     "notes":             result.get("notes"),
                 }
-                intent = "fine_lookup"
+                intent        = "fine_lookup"
                 query_summary = params.get("offence_type", "fine_lookup").lower().replace("_", " ")
-
-                # Hallucination guard: flag suspiciously large fine amounts
                 amount = fine_data["amount_inr"]
                 if isinstance(amount, (int, float)) and amount > guard["max_fine_amount_inr"]:
-                    logger.warning(
-                        "[AgentEngine] Hallucination Alert: High fine ₹%s detected — possible error.",
-                        amount,
-                    )
+                    logger.warning("[Agent] High fine ₹%s detected — possible hallucination.", amount)
 
             elif tool_name == "lookup_rule" and result.get("found"):
                 rule_data = {
@@ -849,7 +1219,7 @@ class AgentEngine:
                     "imprisonment": result.get("imprisonment"),
                 }
                 if intent == "general_query":
-                    intent = "rule_query"
+                    intent        = "rule_query"
                     query_summary = params.get("offence_code", "rule_query").lower().replace("_", " ")
 
             elif tool_name == "search_rules" and result.get("found") and result.get("rules"):
@@ -861,33 +1231,30 @@ class AgentEngine:
                     "section":     top_rule.get("section"),
                 }
                 if intent == "general_query":
-                    intent = "rule_query"
+                    intent        = "rule_query"
                     query_summary = " ".join(params.get("keywords", []))
 
             elif tool_name == "check_zone" and result.get("found") and result.get("zones"):
                 zone_data = {
-                    "active_zones":      [z.get("name") for z in result["zones"]],
-                    "applicable_rules":  [z.get("rules", []) for z in result["zones"]],
+                    "active_zones":     [z.get("name") for z in result["zones"]],
+                    "applicable_rules": [z.get("rules", []) for z in result["zones"]],
                 }
 
             elif tool_name == "hybrid_search":
                 search_matches = result
 
-        # Status classification — keywords are configurable
         lower_text = final_text.lower()
         if "?" in final_text and any(k in lower_text for k in fb["clarification_keywords"]):
             status = "needs_clarification"
         elif not fine_data and not rule_data and any(k in lower_text for k in fb["not_found_keywords"]):
             status = "not_found"
         elif (
-            not fine_data and not rule_data
-            and intent == "general_query"
+            not fine_data and not rule_data and intent == "general_query"
             and any(k in lower_text for k in fb["insufficient_info_keywords"])
         ):
             status = "insufficient_info"
             intent = "unknown"
 
-        # Session state
         session_state: Dict[str, Any] = {}
         if fine_data:
             session_state["offence_type"]    = query_summary.upper().replace(" ", "_")
@@ -900,9 +1267,7 @@ class AgentEngine:
 
         warnings_list = []
         if status == "not_found":
-            warnings_list.append(
-                f"No data found in the database. Please verify at {guard['verify_url']}."
-            )
+            warnings_list.append(f"No data found. Please verify at {guard['verify_url']}.")
 
         return {
             "status":         status,

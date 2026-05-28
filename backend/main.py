@@ -200,11 +200,13 @@ def validate_security(v: str) -> str:
     return v
 
 class QueryRequest(BaseModel):
-    text:    str = Field(..., max_length=1000)
-    gps:     Optional[Dict] = None
-    session_id: Optional[str] = None
-    session: Dict           = {}
-    country: Optional[str] = "IN"
+    text:         str = Field(..., max_length=1000)
+    gps:          Optional[Dict] = None
+    session_id:   Optional[str] = None
+    session:      Dict = {}
+    country:      Optional[str] = "IN"
+    image_base64: Optional[str] = None
+    image_mime:   Optional[str] = "image/jpeg"
 
     @field_validator('text')
     def check_text(cls, v):
@@ -222,10 +224,12 @@ class FineCalculateRequest(BaseModel):
     country:       Optional[str] = "IN"
 
 class AgentQueryRequest(BaseModel):
-    text:    str = Field(..., max_length=1000)
-    gps:     Optional[Dict] = None
-    session_id: Optional[str] = None
-    history: list = []
+    text:         str = Field(..., max_length=1000)
+    gps:          Optional[Dict] = None
+    session_id:   Optional[str] = None
+    history:      list = []
+    image_base64: Optional[str] = None
+    image_mime:   Optional[str] = "image/jpeg"
 
     @field_validator('text')
     def check_text(cls, v):
@@ -272,8 +276,13 @@ async def handle_query(request: Request, payload: QueryRequest = Body(...)):
             context_str = ", ".join(context_parts)
             enriched_text = f"[Context: {context_str}] {enriched_text}"
 
-        # Run the agent engine (falls back to _keyword_fallback if Gemini is rate-limited or API key not set)
-        result = agent_engine.run(enriched_text, [], payload.gps)
+        # Run the agent engine — Ollama → Gemini → Groq → keyword fallback
+        result = agent_engine.run(
+            enriched_text, [],
+            payload.gps,
+            image_base64=payload.image_base64,
+            image_mime=payload.image_mime or "image/jpeg",
+        )
 
         # Merge in input session state if not fully overridden or updated by the tool run
         if "session" not in result:
@@ -385,9 +394,11 @@ async def handle_agent_query(request: Request, payload: AgentQueryRequest = Body
         active_history = payload.history if payload.history else saved_history
 
         result = agent_engine.run(
-            user_text             = payload.text,
-            conversation_history  = active_history,
-            gps                   = payload.gps,
+            user_text            = payload.text,
+            conversation_history = active_history,
+            gps                  = payload.gps,
+            image_base64         = payload.image_base64,
+            image_mime           = payload.image_mime or "image/jpeg",
         )
 
         # Append new interaction to history
@@ -756,6 +767,16 @@ async def get_health():
     from backend.modules.ai.circuit_breaker import ai_circuit_breaker
     circuit_state = ai_circuit_breaker.current_state
 
+    # Determine active agent mode (priority: Ollama → Gemini → Groq → keyword)
+    if agent_engine.ollama_available:
+        agent_mode = f"ollama/{agent_engine.ollama_model}"
+    elif agent_engine.gemini_available:
+        agent_mode = "gemini-2.0-flash"
+    elif agent_engine.groq_available:
+        agent_mode = "groq"
+    else:
+        agent_mode = "keyword-fallback"
+
     status = "ok"
     if circuit_state == "open":
         status = "degraded"
@@ -768,7 +789,12 @@ async def get_health():
         "country_counts":       country_counts,
         "db_age":               db_age,
         "ai_engine":            "groq" if ai_engine else "template",
-        "agent_engine":         "groq" if agent_engine.groq_available else "keyword-fallback",
+        "agent_mode":           agent_mode,
+        "agent_providers": {
+            "ollama":   agent_engine.ollama_available,
+            "gemini":   agent_engine.gemini_available,
+            "groq":     agent_engine.groq_available,
+        },
         "circuit_breaker":      circuit_state,
         "challan_calculator":   challan_calculator is not None,
         "vector_search":        hybrid_search.bm25 is not None,
