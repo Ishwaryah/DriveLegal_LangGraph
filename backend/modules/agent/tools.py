@@ -9,6 +9,8 @@ and the ToolExecutor that bridges LLM tool calls to backend modules
 import logging
 from typing import Any, Dict, List, Optional
 
+from backend.modules.agent.normalize import CITY_TO_STATE as _CITY_TO_STATE
+
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -329,39 +331,6 @@ class ToolExecutor:
 
     # ── lookup_fine ───────────────────────────────────────────────────────────
 
-    # City/shorthand → canonical state name used in the DB
-    _STATE_ALIASES: Dict[str, str] = {
-        "tn": "Tamil Nadu",        "tamilnadu": "Tamil Nadu",   "chennai": "Tamil Nadu",
-        "coimbatore": "Tamil Nadu", "madurai": "Tamil Nadu",
-        "dl": "Delhi",             "delhi": "Delhi",            "new delhi": "Delhi",
-        "mh": "Maharashtra",       "maharashtra": "Maharashtra","mumbai": "Maharashtra",
-        "pune": "Maharashtra",     "nagpur": "Maharashtra",
-        "ka": "Karnataka",         "karnataka": "Karnataka",    "bangalore": "Karnataka",
-        "bengaluru": "Karnataka",  "mysuru": "Karnataka",
-        "kl": "Kerala",            "kerala": "Kerala",          "kochi": "Kerala",
-        "thiruvananthapuram": "Kerala",
-        "up": "Uttar Pradesh",     "lucknow": "Uttar Pradesh",  "noida": "Uttar Pradesh",
-        "agra": "Uttar Pradesh",
-        "gj": "Gujarat",           "gujarat": "Gujarat",        "ahmedabad": "Gujarat",
-        "surat": "Gujarat",
-        "rj": "Rajasthan",         "rajasthan": "Rajasthan",    "jaipur": "Rajasthan",
-        "wb": "West Bengal",       "kolkata": "West Bengal",    "west bengal": "West Bengal",
-        "tg": "Telangana",         "ts": "Telangana",           "telangana": "Telangana",
-        "hyderabad": "Telangana",
-        "ap": "Andhra Pradesh",    "andhra pradesh": "Andhra Pradesh",
-        "br": "Bihar",             "bihar": "Bihar",            "patna": "Bihar",
-        "hr": "Haryana",           "haryana": "Haryana",        "gurugram": "Haryana",
-        "mp": "Madhya Pradesh",    "madhya pradesh": "Madhya Pradesh",
-        "or": "Odisha",            "od": "Odisha",              "odisha": "Odisha",
-        "pb": "Punjab",            "punjab": "Punjab",          "chandigarh": "Punjab",
-        "as": "Assam",             "assam": "Assam",            "guwahati": "Assam",
-        "cg": "Chhattisgarh",      "chhattisgarh": "Chhattisgarh",
-        "jh": "Jharkhand",         "jharkhand": "Jharkhand",
-        "uk": "Uttarakhand",       "uttarakhand": "Uttarakhand",
-        "hp": "Himachal Pradesh",  "himachal pradesh": "Himachal Pradesh",
-        "goa": "Goa",              "ga": "Goa",
-    }
-
     def _lookup_fine(self, params: Dict, _gps: Optional[Dict]) -> Dict:
         if not self.fine_lookup:
             return {"found": False, "error": "Fine database not available."}
@@ -389,8 +358,8 @@ class ToolExecutor:
 
         # Normalise state: city/shorthand → full state name
         state_clean = state_raw.strip().lower()
-        if state_clean in self._STATE_ALIASES:
-            state_norm = self._STATE_ALIASES[state_clean]
+        if state_clean in _CITY_TO_STATE:
+            state_norm = _CITY_TO_STATE[state_clean]
         elif state_raw.upper() in ("ALL", "ANY", "NATIONAL", ""):
             state_norm = "ALL"
         else:

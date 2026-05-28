@@ -14,6 +14,8 @@ from typing import List, Optional
 import sqlite3
 import os
 
+from backend.modules.agent.normalize import CURRENCY_MAP, COUNTRY_NAMES
+
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/fines.db"))
@@ -133,8 +135,7 @@ def calculate_challan(req: ChallanCalculationRequest = Body(...)):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    _CURRENCY_DEFAULTS = {"IN": "INR", "AE": "AED", "SG": "SGD", "GB": "GBP"}
-    currency = _CURRENCY_DEFAULTS.get(req.country, "USD")
+    currency = CURRENCY_MAP.get(req.country, "USD")
 
     vc_candidates = _resolve_vehicle(req.vehicle_type)
     vc_ph = ",".join("?" * len(vc_candidates))
@@ -304,19 +305,10 @@ def get_supported_countries():
     rows = cursor.fetchall()
     conn.close()
 
-    names = {
-        "IN": "India",
-        "AE": "UAE",
-        "GB": "United Kingdom",
-        "SG": "Singapore",
-        "SA": "Saudi Arabia",
-        "US": "United States",
-    }
-
     return [
         {
             "code": row["country"],
-            "name": names.get(row["country"], row["country"]),
+            "name": COUNTRY_NAMES.get(row["country"], row["country"]),
             "currency": row["currency"],
             "total_violations": row["total_violations"],
         }

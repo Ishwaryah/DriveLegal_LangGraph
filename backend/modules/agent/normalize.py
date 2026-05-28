@@ -1,4 +1,9 @@
-"""Normalize AI tool inputs to match fines.db / rules.json conventions."""
+"""Normalize AI tool inputs to match fines.db / rules.json conventions.
+
+This module is the single source of truth for all lookup tables shared across
+the agent, router, and rules modules. Import from here rather than re-defining
+the same dicts elsewhere.
+"""
 
 from __future__ import annotations
 
@@ -101,7 +106,14 @@ COUNTRY_ALIASES: dict[str, str] = {
     "new york": "US",
     "texas": "US",
     "florida": "US",
+    "los angeles": "US",
+    "san francisco": "US",
+    "nyc": "US",
+    "houston": "US",
+    "dallas": "US",
+    "minnesota": "US",
     "singapore": "SG",
+    "spore": "SG",
     "saudi": "SA",
     "saudi arabia": "SA",
     "ksa": "SA",
@@ -116,8 +128,13 @@ COUNTRY_STATE_MAP: dict[str, str] = {
     "abudhabi": "ABU_DHABI",
     "sharjah": "ALL",
     "california": "CALIFORNIA",
+    "los angeles": "CALIFORNIA",
+    "san francisco": "CALIFORNIA",
     "new york": "NEW_YORK",
+    "nyc": "NEW_YORK",
     "texas": "TEXAS",
+    "houston": "TEXAS",
+    "dallas": "TEXAS",
     "london": "ALL",
 }
 
@@ -137,6 +154,49 @@ CURRENCY_SYMBOL: dict[str, str] = {
     "USD": "$",
     "SGD": "S$",
     "SAR": "SAR ",
+}
+
+# Convenience map used when building /fines/countries responses
+COUNTRY_NAMES: dict[str, str] = {
+    "IN": "India",
+    "AE": "UAE",
+    "GB": "United Kingdom",
+    "SG": "Singapore",
+    "SA": "Saudi Arabia",
+    "US": "United States",
+}
+
+# City / shorthand (lowercase) → canonical full state name used in fines.db
+CITY_TO_STATE: dict[str, str] = {
+    "tn": "Tamil Nadu",        "tamilnadu": "Tamil Nadu",    "chennai": "Tamil Nadu",
+    "coimbatore": "Tamil Nadu", "madurai": "Tamil Nadu",
+    "dl": "Delhi",             "delhi": "Delhi",             "new delhi": "Delhi",
+    "mh": "Maharashtra",       "maharashtra": "Maharashtra", "mumbai": "Maharashtra",
+    "pune": "Maharashtra",     "nagpur": "Maharashtra",
+    "ka": "Karnataka",         "karnataka": "Karnataka",     "bangalore": "Karnataka",
+    "bengaluru": "Karnataka",  "mysuru": "Karnataka",
+    "kl": "Kerala",            "kerala": "Kerala",           "kochi": "Kerala",
+    "thiruvananthapuram": "Kerala",
+    "up": "Uttar Pradesh",     "lucknow": "Uttar Pradesh",   "noida": "Uttar Pradesh",
+    "agra": "Uttar Pradesh",
+    "gj": "Gujarat",           "gujarat": "Gujarat",         "ahmedabad": "Gujarat",
+    "surat": "Gujarat",
+    "rj": "Rajasthan",         "rajasthan": "Rajasthan",     "jaipur": "Rajasthan",
+    "wb": "West Bengal",       "kolkata": "West Bengal",     "west bengal": "West Bengal",
+    "tg": "Telangana",         "ts": "Telangana",            "telangana": "Telangana",
+    "hyderabad": "Telangana",
+    "ap": "Andhra Pradesh",    "andhra pradesh": "Andhra Pradesh",
+    "br": "Bihar",             "bihar": "Bihar",             "patna": "Bihar",
+    "hr": "Haryana",           "haryana": "Haryana",         "gurugram": "Haryana",
+    "mp": "Madhya Pradesh",    "madhya pradesh": "Madhya Pradesh",
+    "or": "Odisha",            "od": "Odisha",               "odisha": "Odisha",
+    "pb": "Punjab",            "punjab": "Punjab",           "chandigarh": "Punjab",
+    "as": "Assam",             "assam": "Assam",             "guwahati": "Assam",
+    "cg": "Chhattisgarh",      "chhattisgarh": "Chhattisgarh",
+    "jh": "Jharkhand",         "jharkhand": "Jharkhand",
+    "uk": "Uttarakhand",       "uttarakhand": "Uttarakhand",
+    "hp": "Himachal Pradesh",  "himachal pradesh": "Himachal Pradesh",
+    "goa": "Goa",              "ga": "Goa",
 }
 
 

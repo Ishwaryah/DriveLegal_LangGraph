@@ -1,0 +1,94 @@
+{
+  "_comment": "Test fixture data for the benchmark suite. Add new cases here — no code changes needed.",
+
+  "fine_lookup_engine": [
+    {"id": "helmet-tn",          "query": "What is the fine for driving without a helmet in Tamil Nadu?",       "expect_intent": "fine_lookup", "expect_section": "194D"},
+    {"id": "seatbelt-delhi",     "query": "Fine for not wearing a seatbelt in Delhi for a car.",               "expect_intent": "fine_lookup", "expect_section": "194B"},
+    {"id": "speed-mh",           "query": "How much do I pay for overspeeding a car in Maharashtra?",          "expect_intent": "fine_lookup", "expect_section": "183"},
+    {"id": "red-light-ka",       "query": "What is the penalty for jumping a red light in Karnataka?",         "expect_intent": "fine_lookup", "expect_section": "177"},
+    {"id": "no-insurance-up",    "query": "Fine for driving without insurance in Uttar Pradesh.",              "expect_intent": "fine_lookup", "expect_section": "196"},
+    {"id": "no-puc-kl",          "query": "What is the challan for no PUC (pollution certificate) in Kerala?","expect_intent": "fine_lookup", "expect_section": "194F"},
+    {"id": "triple-riding-ap",   "query": "Fine for triple riding on a bike in Andhra Pradesh.",              "expect_intent": "fine_lookup", "expect_section": "194C"},
+    {"id": "mobile-phone-ts",    "query": "Penalty for using a mobile phone while driving in Telangana.",     "expect_intent": "fine_lookup", "expect_section": "184"},
+    {"id": "drunk-driving-wb",   "query": "How much is the fine for drunk driving in West Bengal?",           "expect_intent": "fine_lookup", "expect_section": "185"},
+    {"id": "wrong-way-gj-truck", "query": "Fine for wrong-way driving in Gujarat for a truck.",               "expect_intent": "fine_lookup", "expect_section": "179"},
+    {"id": "repeat-drunk-tn",    "query": "What is the fine for a second offense of drunk driving in TN?"},
+    {"id": "helmet-base",        "query": "Fine for not wearing a helmet."},
+    {"id": "minor-driving",      "query": "What if a minor is caught driving without a license?"},
+    {"id": "no-license-plate",   "query": "Fine for driving without a license plate.",                        "expect_intent": "fine_lookup", "expect_section": "192"},
+    {"id": "mobile-phone-uk",    "query": "How much is the penalty for texting and driving in the UK?"},
+    {"id": "seatbelt-london",    "query": "Fine for not wearing a seatbelt in London, UK."},
+    {"id": "drunk-driving-185",  "query": "Under what section of the Motor Vehicles Act is drunk driving penalized?", "expect_section_in_response": "185"},
+    {"id": "section-194d",       "query": "Explain Section 194D of the Motor Vehicles Act.",                  "expect_section_in_response": "194"},
+    {"id": "tinted-windows",     "query": "What are the rules for tinted windows on cars?"},
+    {"id": "high-beam",          "query": "What are the rules regarding high-beam headlights in city limits?"},
+    {"id": "pillion-helmet",     "query": "Does a pillion rider need to wear a helmet by law?"},
+    {"id": "bac-limit",          "query": "What is the legal blood alcohol limit for driving in India?"},
+    {"id": "digilocker",         "query": "Are physical documents required, or is DigiLocker valid?"},
+    {"id": "red-light-dubai",    "query": "What is the fine for running a red light in Dubai (UAE)?"}
+  ],
+
+  "fine_lookup_tool": [
+    {"id": "seatbelt-lmv",       "offence_type": "NO_SEATBELT",      "vehicle_class": "LMV",     "state": "ALL",        "expect_found": true},
+    {"id": "seatbelt-lmv-repeat","offence_type": "NO_SEATBELT",      "vehicle_class": "LMV",     "state": "ALL",        "is_repeat": "true", "expect_found": true},
+    {"id": "speed-lmv",          "offence_type": "SPEED_EXCESS",     "vehicle_class": "LMV",     "state": "ALL",        "expect_found": true},
+    {"id": "speed-hgv",          "offence_type": "SPEED_EXCESS",     "vehicle_class": "HGV",     "state": "ALL",        "expect_found": true},
+    {"id": "juvenile-driving",   "offence_type": "JUVENILE_DRIVING", "vehicle_class": "GENERAL", "state": "ALL",        "expect_found": true, "expect_section": "199A"},
+    {"id": "red-light-dubai",    "offence_type": "RED_LIGHT_JUMPING","vehicle_class": "ALL",     "state": "DUBAI",      "country": "AE", "expect_found": true, "expect_currency": "AED"},
+    {"id": "speed-abu-dhabi",    "offence_type": "SPEED_EXCESS",     "vehicle_class": "ALL",     "state": "ABU_DHABI",  "country": "AE", "expect_found": true, "expect_currency": "AED"},
+    {"id": "mobile-phone-uk",    "offence_type": "MOBILE_PHONE",     "vehicle_class": "ALL",     "state": "ALL",        "country": "GB", "expect_found": true, "expect_currency": "GBP"},
+    {"id": "no-insurance-ca",    "offence_type": "NO_INSURANCE",     "vehicle_class": "ALL",     "state": "CALIFORNIA", "country": "US", "expect_found": true, "expect_currency": "USD"},
+    {"id": "speed-sg",           "offence_type": "SPEED_EXCESS",     "vehicle_class": "ALL",     "state": "ALL",        "country": "SG", "expect_found": true, "expect_currency": "SGD"},
+    {"id": "parking-sa",         "offence_type": "NO_PARKING",       "vehicle_class": "ALL",     "state": "ALL",        "country": "SA", "expect_found": true, "expect_currency": "SAR"},
+    {"id": "dui-ny",             "offence_type": "DRUNK_DRIVING",    "vehicle_class": "ALL",     "state": "NEW_YORK",   "country": "US", "expect_found": true, "expect_currency": "USD"},
+    {"id": "seatbelt-gb",        "offence_type": "NO_SEATBELT",      "vehicle_class": "ALL",     "state": "ALL",        "country": "GB", "expect_found": true, "expect_currency": "GBP"},
+    {"id": "red-light-dubai-b",  "offence_type": "RED_LIGHT_JUMPING","vehicle_class": "ALL",     "state": "DUBAI",      "country": "AE", "expect_found": true, "expect_section_contains": "black points"},
+    {"id": "horn-honking",       "offence_type": "HORN_HONKING",     "vehicle_class": "GENERAL", "state": "ALL",        "expect_found": true},
+    {"id": "unknown-offence",    "offence_type": "TOTALLY_UNKNOWN_OFFENCE_XYZ", "vehicle_class": "LMV", "state": "ALL", "expect_found": false}
+  ],
+
+  "rule_lookup_tool": [
+    {"id": "drunk-driving-rule",   "offence_code": "DRUNK_DRIVING",        "expect_section": "185", "expect_title_keywords": ["drunk", "driving under", "drunken"]},
+    {"id": "no-helmet-rule",       "offence_code": "NO_HELMET",            "expect_section": "194D","expect_desc_keywords": ["helmet", "headgear", "pillion"]},
+    {"id": "tinted-glass-rule",    "offence_code": "TINTED_GLASS",         "expect_title_keywords": ["tinted", "glass", "window"]},
+    {"id": "exhaust-mod-rule",     "offence_code": "VEHICLE_MODIFICATION",  "expect_section_or_title": ["52", "modification"]},
+    {"id": "high-beam-rule",       "offence_code": "HIGH_BEAM",             "expect_section_or_title": ["177", "beam"]},
+    {"id": "uae-demerit-rule",     "offence_code": "UAE_DEMERIT_POINTS",    "expect_desc_keywords": ["black", "demerit", "point"]}
+  ],
+
+  "suggest_offence_tool": [
+    {"id": "exhaust-suggest", "description": "exhaust modification on my motorcycle", "expect_code": "VEHICLE_MODIFICATION"}
+  ],
+
+  "search_rules_tool": [
+    {"id": "digilocker-search",  "keywords": ["digilocker", "digital", "documents"], "expect_title_keywords": ["digilocker", "document"]},
+    {"id": "pay-challan-search", "keywords": ["pay", "challan", "online"],           "expect_title_keywords": ["pay", "challan", "online"]},
+    {"id": "uae-demerit-search", "keywords": ["uae", "demerit"],                     "expect_title_keywords": ["uae", "demerit", "black"]}
+  ],
+
+  "zone_check_tool": [
+    {"id": "adyar-hospital",  "lat": 13.01,  "lon": 80.23,  "expect_found": true,  "expect_zone_type": "hospital_silent_zone", "expect_fine_multiplier": 2.0},
+    {"id": "school-zone",     "lat": 13.063, "lon": 80.233, "expect_found": true,  "expect_zone_type": "school_zone",          "expect_fine_multiplier": 2.0},
+    {"id": "no-horn-zone",    "lat": 13.073, "lon": 80.243, "expect_found": true,  "expect_zone_type": "no_horn"},
+    {"id": "apollo-hospital", "lat": 13.059, "lon": 80.256, "expect_found": true,  "expect_zone_type": "hospital_silent_zone", "expect_speed_limit_kmh": 30, "expect_horn_prohibited": true},
+    {"id": "outside-zones",   "lat": 13.5,   "lon": 80.5,   "expect_found": false}
+  ],
+
+  "engine_routing": [
+    {"id": "greeting-hello",      "query": "Hello!",                    "expect_intent": "greeting", "expect_fine": false, "expect_tools": 0},
+    {"id": "greeting-hi",         "query": "Hi there! How can you help?","expect_intent": "greeting", "expect_fine": false, "expect_tools": 0},
+    {"id": "meta-model",          "query": "Which model are you running on?", "expect_intent": "meta"},
+    {"id": "thanks-closing",      "query": "Thanks for the information!", "expect_fine": false, "expect_tools": 0},
+    {"id": "keyword-fallback",    "query": "What is the fine for drunk driving in Delhi?", "expect_agent_powered": false, "expect_model": "keyword-fallback"},
+    {"id": "tools-structure",     "query": "Fine for no helmet in Maharashtra."},
+    {"id": "empty-db-graceful",   "query": null, "tool": "lookup_fine", "tool_params": {"offence_type": "TOTALLY_UNKNOWN_OFFENCE_XYZ", "vehicle_class": "LMV", "state": "ALL"}, "expect_found": false},
+    {"id": "missing-gps",         "query": null, "tool": "check_zone",  "tool_params": {}, "expect_found": false, "expect_msg_keywords": ["GPS", "coordinates"]}
+  ],
+
+  "oos_queries": [
+    {"id": "oos-recipe",   "query": "Give me a recipe for chocolate cake."},
+    {"id": "oos-france",   "query": "What is the capital of France?"},
+    {"id": "oos-weather",  "query": "What is the weather like in Mumbai today?"},
+    {"id": "oos-gibberish","query": "xkcd foo bar baz 12345!"}
+  ]
+}

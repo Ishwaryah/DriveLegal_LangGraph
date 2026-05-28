@@ -42,6 +42,7 @@ from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 
 from backend.modules.agent.tools import ToolExecutor, TOOL_DEFINITIONS
+from backend.modules.agent.normalize import get_currency_symbol as _get_currency_symbol, detect_country_and_state
 
 logger = logging.getLogger(__name__)
 
@@ -1157,7 +1158,6 @@ class AgentEngine:
         "overload", "number plate", "registration", "fitness",
     ]
     _CLOSING_TERMS  = ["thanks", "thank you", "ok thanks", "bye", "goodbye", "noted", "got it", "great", "ok"]
-    _CURRENCY_SYMBOL = {"IN": "₹", "AE": "AED ", "GB": "£", "SG": "SGD ", "US": "USD ", "SA": "SAR "}
 
     def _keyword_fallback(self, text: str, gps: Optional[Dict]) -> Dict[str, Any]:
         text_lower     = text.lower()
@@ -1207,7 +1207,7 @@ class AgentEngine:
             return self._build_unified_response(oos, [], False, "keyword-fallback")
 
         country, intl_state = self._detect_country(clean_text)
-        currency_sym        = self._CURRENCY_SYMBOL.get(country, "₹")
+        currency_sym        = _get_currency_symbol(country)
 
         offence = self._detect_offence(clean_text) or (context_offence.upper() if context_offence else None)
         vehicle = self._detect_vehicle(clean_text)
@@ -1344,27 +1344,8 @@ class AgentEngine:
         return "ALL"
 
     def _detect_country(self, text: str) -> tuple:
-        if any(k in text for k in ["dubai", "uae", "united arab emirates", "sharjah", "ajman"]):
-            region = "ABU_DHABI" if "abu dhabi" in text else "DUBAI"
-            return "AE", region
-        if "abu dhabi" in text:
-            return "AE", "ABU_DHABI"
-        if any(k in text for k in ["united kingdom", "london", "britain", "england", "scotland", "wales"]) \
-                or re.search(r'(?<![a-z0-9])uk(?![a-z0-9])', text):
-            return "GB", "ALL"
-        if any(k in text for k in ["singapore", "spore", " sg "]):
-            return "SG", "ALL"
-        if any(k in text for k in ["saudi", "saudi arabia", "riyadh", "jeddah", "ksa"]):
-            return "SA", "ALL"
-        if any(k in text for k in ["usa", "united states", "america", "california", "new york", "texas"]):
-            if "california" in text or "los angeles" in text or "san francisco" in text:
-                return "US", "CALIFORNIA"
-            if "new york" in text or "nyc" in text:
-                return "US", "NEW_YORK"
-            if "texas" in text or "houston" in text or "dallas" in text:
-                return "US", "TEXAS"
-            return "US", "ALL"
-        return "IN", None
+        country, state = detect_country_and_state(text)
+        return country, state if state != "ALL" else None
 
     # ─────────────────────────────────────────────────────────────────────────
     # Unified response builder
