@@ -841,10 +841,16 @@ class AgentEngine:
         history: List[Dict],
         gps: Optional[Dict],
     ) -> Dict[str, Any]:
-        t0        = time.time()
-        groq_time = 0.0
-        tool_time = 0.0
-        tools_used: List[Dict] = []
+        t0 = time.time()
+        
+        try:
+            from langchain_groq import ChatGroq
+            from langgraph.prebuilt import create_react_agent
+            from langchain_core.tools import StructuredTool
+            from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+        except ImportError as e:
+            logger.error("[Agent/LangGraph] Missing LangChain dependencies: %s", e)
+            return self._keyword_fallback(user_text, gps)
 
         groq_cfg  = self._groq_cfg
         guard_cfg = self._guard_cfg
@@ -856,13 +862,35 @@ class AgentEngine:
                 "Check zone restrictions if relevant.]"
             )
 
-        messages = [{"role": "system", "content": self._system_prompt}]
-        for turn in history:
-            role      = "assistant" if turn.get("role") == "model" else turn.get("role", "user")
-            parts_text = turn.get("parts", [""])
-            messages.append({"role": role, "content": " ".join(parts_text)})
-        messages.append({"role": "user", "content": enriched_text})
-
+        # 1. Build LangChain Tools dynamically from TOOL_DEFINITIONS
+        lc_tools = []
+        tools_used_record = [] # To keep track for _build_unified_response
+        
+        for t_def in TOOL_DEFINITIONS:
+            name = t_def["name"]
+            desc = t_def["description"]
+            # Create a closure to capture the tool name
+            def tool_func(name=name, **kwargs) -> str:
+                result = self.tool_executor.execute(name, kwargs, gps)
+                tools_used_record.append({"tool": name, "params": kwargs, "result": result})
+                return json.dumps(result)
+            
+            # Use type() to dynamically create a Pydantic model for args if needed, 
+            # or just use StructuredTool.from_function (which requires type hints usually).
+            # For simplicity, we'll let LangChain infer from a generic wrapper or we build it manually.
+            
+            lc_tools.append(
+                StructuredTool.from_function(
+                    func=tool_func,
+                    name=name,
+                    description=desc,
+                    # We pass the raw JSON schema for args
+                    args_schema=None, # LangChain can accept raw schema in other ways, but for StructuredTool it's best to use pydantic.
+                )
+            )
+            
+        # Refine tool creation to properly use the schema from TOOL_DEFINITIONS
+        # Actually, ChatGroq.bind_tools can accept raw OpenAI-style dicts!
         groq_tools = []
         for t in TOOL_DEFINITIONS:
             parameters = dict(t.get("parameters", {}))
@@ -875,54 +903,92 @@ class AgentEngine:
                 "function": {"name": t["name"], "description": t["description"], "parameters": parameters},
             })
 
-        try:
-            from pybreaker import CircuitBreakerError
-            response_message = None
-            for iteration in range(groq_cfg["max_tool_iterations"]):
-                t1 = time.time()
-                response = self.groq_client.chat.completions.create(
-                    model        = groq_cfg["model"],
-                    messages     = messages,
-                    tools        = groq_tools,
-                    tool_choice  = "auto",
-                    max_tokens   = groq_cfg["max_tokens"],
-                    temperature  = groq_cfg["temperature"],
+        # Initialize the LLM
+        llm = ChatGroq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            model=groq_cfg["model"],
+            temperature=groq_cfg["temperature"],
+            max_tokens=groq_cfg["max_tokens"]
+        )
+        
+        # We need a custom Node for tools since we use raw dict schemas for binding, 
+        # but create_react_agent prefers LangChain tools.
+        # Let's wrap our ToolExecutor in LangChain tools properly.
+        from pydantic import create_model, Field
+        from typing import Optional, Any
+        
+        pydantic_tools = []
+        for t in TOOL_DEFINITIONS:
+            name = t["name"]
+            props = t.get("parameters", {}).get("properties", {})
+            fields = {}
+            for k, v in props.items():
+                # Define field types based on schema
+                f_type = str
+                if v.get("type") == "number": f_type = float
+                elif v.get("type") == "integer": f_type = int
+                elif v.get("type") == "boolean": f_type = bool
+                
+                # Default to Optional if not in required
+                is_req = k in t.get("parameters", {}).get("required", [])
+                if is_req:
+                    fields[k] = (f_type, Field(description=v.get("description", "")))
+                else:
+                    fields[k] = (Optional[f_type], Field(default=None, description=v.get("description", "")))
+            
+            Model = create_model(f"{name}Schema", **fields)
+            
+            def create_func(tool_name):
+                def _impl(**kwargs):
+                    result = self.tool_executor.execute(tool_name, kwargs, gps)
+                    tools_used_record.append({"tool": tool_name, "params": kwargs, "result": result})
+                    return json.dumps(result)
+                return _impl
+
+            pydantic_tools.append(
+                StructuredTool.from_function(
+                    func=create_func(name),
+                    name=name,
+                    description=t["description"],
+                    args_schema=Model
                 )
-                groq_time       += time.time() - t1
-                response_message = response.choices[0].message
-                tool_calls       = response_message.tool_calls
+            )
 
-                assistant_msg: Dict[str, Any] = {"role": "assistant"}
-                if response_message.content is not None:
-                    assistant_msg["content"] = response_message.content
-                if tool_calls:
-                    assistant_msg["tool_calls"] = [
-                        {"id": c.id, "type": "function",
-                         "function": {"name": c.function.name, "arguments": c.function.arguments}}
-                        for c in tool_calls
-                    ]
-                messages.append(assistant_msg)
+        # Create the LangGraph agent
+        agent = create_react_agent(llm, tools=pydantic_tools)
 
-                if not tool_calls:
-                    break
+        # Create a simplified system prompt for LangGraph to avoid confusing Groq's tool parser
+        langgraph_system_prompt = (
+            "You are DriveLegal AI, an expert Indian traffic law assistant.\n"
+            "You have access to tools to lookup rules and fines.\n"
+            "ALWAYS use the tools provided to fetch accurate information before answering.\n"
+            "When using tools, provide the EXACT correct arguments.\n"
+            "Once you have the tool results, synthesize them into a helpful, detailed markdown response.\n"
+            "Important: Do NOT attempt to output XML or raw JSON yourself. Just call the tools normally."
+        )
 
-                logger.info("[Agent/Groq] iter %d tools: %s", iteration + 1, [c.function.name for c in tool_calls])
+        # Convert history to LangChain messages
+        lc_messages = [SystemMessage(content=langgraph_system_prompt)]
+        for turn in history:
+            role = "assistant" if turn.get("role") == "model" else turn.get("role", "user")
+            parts_text = turn.get("parts", [""])
+            text = " ".join(parts_text)
+            if role == "assistant":
+                lc_messages.append(AIMessage(content=text))
+            else:
+                lc_messages.append(HumanMessage(content=text))
+                
+        lc_messages.append(HumanMessage(content=enriched_text))
 
-                for call in tool_calls:
-                    t_tool = time.time()
-                    try:
-                        params = json.loads(call.function.arguments)
-                    except json.JSONDecodeError:
-                        params = {}
-                    result     = self.tool_executor.execute(call.function.name, params, gps)
-                    tool_time += time.time() - t_tool
-                    tools_used.append({"tool": call.function.name, "params": params, "result": result})
-                    messages.append({
-                        "tool_call_id": call.id, "role": "tool",
-                        "name": call.function.name, "content": json.dumps({"result": result}),
-                    })
-
-            final_text = (response_message.content or "").strip() if response_message else ""
+        # Run the graph
+        try:
+            logger.info("[Agent/LangGraph] Invoking LangGraph agent...")
+            final_state = agent.invoke({"messages": lc_messages})
+            
+            # The last message is the AI's final response
+            final_message = final_state["messages"][-1]
+            final_text = final_message.content if hasattr(final_message, "content") else str(final_message)
+            
             if not final_text:
                 final_text = self._fb_cfg["no_info_response"]
 
@@ -930,22 +996,13 @@ class AgentEngine:
             if disclaimer not in final_text:
                 final_text += f"\n\n{disclaimer}"
 
-            total_time = time.time() - t0
-            logger.info(
-                "[Agent/Groq] Groq: %.0fms | Tools: %.0fms | Total: %.0fms",
-                groq_time * 1000, tool_time * 1000, total_time * 1000,
-            )
-            return self._build_unified_response(final_text, tools_used, True, groq_cfg["model_label"])
+            logger.info("[Agent/LangGraph] Finished in %.0fms", (time.time() - t0) * 1000)
+            
+            return self._build_unified_response(final_text, tools_used_record, True, "langgraph/" + groq_cfg["model_label"])
 
         except Exception as e:
             error_msg = str(e)
-            logger.error("[Agent/Groq] Error: %s", error_msg)
-            try:
-                from pybreaker import CircuitBreakerError
-                if isinstance(e, CircuitBreakerError):
-                    raise
-            except ImportError:
-                pass
+            logger.error("[Agent/LangGraph] Error during graph execution: %s", error_msg)
             fallback = self._keyword_fallback(user_text, gps)
             fallback["error_detail"] = error_msg
             return fallback

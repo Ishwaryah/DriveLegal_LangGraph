@@ -22,3 +22,7 @@ redis
 fastapi-cache2[redis]
 python-json-logger
 pybreaker
+langgraph
+langchain-groq
+langchain-google-genai
+langchain-openai
